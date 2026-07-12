@@ -11,7 +11,6 @@ In this chapter I want to explain how I solved the syntactic problems I encounte
 ### The `.rql` file
 
 Compiler input — text in the RetractorQL language containing `DECLARE` and `SELECT` directives. The ANTLR4 parser reads the file sequentially; a reference to a stream not yet defined earlier in the file results in a compilation error.
-{% endstep %}
 
 ### The ANTLR4 parser → `qTree`
 
