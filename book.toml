@@ -1,0 +1,20 @@
+[book]
+title = "RetractorDB"
+authors = ["Michal Widera"]
+language = "en"
+src = "."
+
+[build]
+build-dir = "book"
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
+
+[output.html]
+mathjax-support = true
+no-section-label = false
+git-repository-url = "https://github.com/michalwidera/documentation-rdb"
+edit-url-template = "https://github.com/michalwidera/documentation-rdb/edit/main/{path}"
+additional-js = ["mermaid.min.js", "mermaid-init.js"]
+additional-css = ["no-print.css"]
+# additional-css = ["print-b5.css"]  # [pdfb5] uncomment before printing to B5

@@ -8,7 +8,7 @@ This is an **mdBook documentation repository** for [RetractorDB](https://github.
 
 **Build system:** mdBook (not GitBook). Workflow: edit Markdown → commit → GitHub Actions builds and publishes to GitHub Pages.
 
-**Live site:** `https://michalwidera.github.io/gitbook-rdb/` — this is the canonical rendered version. Always verify math and diagrams against this URL after pushing, not against VS Code preview (which doesn't render MathJax or Mermaid).
+**Live site:** `https://michalwidera.github.io/documentation-rdb/` — this is the canonical rendered version. Always verify math and diagrams against this URL after pushing, not against VS Code preview (which doesn't render MathJax or Mermaid).
 
 The table of contents is defined in [SUMMARY.md](SUMMARY.md). Images and assets live in [assets/](assets/).
 
@@ -37,7 +37,7 @@ mdbook build               # output → book/
 - **Diagrams:** use standard ` ```mermaid ``` ` fenced blocks — rendered by `mdbook-mermaid` plugin.
 - **Callouts:** use blockquotes with bold prefix: `> **ℹ️ Info**` / `> **⚠️ Warning**` / `> **✅ Note**`.
 - **Images:** paths relative to each `.md` file pointing to `assets/` (e.g. `../assets/foo.png` from a subdirectory).
-- No GitBook-specific syntax: no `{% hint %}`, no `{% tabs %}`, no `{% embed %}`, no YAML frontmatter.
+- No GitBook-specific shortcodes (hint/tabs/embed blocks), no YAML frontmatter. Never write a literal curly-brace-percent tag anywhere in this repo, even inside backticks or code fences — Jekyll's Liquid engine parses it before Markdown rendering and ignores code-span escaping, which breaks the GitHub Pages fallback build if the mdBook Actions workflow ever fails to run.
 
 ## Collaboration Rules
 

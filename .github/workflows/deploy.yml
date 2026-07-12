@@ -1,0 +1,306 @@
+name: Deploy mdBook to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[nobuild]')"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install mdBook
+        run: |
+          MDBOOK_TAG=$(curl -sL -H "Authorization: Bearer ${{ github.token }}" \
+            https://api.github.com/repos/rust-lang/mdBook/releases/latest \
+            | grep '"tag_name"' | head -1 | cut -d'"' -f4)
+          if [ -z "$MDBOOK_TAG" ]; then
+            echo "Could not determine the latest mdBook tag (API rate limit?)" >&2
+            exit 1
+          fi
+          echo "Installing mdBook ${MDBOOK_TAG}"
+          curl -sfL "https://github.com/rust-lang/mdBook/releases/download/${MDBOOK_TAG}/mdbook-${MDBOOK_TAG}-x86_64-unknown-linux-gnu.tar.gz" \
+            | tar xz -C /usr/local/bin
+
+      - name: Install mdbook-mermaid
+        run: |
+          cargo install mdbook-mermaid
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install Pandoc and LaTeX
+        if: "!contains(github.event.head_commit.message, '[skippdf]')"
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q pandoc \
+            texlive-xetex texlive-latex-extra \
+            fonts-dejavu librsvg2-bin imagemagick
+
+      - name: Install mermaid-cli
+        if: "!contains(github.event.head_commit.message, '[skippdf]')"
+        run: npm install -g @mermaid-js/mermaid-cli
+
+      - name: Build
+        run: |
+          mdbook-mermaid install .
+          mdbook build
+
+      - name: Generate PDF
+        if: "!contains(github.event.head_commit.message, '[skippdf]')"
+        run: |
+          printf '{"args":["--no-sandbox","--disable-setuid-sandbox"]}' > /tmp/puppeteer.json
+
+          cat > /tmp/header.tex << 'TEXEOF'
+          \usepackage{caption}
+          \usepackage{float}
+          \floatplacement{figure}{H}
+          \usepackage{amssymb}
+          \usepackage{tcolorbox}
+          \let\origmaketitle\maketitle
+          \renewcommand{\maketitle}{\AtEndDocument{\clearpage\origmaketitle}}
+          \usepackage{titlesec}
+          \titlelabel{\thetitle.\quad}
+          \usepackage{tocloft}
+          \renewcommand{\cftchapaftersnum}{.}
+          \renewcommand{\cftsecaftersnum}{.}
+          \renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+          \cftsetpnumwidth{2.5em}
+          \cftsetrmarg{3em}
+          \setlength{\cftchapnumwidth}{2.5em}
+          \setlength{\cftsecindent}{2.5em}
+          \setlength{\cftsecnumwidth}{3em}
+          \setlength{\cftsubsecindent}{5.5em}
+          \tcbuselibrary{breakable}
+          \usepackage{mdframed}
+          \captionsetup{labelformat=empty,labelsep=none}
+          \newtcolorbox{calloutNote}{breakable,colback=green!8,colframe=green!45!black,fonttitle=\bfseries,title={Note}}
+          \newtcolorbox{calloutInfo}{breakable,colback=cyan!6,colframe=cyan!55!black,fonttitle=\bfseries,title={Info}}
+          \newtcolorbox{calloutWarning}{breakable,colback=orange!10,colframe=orange!70!black,fonttitle=\bfseries,title={Warning}}
+          TEXEOF
+
+          cat > /tmp/cover.tex << COVEOF
+          \thispagestyle{empty}
+          \newgeometry{margin=0cm}
+          \includegraphics[width=\paperwidth,height=\paperheight]{${PWD}/assets/book-cover.png}
+          \restoregeometry
+          \clearpage
+          COVEOF
+
+          cat > /tmp/fix_math.lua << 'LUAEOF'
+          function Math(elem)
+              local text = elem.text
+              -- \\X → \X: double-escaped specials written for Markdown, need single for LaTeX
+              text = text:gsub("\\\\([{}!,;:#&%%])", "\\%1")
+              -- \\\\ → \\: Markdown-escaped LaTeX line-break (array row separator)
+              text = text:gsub("\\\\\\\\", "\\\\")
+              return pandoc.Math(elem.mathtype, text)
+          end
+          LUAEOF
+
+          cat > /tmp/codeblock.lua << 'CODELUAEOF'
+          local box = "[linewidth=0.5pt,linecolor=gray!50,backgroundcolor=gray!8," ..
+                      "innerleftmargin=8pt,innerrightmargin=8pt," ..
+                      "innertopmargin=5pt,innerbottommargin=5pt," ..
+                      "skipabove=6pt,skipbelow=4pt]"
+          function CodeBlock(el)
+            if FORMAT:match("latex") then
+              return {
+                pandoc.RawBlock("latex", "\\begin{mdframed}" .. box),
+                el,
+                pandoc.RawBlock("latex", "\\end{mdframed}")
+              }
+            end
+          end
+          function Table(el)
+            if not FORMAT:match("latex") then return end
+            if #el.head.rows == 0 then return end
+            local first_cell = el.head.rows[1].cells[1]
+            if not first_cell then return end
+            if pandoc.utils.stringify(first_cell.content) ~= "Test name" then return end
+            for _, body in ipairs(el.bodies) do
+              for _, row in ipairs(body.body) do
+                if #row.cells >= 2 then
+                  local cell = row.cells[2]
+                  cell.content:insert(1,
+                    pandoc.RawBlock("latex", "\\vspace*{\\baselineskip}"))
+                end
+              end
+            end
+            return el
+          end
+          CODELUAEOF
+
+          cat > /tmp/callouts.lua << 'CALLUAEOF'
+          local envs = {Note="calloutNote", Info="calloutInfo",
+                        Warning="calloutWarning", NOTE="calloutNote",
+                        Download="calloutInfo"}
+          local function get_env(text)
+              for k, v in pairs(envs) do
+                  if text:find(k, 1, true) then return v end
+              end
+          end
+          function BlockQuote(el)
+              if #el.content == 0 then return el end
+              local first = el.content[1]
+              if first.t ~= "Para" or #first.content == 0 then return el end
+              local head = first.content[1]
+              if head.t ~= "Strong" then return el end
+              local env = get_env(pandoc.utils.stringify(head))
+              if not env then return el end
+              local body = {}
+              local rest = {}
+              for i = 2, #first.content do table.insert(rest, first.content[i]) end
+              while #rest > 0 and rest[1].t == "Space" do table.remove(rest, 1) end
+              if #rest > 0 then table.insert(body, pandoc.Para(rest)) end
+              for i = 2, #el.content do table.insert(body, el.content[i]) end
+              local out = {pandoc.RawBlock("latex", "\\begin{"..env.."}")}
+              for _, b in ipairs(body) do table.insert(out, b) end
+              table.insert(out, pandoc.RawBlock("latex", "\\end{"..env.."}"))
+              return out
+          end
+          CALLUAEOF
+
+          # Parse SUMMARY.md for file order and nesting level, then demote headings
+          # so that subsections (indent 2) get # → ##, sub-subsections get # → ###, etc.
+          python3 - << 'PYEOF'
+          import re, sys, subprocess, os
+          from pathlib import Path
+          MERMAID_DIR = '/tmp/mermaid'
+          os.makedirs(MERMAID_DIR, exist_ok=True)
+          mermaid_n = [0]
+          def render_mermaid(m):
+              mermaid_n[0] += 1
+              idx = mermaid_n[0]
+              mmd = f'{MERMAID_DIR}/d{idx}.mmd'
+              png = f'{MERMAID_DIR}/d{idx}.png'
+              content = m.group(1).strip()
+              Path(mmd).write_text(content)
+              subprocess.run(['mmdc', '-i', mmd, '-o', png, '-p', '/tmp/puppeteer.json'], capture_output=True)
+              if not os.path.exists(png):
+                  return m.group(0)
+              subprocess.run(['convert', png, '-trim', '+repage', png], capture_output=True)
+              pdfw = re.search(r'^%%\s+pdf-width:\s*(\S+)', content, re.MULTILINE)
+              if pdfw:
+                  width = pdfw.group(1)
+              else:
+                  dtype = next((l for l in content.split('\n') if not l.strip().startswith('%%')), '').lower().strip()
+                  width = '85%' if any(k in dtype for k in ('sequence', 'timeline', ' lr')) else '50%'
+              return f'![Diagram]({png}){{width={width}}}\n'
+          def fix_figure(m, d):
+              src_m = re.search(r'src="([^"]+)"', m.group(0))
+              if not src_m:
+                  return m.group(0)
+              src = src_m.group(1)
+              cap_m = re.search(r'<figcaption[^>]*>(.*?)</figcaption>', m.group(0), re.DOTALL)
+              cap = re.sub(r'<[^>]+>', '', cap_m.group(1)).strip() if cap_m else ''
+              if not src.startswith(('http://', 'https://', '/')):
+                  src = str((d / src).resolve())
+              if src.lower().endswith('.gif'):
+                  png = src[:-4] + '.png'
+                  if not os.path.exists(png):
+                      subprocess.run(['convert', src + '[0]', png], check=False)
+                  src = png if os.path.exists(png) else None
+              if not src:
+                  return (f'*[{cap}]*\n' if cap else '')
+              wm = re.search(r'<img[^>]+width="([^"]+)"', m.group(0))
+              wattr = f'{{width={wm.group(1)}}}' if wm else ''
+              return f'![{cap}]({src}){wattr}\n'
+          def demote_headings(text, levels):
+              if levels == 0:
+                  return text
+              def replace(m):
+                  return '#' * min(len(m.group(1)) + levels, 6) + m.group(2)
+              return re.sub(r'^(#+)( )', replace, text, flags=re.MULTILINE)
+          summary = Path('SUMMARY.md').read_text()
+          file_entries = []
+          for line in summary.splitlines():
+              match = re.match(r'^( *)\*.*\(([^)]+\.md)\)', line)
+              if match:
+                  level = len(match.group(1)) // 2
+                  filepath = match.group(2)
+                  if Path(filepath).exists():
+                      file_entries.append((filepath, level))
+          parts = []
+          for filepath, level in file_entries:
+              d = Path(filepath).parent.resolve()
+              text = Path(filepath).read_text()
+              text = re.sub(r'<div class="no-print">.*?</div>', '', text, flags=re.DOTALL)
+              text = text.replace('✔', '$\\checkmark$')
+              text = re.sub(r'```mermaid\n(.*?)```', render_mermaid, text, flags=re.DOTALL)
+              text = re.sub(r'<figure>.*?</figure>', lambda m, d=d: fix_figure(m, d), text, flags=re.DOTALL)
+              def fix_img(m, d=d):
+                  alt, src = m.group(1), m.group(2)
+                  if src.startswith(('http://', 'https://', '/')):
+                      return m.group(0)
+                  return f'![{alt}]({(d / src).resolve()})'
+              text = re.sub(r'!\[([^\]]*)\]\(([^)\s]+)\)', fix_img, text)
+              text = demote_headings(text, level)
+              parts.append(text)
+          combined = '\n\n'.join(parts)
+          # Lift _Fig. N. Caption_ from after mermaid into alt text so pandoc renders proper figure caption
+          combined = re.sub(
+              r'!\[Diagram\]\(([^)]+)\)(\{[^}]*\})?\n+_(Fig\.[^_\n]+)_',
+              lambda m: f'![{m.group(3)}]({m.group(1)}){m.group(2) or ""}',
+              combined
+          )
+          Path('/tmp/combined.md').write_text(combined)
+          PYEOF
+
+          pandoc /tmp/combined.md \
+            --from markdown+tex_math_double_backslash \
+            --lua-filter /tmp/codeblock.lua \
+            --lua-filter /tmp/callouts.lua \
+            --lua-filter /tmp/fix_math.lua \
+            --include-in-header=/tmp/header.tex \
+            --include-before-body=/tmp/cover.tex \
+            --pdf-engine=xelatex \
+            --number-sections \
+            --toc --toc-depth=2 \
+            --top-level-division=chapter \
+            -V secnumdepth=1 \
+            --standalone \
+            -V lang=en \
+            -V geometry:margin=2.5cm \
+            -V fontsize=11pt \
+            -V documentclass=report \
+            -V mainfont="DejaVu Serif" \
+            -V monofont="DejaVu Sans Mono" \
+            --metadata title="RetractorDB" \
+            --metadata subtitle="Edge Signal Processing Engine" \
+            --metadata author="Michal Widera" \
+            --metadata date="$(date +%Y-%m-%d) · commit $(git rev-parse --short HEAD)" \
+            -o book/retractordb.pdf
+
+      - name: Restore PDF from previous deployment
+        if: "contains(github.event.head_commit.message, '[skippdf]')"
+        run: curl -sL "https://michalwidera.github.io/documentation-rdb/retractordb.pdf" -o book/retractordb.pdf || echo "Previous PDF not found, skipping."
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: book/
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
