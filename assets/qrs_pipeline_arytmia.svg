@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="670" viewBox="0 0 820 670"
+     font-family="Liberation Sans,Arial,sans-serif" font-size="13">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#444"/>
+    </marker>
+    <marker id="arr-r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#C2185B"/>
+    </marker>
+    <marker id="arr-p" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#7B1FA2"/>
+    </marker>
+    <marker id="arr-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#388E3C"/>
+    </marker>
+  </defs>
+
+  <rect width="820" height="670" fill="#FAFAFA" rx="4"/>
+
+  <!-- ═══════════════════ TITLE ═══════════════════ -->
+  <text x="410" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#212121">
+    Detekcja QRS i identyfikacja arytmii — przepływ danych w RetractorDB
+  </text>
+
+  <!-- ═══════════════════ ROW 1: źródła danych ═══════════════════ -->
+
+  <!-- MIT-BIH -->
+  <rect x="20" y="48" width="150" height="54" rx="8" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.5"/>
+  <text x="95" y="70" text-anchor="middle" font-weight="bold" fill="#1565C0">MIT-BIH rec205</text>
+  <text x="95" y="86" text-anchor="middle" font-size="11" fill="#1565C0">205.dat · 205.hea</text>
+  <text x="95" y="99" text-anchor="middle" font-size="10" fill="#1565C0">format 212, 360 Hz</text>
+
+  <!-- gen_bp_coef.py -->
+  <rect x="220" y="48" width="175" height="54" rx="8" fill="#FCE4EC" stroke="#C2185B" stroke-width="1.5"/>
+  <text x="307" y="68" text-anchor="middle" font-weight="bold" fill="#AD1457">gen_bp_coef.py</text>
+  <text x="307" y="84" text-anchor="middle" font-size="11" fill="#AD1457">windowed sinc, N=25</text>
+  <text x="307" y="98" text-anchor="middle" font-size="10" fill="#AD1457">fc₁=5 Hz, fc₂=15 Hz, fs=360 Hz</text>
+
+  <!-- gen_d_coef.py -->
+  <rect x="425" y="48" width="175" height="54" rx="8" fill="#F3E5F5" stroke="#7B1FA2" stroke-width="1.5"/>
+  <text x="512" y="68" text-anchor="middle" font-weight="bold" fill="#6A1B9A">gen_d_coef.py</text>
+  <text x="512" y="84" text-anchor="middle" font-size="11" fill="#6A1B9A">Pan &amp; Tompkins (1985)</text>
+  <text x="512" y="98" text-anchor="middle" font-size="10" fill="#6A1B9A">h = [−1, −2, 0, 2, 1]</text>
+
+  <!-- Istniejące metody arytmii (prawa kolumna) -->
+  <rect x="640" y="48" width="162" height="54" rx="8" fill="#FFF9C4" stroke="#F9A825" stroke-width="1.5"/>
+  <text x="721" y="68" text-anchor="middle" font-weight="bold" fill="#F57F17">Metody klasyczne</text>
+  <text x="721" y="84" text-anchor="middle" font-size="11" fill="#795548">interwały RR</text>
+  <text x="721" y="98" text-anchor="middle" font-size="10" fill="#795548">morfologia · HRV · statystyki</text>
+
+  <!-- ═══════════════════ ROW 2: pliki pośrednie ═══════════════════ -->
+
+  <!-- arrow MIT-BIH → mitbih2rdb -->
+  <line x1="95" y1="102" x2="95" y2="124" stroke="#444" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- mitbih2rdb.py + build.sh -->
+  <rect x="20" y="124" width="150" height="42" rx="8" fill="#FFF9C4" stroke="#F9A825" stroke-width="1.5"/>
+  <text x="95" y="142" text-anchor="middle" font-size="11" fill="#F57F17">mitbih2rdb.py</text>
+  <text x="95" y="157" text-anchor="middle" font-size="11" fill="#F57F17">+ build.sh</text>
+
+  <!-- arrow mitbih2rdb → rec205 -->
+  <line x1="95" y1="166" x2="95" y2="188" stroke="#444" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- rec205 binary -->
+  <rect x="20" y="188" width="150" height="42" rx="8" fill="#E8F5E9" stroke="#388E3C" stroke-width="1.5"/>
+  <text x="95" y="206" text-anchor="middle" font-weight="bold" fill="#2E7D32">rec205</text>
+  <text x="95" y="222" text-anchor="middle" font-size="11" fill="#2E7D32">int32 LE · 5 200 000 B</text>
+
+  <!-- arrow gen_bp_coef → bp_coef.txt -->
+  <line x1="307" y1="102" x2="307" y2="124" stroke="#C2185B" stroke-width="1.5" marker-end="url(#arr-r)"/>
+
+  <!-- bp_coef.txt -->
+  <rect x="220" y="124" width="175" height="42" rx="8" fill="#FCE4EC" stroke="#C2185B" stroke-width="1"/>
+  <text x="307" y="142" text-anchor="middle" font-size="12" fill="#880E4F">bp_coef.txt</text>
+  <text x="307" y="158" text-anchor="middle" font-size="11" fill="#880E4F">25 współczynników całkowitoliczbowych</text>
+
+  <!-- arrow gen_d_coef → d_coef.txt -->
+  <line x1="512" y1="102" x2="512" y2="124" stroke="#7B1FA2" stroke-width="1.5" marker-end="url(#arr-p)"/>
+
+  <!-- d_coef.txt -->
+  <rect x="425" y="124" width="175" height="42" rx="8" fill="#F3E5F5" stroke="#7B1FA2" stroke-width="1"/>
+  <text x="512" y="142" text-anchor="middle" font-size="12" fill="#4A148C">d_coef.txt</text>
+  <text x="512" y="158" text-anchor="middle" font-size="11" fill="#4A148C">[−1, −2, 0, 2, 1]</text>
+
+  <!-- ═══════════════════ ARROWS into pipeline ═══════════════════ -->
+
+  <!-- rec205 → pipeline -->
+  <line x1="95" y1="230" x2="95" y2="274" stroke="#388E3C" stroke-width="1.5" marker-end="url(#arr-g)"/>
+
+  <!-- bp_coef → pipeline (diagonal) -->
+  <line x1="307" y1="166" x2="200" y2="274" stroke="#C2185B" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr-r)"/>
+
+  <!-- d_coef → pipeline (diagonal) -->
+  <line x1="512" y1="166" x2="395" y2="274" stroke="#7B1FA2" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr-p)"/>
+
+  <!-- ═══════════════════ PIPELINE BOX ═══════════════════ -->
+
+  <rect x="20" y="274" width="790" height="248" rx="10" fill="#ECEFF1" stroke="#546E7A" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <text x="415" y="297" text-anchor="middle" font-size="14" font-weight="bold" fill="#37474F">
+    POTOK ALGORYTMU PAN-TOMPKINS — rec205-detect.rql
+  </text>
+
+  <!-- Step 1 -->
+  <rect x="38" y="306" width="754" height="34" rx="5" fill="#BBDEFB" stroke="#1565C0" stroke-width="1"/>
+  <text x="415" y="328" text-anchor="middle" font-size="12" fill="#0D47A1">
+    1. Filtr pasmowoprzepustowy 5–15 Hz — mlii_win[_] × bpf[_] → bp_acc.sumc / 1000 → bp_out
+  </text>
+
+  <!-- Step 2 -->
+  <rect x="38" y="347" width="754" height="34" rx="5" fill="#C8E6C9" stroke="#2E7D32" stroke-width="1"/>
+  <text x="415" y="369" text-anchor="middle" font-size="12" fill="#1B5E20">
+    2. Różniczkowanie FIR 5-tap — bp_win[_] × df[_] → d_acc.sumc → d_out
+  </text>
+
+  <!-- Step 3 -->
+  <rect x="38" y="388" width="754" height="34" rx="5" fill="#FFE0B2" stroke="#E65100" stroke-width="1"/>
+  <text x="415" y="410" text-anchor="middle" font-size="12" fill="#BF360C">
+    3. Kwadratowanie — sq_out = d_out × d_out / 1000  (eliminuje znak, wzmacnia piki QRS)
+  </text>
+
+  <!-- Step 4 -->
+  <rect x="38" y="429" width="754" height="34" rx="5" fill="#F8BBD9" stroke="#AD1457" stroke-width="1"/>
+  <text x="415" y="451" text-anchor="middle" font-size="12" fill="#880E4F">
+    4. Całkowanie ruchome 30 próbek (~83 ms) — mwi = mwi_win.avg  (obwiednia MWI)
+  </text>
+
+  <!-- Step 5 -->
+  <rect x="38" y="470" width="754" height="34" rx="5" fill="#E1BEE7" stroke="#6A1B9A" stroke-width="1"/>
+  <text x="415" y="492" text-anchor="middle" font-size="12" fill="#4A148C">
+    5. Próg adaptacyjny — mwi_thr = mwi_long.avg (180 próbek, 0,5 s) → detekcja = mwi − 2·mwi_thr
+  </text>
+
+  <!-- ═══════════════════ detect_out ═══════════════════ -->
+
+  <line x1="415" y1="522" x2="415" y2="548" stroke="#444" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="255" y="548" width="320" height="52" rx="8" fill="#E3F2FD" stroke="#1565C0" stroke-width="2"/>
+  <text x="415" y="569" text-anchor="middle" font-weight="bold" fill="#0D47A1">detect_out  (VOLATILE)</text>
+  <text x="415" y="585" text-anchor="middle" font-size="11" fill="#1565C0">
+    [0] mlii−900  ·  [1] v1−900  ·  [2] (mwi−2·mwi_thr)×5
+  </text>
+
+  <!-- ═══════════════════ OUTPUT BRANCHES ═══════════════════ -->
+
+  <!-- left branch: visualization -->
+  <line x1="330" y1="600" x2="190" y2="628" stroke="#444" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="60" y="628" width="260" height="34" rx="8" fill="#E8F5E9" stroke="#388E3C" stroke-width="1.5"/>
+  <text x="190" y="645" text-anchor="middle" font-weight="bold" fill="#1B5E20">Wizualizacja — ninja ecg-detect-qrs</text>
+  <text x="190" y="658" text-anchor="middle" font-size="11" fill="#2E7D32">xplot.sh · gnuplot RTL · okno ±400 ADC · 720 próbek</text>
+
+  <!-- right branch: arrhythmia -->
+  <line x1="500" y1="600" x2="620" y2="628" stroke="#444" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="490" y="628" width="312" height="34" rx="8" fill="#FFF3E0" stroke="#E65100" stroke-width="1.5"/>
+  <text x="646" y="645" text-anchor="middle" font-weight="bold" fill="#BF360C">Identyfikacja arytmii</text>
+  <text x="646" y="658" text-anchor="middle" font-size="11" fill="#E65100">interwały RR → HR · PVC · VT (częstoskurcz) · APC</text>
+
+  <!-- arrow from classical methods to arrhythmia box -->
+  <line x1="721" y1="102" x2="721" y2="628" stroke="#F9A825" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arr)"/>
+
+</svg>

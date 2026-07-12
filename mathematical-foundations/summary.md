@@ -1,0 +1,10 @@
+# Summary
+
+I initially modeled these equations as Python programs. The formal form presented here took shape only at the very end of the search process. To numerically prove the correctness of the developed equations, I constructed sequences of operations on streams. If any elements got lost in the course of carrying out the operations shown, it meant I had made a mistake. It turns out, for instance, that it is essential in the implementation never to leave the domain of rational numbers, even for a moment. A mistake can be made by accident, by implicitly casting the result to a floating-point number. Materializing the result as a floating-point number must be deferred, in the calculations, until the result is explicitly carried over via the floor or ceiling operation. If we assemble a Python program into a sequence of operations on infinite streams and no data disappears as a result of that operation — we have an object ready for further research and formal analysis, ready for a formal mathematical proof of correctness. The formal proof (the mathematical formalism) can be found in the paper titled [A Deterministic Method for Processing Data Sequences](https://www.academia.edu/1840563/Deterministyczna_metoda_przetwarzania_ciagow_danych) \[[3](../references.md#3)].
+
+The branch of mathematics that contains the research related to these equations is called covering systems \[[4](../references.md#4)] within number theory.
+
+> **ℹ️ Info**
+>
+> Presenting the mathematical foundations of the system is necessary in order to understand the further technical aspects of the solution. The methods presented go beyond the standard material currently taught in technical-science degree programs. This is because I drew the mathematical foundations from an area that, to my knowledge, had not previously been applied in engineering. These are methods that make it possible to build a new way of processing data. This is one of the aspects that sets RetractorDB apart from other similar solutions.
+

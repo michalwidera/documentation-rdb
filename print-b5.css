@@ -1,0 +1,6 @@
+@media print {
+  @page {
+    size: 160mm 241mm;
+    margin: 20mm 15mm 20mm 20mm;
+  }
+}
