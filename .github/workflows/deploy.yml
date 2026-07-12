@@ -286,9 +286,33 @@ jobs:
             --metadata date="$(date +%Y-%m-%d) · commit $(git rev-parse --short HEAD)" \
             -o book/retractordb.pdf
 
+      - name: Generate EPUB
+        if: "!contains(github.event.head_commit.message, '[skippdf]')"
+        run: |
+          pandoc /tmp/combined.md \
+            --from markdown+tex_math_double_backslash \
+            --lua-filter /tmp/codeblock.lua \
+            --lua-filter /tmp/callouts.lua \
+            --lua-filter /tmp/fix_math.lua \
+            --number-sections \
+            --toc --toc-depth=2 \
+            --top-level-division=chapter \
+            --standalone \
+            -V lang=en \
+            --epub-cover-image=assets/book-cover.png \
+            --metadata title="RetractorDB" \
+            --metadata subtitle="Edge Signal Processing Engine" \
+            --metadata author="Michal Widera" \
+            --metadata date="$(date +%Y-%m-%d) · commit $(git rev-parse --short HEAD)" \
+            -o book/retractordb.epub
+
       - name: Restore PDF from previous deployment
         if: "contains(github.event.head_commit.message, '[skippdf]')"
         run: curl -sL "https://documentation.retractordb.com/retractordb.pdf" -o book/retractordb.pdf || echo "Previous PDF not found, skipping."
+
+      - name: Restore EPUB from previous deployment
+        if: "contains(github.event.head_commit.message, '[skippdf]')"
+        run: curl -sL "https://documentation.retractordb.com/retractordb.epub" -o book/retractordb.epub || echo "Previous EPUB not found, skipping."
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

@@ -2,9 +2,9 @@
 
 This chapter is a map, not a catalog. Instead of listing everything ever written about streams and signals, I show five strands of peer-reviewed literature at whose intersection RetractorDB sits, and for each of them I answer three questions: what has this strand already solved, how does RetractorDB differ from it, and what does this strand **not** touch. Only by overlaying these five layers does the gap this project fills become visible.
 
-> **📥 Download the documentation as a PDF**
+> **📥 Download the documentation**
 >
-> [retractordb.pdf](retractordb.pdf) — generated automatically on every `git push`.
+> [retractordb.pdf](retractordb.pdf) · [retractordb.epub](retractordb.epub) — generated automatically on every `git push`.
 
 > **✅ Note**
 >
