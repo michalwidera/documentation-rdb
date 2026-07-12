@@ -8,7 +8,7 @@ This is an **mdBook documentation repository** for [RetractorDB](https://github.
 
 **Build system:** mdBook (not GitBook). Workflow: edit Markdown → commit → GitHub Actions builds and publishes to GitHub Pages.
 
-**Live site:** `https://michalwidera.github.io/documentation-rdb/` — this is the canonical rendered version. Always verify math and diagrams against this URL after pushing, not against VS Code preview (which doesn't render MathJax or Mermaid).
+**Live site:** `https://documentation.retractordb.com/` (custom domain, see `CNAME`) — this is the canonical rendered version. Always verify math and diagrams against this URL after pushing, not against VS Code preview (which doesn't render MathJax or Mermaid).
 
 The table of contents is defined in [SUMMARY.md](SUMMARY.md). Images and assets live in [assets/](assets/).
 
@@ -49,7 +49,8 @@ mdbook build               # output → book/
 |------|---------|
 | `book.toml` | mdBook config: title, language, MathJax, Mermaid, GitHub edit links |
 | `SUMMARY.md` | Table of contents (mdBook format) |
-| `.github/workflows/deploy.yml` | CI: installs mdBook + mdbook-mermaid, builds, deploys to GitHub Pages |
+| `.github/workflows/deploy.yml` | CI: installs mdBook + mdbook-mermaid, builds, deploys to GitHub Pages; copies `CNAME` into `book/` so the custom domain survives each deploy |
+| `CNAME` | GitHub Pages custom domain (`documentation.retractordb.com`); must be copied into `book/` on every build — mdBook doesn't do this itself |
 | `.gitignore` | Excludes `book/`, `mermaid.min.js`, `mermaid-init.js` |
 | `migrate_to_mdbook.py` | One-time migration script (GitBook → mdBook); idempotent, safe to re-run |
 

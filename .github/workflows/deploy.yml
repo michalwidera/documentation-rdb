@@ -58,6 +58,7 @@ jobs:
         run: |
           mdbook-mermaid install .
           mdbook build
+          if [ -f CNAME ]; then cp CNAME book/CNAME; fi
 
       - name: Generate PDF
         if: "!contains(github.event.head_commit.message, '[skippdf]')"
@@ -287,7 +288,7 @@ jobs:
 
       - name: Restore PDF from previous deployment
         if: "contains(github.event.head_commit.message, '[skippdf]')"
-        run: curl -sL "https://michalwidera.github.io/documentation-rdb/retractordb.pdf" -o book/retractordb.pdf || echo "Previous PDF not found, skipping."
+        run: curl -sL "https://documentation.retractordb.com/retractordb.pdf" -o book/retractordb.pdf || echo "Previous PDF not found, skipping."
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
