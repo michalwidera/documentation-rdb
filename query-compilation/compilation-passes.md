@@ -73,7 +73,7 @@ The chain of stages is defined by the `compiler::compile()` function:
 
 #### extractIntermediateStreams
 
-Reduces every FROM expression to at most a two-argument form. Complex expressions like `(core0#core1)+core2`, and chained notations without parentheses (`core0+core1+core2`, `core0#core1#core2`), require intermediate streams. This stage automatically creates substrates — see [Substrates](substrates.md).
+Reduces every FROM expression to at most a two-argument form. Complex expressions like `(core0#core1)+core2`, and chained notations without parentheses (`core0+core1+core2`, `core0#core1#core2`), require intermediate streams. Every query is reduced to a fixed point, so the stage also handles adjacent unary subexpressions such as `(core0>2)#(core1>1)`. This stage automatically creates substrates — see [Substrates](substrates.md).
 
 #### expandSchemaWildcards
 
@@ -82,6 +82,10 @@ Expands the `*` symbol in a SELECT clause. Replaces it with the field list deriv
 #### resolveStreamIntervals (← loops are detected here)
 
 Determines the time interval (delta) of every stream based on the algebraic operators and the intervals of the input streams. An iterative algorithm — each round resolves as many streams as possible. It detects cyclic dependencies by stopping when the number of unresolved streams stops decreasing — see [Interval Resolution](interval-resolution.md) and [Loop Detection](loop-detection.md).
+
+#### factorMatchedHashTimeMoves
+
+Recognizes matched shifts of interleave arguments. When `i·ΔA=k·ΔB`, it rewrites `(A>i)#(B>k)` as `(A#B)>(i+k)`, reducing two shift substrates to one interleave substrate. Unmatched cases and substrates shared with other consumers remain unchanged — see [Substrates](substrates.md).
 
 #### deduplicateSubstrats
 
@@ -101,7 +105,7 @@ Converts field references (`b[x]`, `c[y]`) into indices in the flattened output 
 
 #### computeRequiredCapacities
 
-Computes the required buffer capacities for every stream, based on schema sizes and time-window requirements.
+Computes the required buffer capacities for every stream, based on schema sizes and time-window requirements. A `>N` shift reads history slot `N`, so it requires `N+1` records (slot 0 is the current record).
 
 #### validateConstraints
 

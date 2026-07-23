@@ -175,6 +175,36 @@ A substrate is generated for every query whose program contains more than one st
 
 The newly created substrate is given a name built from the operation symbol and the operand names, e.g. `STREAM_ADD_core1_core0` (the `composeStreamName` function in `compiler.cpp`). In the parent query's program, the operator token is replaced with a `PUSH_STREAM` token pointing at this substrate.
 
+### Matched interleave-shift factorization
+
+After extracting substrates and resolving their intervals, the compiler applies the algebraic rewrite:
+
+\\[
+(A > i) \mathbin{\\#} (B > k) \longrightarrow (A \mathbin{\\#} B) > (i+k),
+\qquad i\Delta_{a}=k\Delta_{b}
+\\]
+
+The condition \\(i\Delta_{a}=k\Delta_{b}\\) means that both interleave arguments are shifted by the same physical time. Without this condition the transformation is not equivalent, so the compiler keeps the original plan.
+
+Before optimization the plan contains two substrates:
+
+```
+STREAM_TIMEMOVE_A = A > i
+STREAM_TIMEMOVE_B = B > k
+result = STREAM_TIMEMOVE_A # STREAM_TIMEMOVE_B
+```
+
+After optimization only one remains:
+
+```
+STREAM_HASH_A_B = A # B
+result = STREAM_HASH_A_B > (i + k)
+```
+
+The `factorMatchedHashTimeMoves()` pass does not remove explicit user streams or substrates used by other consumers. It runs before deduplication so that the exposed `A # B` substrate can subsequently be shared with another equivalent plan.
+
+The `issue202_hash_shift_e2e` test executes both sides of the identity over independent copies of file-backed input streams. It compares the `matched` and `CC` artifacts byte for byte, compares their metadata after excluding the creation timestamp, and checks the complete sequence against a reference derived from the `B,A,A` interleave period. Because the resulting `>3` operator addresses history slot 3 (slot 0 is the current record), `computeRequiredCapacities()` allocates four records—generally `N+1` for a `>N` shift.
+
 ### The deduplication algorithm
 
 After extracting substrates and determining time intervals, the compiler runs the `deduplicateSubstrats()` step. The algorithm works iteratively — a `while(changed)` loop repeats the search until no more duplicate pairs are found.
@@ -191,20 +221,23 @@ If all conditions hold, substrate `it` is considered a duplicate of substrate `i
 
 ### Position in the compilation pipeline
 
-Deduplication is the fourth step of an eight-phase pipeline (the `compiler::compile()` function):
+Deduplication is the fifth step of the pipeline (the `compiler::compile()` function):
 
 ```
 1. extractIntermediateStreams   – substrate extraction
 2. expandSchemaWildcards        – expansion of wildcard symbols in schemas
 3. resolveStreamIntervals       – time-interval computation
-4. deduplicateSubstrats         – duplicate elimination  ← this step
-5. resolveFieldReferences       – field-reference resolution
-6. expandIndexWildcards         – expansion of wildcard indices
-7. localizeFieldOffsets         – field-offset computation
-8. validateConstraints / applyCapacities
+4. factorMatchedHashTimeMoves   – matched interleave-shift factorization
+5. deduplicateSubstrats         – duplicate elimination  ← this step
+6. resolveFieldReferences       – field-reference resolution
+7. expandIndexWildcards         – expansion of wildcard indices
+8. localizeFieldOffsets         – field-offset computation
+9. computeRequiredCapacities    – required-history computation
+10. validateConstraints         – operator-constraint validation
+11. applyCapacitiesToStreams    – capacity application
 ```
 
-Deduplication must happen after step 3, because comparing intervals is one of the equivalence criteria — substrates with different intervals are not identical, even if they carry out the same algebraic operation.
+Matched interleave-shift factorization and deduplication must happen after step 3 because both operations compare intervals. Deduplication follows the algebraic rewrite so that it can merge interleave substrates exposed by that rewrite.
 
 ### Effect on the dependency graph
 
