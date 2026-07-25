@@ -94,7 +94,7 @@ The compiler carries out an optimization called **substrate reduction** (the `de
 
 Reduction of a substrate into a user query happens if and only if three conditions are simultaneously satisfied:
 
-1. **The same schema** — the output field types and names are identical.
+1. **The same schema shape** — the field count, types, byte sizes, and cardinalities are identical. Field names are not compared.
 2. **The same delta** — the streams' sampling rate is the same.
 3. **The same processing operations** — the sequence of `PUSH_STREAM` / `STREAM_TIMEMOVE` / `STREAM_HASH`, etc. instructions is identical.
 
@@ -163,7 +163,60 @@ core0(1/10)     sensor_a.txt
         b: INTEGER
 ```
 
-This semantic decision is deliberate: the user declared two separate output streams, and both are entitled to exist independently in the execution plan.
+This semantic decision is deliberate: the user declared two separate output streams, and both are entitled to exist independently in the execution plan. The `deduplicateSubstrats()` pass removes neither of them. The compiler may, however, share their internal computation while retaining both public streams, as described in the next section.
+
+## Sharing equivalent SELECT computations
+
+The `shareEquivalentSelectComputations()` pass detects explicit `SELECT` queries that execute the same field program over equivalent `FROM` trees containing `STREAM_ADD`. Instead of executing the expensive program separately for each query, the compiler creates one `STREAM_SELECT_*` substrate. The public streams remain in the plan as lightweight projections of that substrate.
+
+Example:
+
+```rql
+SELECT a[_] * b[_] STREAM c1 FROM a+b
+SELECT a[_] * b[_] STREAM c2 FROM b+a
+```
+
+After field references are resolved, both field programs read the same values from `a` and `b`, even though the stream `+` operator builds its input in a different order. The plan contains one shared computation, for example `STREAM_SELECT_c1`, and two public streams, `c1` and `c2`, that read its fields.
+
+### Equivalence conditions
+
+Two queries may share a computation only when:
+
+1. they have the same result interval;
+2. they have the same number and order of result fields;
+3. corresponding fields have the same type, size, and cardinality;
+4. after field references and `[_]` are expanded, the field programs read the same source fields and execute the same operations in the same order;
+5. the `FROM` trees are equivalent while preserving their grouping.
+
+The tree fingerprint canonically orders the two children of each individual `STREAM_ADD` node, so `a+b` may be equivalent to `b+a`. It does not flatten the tree or assume associativity. This matters for three sources with different intervals:
+
+```rql
+SELECT p[_] * q[_] + r[_] STREAM x1 FROM (p+q)+r
+SELECT p[_] * q[_] + r[_] STREAM x2 FROM (q+p)+r
+SELECT p[_] * q[_] + r[_] STREAM x3 FROM (r+q)+p
+```
+
+Queries `x1` and `x2` may share their computation because they swap only the children of the same inner node. Query `x3` has different grouping and a different intermediate substrate; its execution cadence may differ, so it remains independent.
+
+Input order is also observable through a full scan and through projection order. The following pairs must not be merged:
+
+```rql
+SELECT * STREAM d1 FROM a+b
+SELECT * STREAM d2 FROM b+a
+
+SELECT a[0], b[1] STREAM n1 FROM a+b
+SELECT b[1], a[0] STREAM n2 FROM b+a
+```
+
+### Preserving the public contract
+
+The optimization shares only the internal computation. Every explicit stream retains its own name, schema and descriptor, rules, retention, storage policy, and artifacts. Automatically generated field names may therefore still differ between `c1` and `c2`, even when their data is identical. This is not a full alias: no public stream disappears from the plan, IPC, or storage.
+
+After creating the common `STREAM_SELECT_*`, the compiler removes orphaned substrates to a fixed point. During ad hoc import, analysis is restricted to new identifiers so recompilation cannot rewrite streams that have already been instantiated in the live plan.
+
+The pass runs after `resolveFieldReferences()` and `expandIndexWildcards()`, but before `localizeFieldOffsets()`. This lets a field fingerprint compare the source identity and index instead of a local offset that depends on whether the input order is `a+b` or `b+a`.
+
+The `select_cse_commutative_add` test checks both plan shape and execution. It covers equivalent indexed projections and explicit field lists, NULL values and their metadata, separate public descriptors, `SELECT *`, changed field order, and positive and negative three-source cases. The test compares equivalent pairs byte for byte and confirms that the counterexamples produce different results — see [Integration Tests](../appendices/integration-tests.md).
 
 ## Elimination of duplicate substrates
 
@@ -231,13 +284,16 @@ Deduplication is the fifth step of the pipeline (the `compiler::compile()` funct
 5. deduplicateSubstrats         – duplicate elimination  ← this step
 6. resolveFieldReferences       – field-reference resolution
 7. expandIndexWildcards         – expansion of wildcard indices
-8. localizeFieldOffsets         – field-offset computation
-9. computeRequiredCapacities    – required-history computation
-10. validateConstraints         – operator-constraint validation
-11. applyCapacitiesToStreams    – capacity application
+8. shareEquivalentSelectComputations – sharing equivalent SELECT computations
+9. localizeFieldOffsets         – field-offset computation
+10. computeRequiredCapacities   – required-history computation
+11. validateConstraints         – operator-constraint validation
+12. applyCapacitiesToStreams    – capacity application
 ```
 
 Matched interleave-shift factorization and deduplication must happen after step 3 because both operations compare intervals. Deduplication follows the algebraic rewrite so that it can merge interleave substrates exposed by that rewrite.
+
+SELECT computation sharing runs only after field references and `[_]` have been expanded because it compares completed field programs. It must still precede field-offset localization so equivalent sources do not look different merely because of their order in the local input buffer.
 
 ### Effect on the dependency graph
 
