@@ -2,6 +2,16 @@
 
 The appendices contain documents not directly related to the system's construction, but which describe the motivation behind design decisions, tool documentation, and supporting material for people deploying or extending the system.
 
+**Production Builds and Research Variants**
+
+A description of the production `release` safety contract and the isolated
+`release-ablation` and `probe` modes. The chapter covers source-tree
+cleanliness checks, explicit optimizer-switch values, separate CMake and Conan
+directories, verification of the resulting binary configuration, and rules
+for interpreting expected ablation-test failures.
+
+Full description: [Production Builds and Research Variants](production-builds-and-research-variants.md)
+
 **System Origin**
 
 A description of the historical circumstances that led to RetractorDB's creation. The starting point is the author's experience building a neonatal monitoring system in the early 2000s — running into the limitations of relational databases when recording high-granularity signals, attempts based on the stream-processing systems of the time, and the evolution toward a dedicated time-series processing engine. The chapter also explains where the name "Retractor" comes from — a reference to a group of surgical instruments that separate and join tissue structures, treated here as an analogy for operations on data streams.
