@@ -79,12 +79,15 @@ Execution-mode flags (without `-c`):
 
 | Flag   | Full name        | Meaning                                             |
 | ------ | ----------------- | ----------------------------------------------------- |
-| `-m N` | `--tlimitqry N`   | run N processing cycles, then exit                    |
+| `-m N` | `--llimitqry N`   | run N processing cycles, then exit                    |
 | `-k`   | `--noanykey`      | don't wait for a keypress — daemon/script mode         |
 | `-t`   | `--realtime`      | real-time mode (SCHED\_FIFO, mlockall)                 |
 | `-x`   | `--xqrywait`      | wait for the first xqry connection before starting     |
 | `-s`   | `--status`        | check whether an xretractor instance is already running |
 | `-v`   | `--verbose`       | print stream parameters at startup                      |
+| `-j`   | `--service`       | service mode — log to stderr (journald)                 |
+| `-g F` | `--config F`      | TOML configuration file instead of the search order     |
+| `-b`   | `--build-info`    | print the optimizer configuration and exit              |
 
 > **ℹ️ Info**
 >

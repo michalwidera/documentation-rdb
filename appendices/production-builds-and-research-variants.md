@@ -65,7 +65,7 @@ RDB_BENCH_PROBE=OFF
 After compilation, the script runs:
 
 ```bash
-build/Release/src/retractor/xretractor --optimizer-build-info
+build/Release/src/retractor/xretractor --build-info
 ```
 
 and compares the result with the set above. A missing binary or any different
@@ -115,7 +115,7 @@ RDB_OPT_COMMUTATIVE_ADD=ON
 is invalid. Commutative-add canonicalization is part of equivalent `SELECT`
 computation sharing, so both the submenu and CMake reject this combination.
 
-After building a variant, the script compares `--optimizer-build-info` with
+After building a variant, the script compares `--build-info` with
 the values selected in the submenu. A mismatch is a configuration error, not
 an ablation-study result.
 
@@ -154,11 +154,14 @@ timings.
 Every `xretractor` provides:
 
 ```bash
-path/to/xretractor --optimizer-build-info
+path/to/xretractor --build-info
 ```
 
-The command prints the configuration and exits without starting the engine.
-An example production result is:
+The command prints the configuration and exits without starting the engine
+(`-b` is an equivalent shorthand). It is handled before the configuration file
+is loaded and validated, so it yields a correct result even when the host
+configuration would prevent the program from starting normally. An example
+production result is:
 
 ```text
 RDB_OPT_DEDUP_SUBSTRATES=ON

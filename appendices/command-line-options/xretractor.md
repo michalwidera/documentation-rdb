@@ -25,6 +25,7 @@ Usage: xretractor queryfile [option]
 
 Available options:
   -h [ --help ]               Show program options
+  -b [ --build-info ]         show optimizer build configuration
   -c [ --onlycompile ]        compile only mode
   -q [ --queryfile ] arg      query set file
   -r [ --quiet ]              no output on screen, skip presenter
@@ -32,9 +33,12 @@ Available options:
   -v [ --verbose ]            verbose mode (show stream params)
   -x [ --xqrywait ]           wait with processing for first query
   -k [ --noanykey ]           do not wait for any key to terminate
-  -t [ --realtime ]           enable real-time scheduling (SCHED_FIFO, mlockall,
->> absolute wakeup)
-  -m [ --tlimitqry ] arg (=0) query limit, 0 - no limit
+  -j [ --service ]            service mode: log to stderr (journald), no log
+                              file
+  -t [ --realtime ]           enable real-time scheduling (SCHED_FIFO,
+                              mlockall, absolute wakeup)
+  -g [ --config ] arg         config file (TOML); overrides search
+  -m [ --llimitqry ] arg (=0) loop iteration limit, 0 - no limit
 ```
 
 ### Processing-mode options
@@ -42,6 +46,7 @@ Available options:
 | Option | Meaning |
 | ----- | --------- |
 | `help` | Displays the help text. The list differs depending on the mode (with or without `-c`). |
+| `build-info` | Prints the optimizer configuration the binary was built with (the `RDB_OPT_*` flags and `RDB_BENCH_PROBE`) and exits without starting the engine. It is handled before the configuration file is loaded and validated, so it also works on a host with an invalid `storage.dir`. The output is stable and meant for automated processing — both `scripts/buildrdb.sh` and the `it_optimizer_ablation-build-info` test rely on it. See the appendix on production builds and research variants for details. |
 | `onlycompile` | Switches the tool into "compile only" mode. The query-execution loop is not started. |
 | `queryfile` | The name of the query file to compile and run. |
 | `quiet` | Skips displaying results on screen. Processing runs normally, but the result presenter isn't started. |
@@ -49,8 +54,10 @@ Available options:
 | `verbose` | An increased-verbosity mode — shows stream parameters. A leftover from the development phase; likely to be kept. |
 | `xqrywait` | Compiles the queries and holds off the processing loop until the first query arrives from an `xqry` process. Required when using `-m N` at the same time in scripts and tests: without this flag, the server may process all N cycles before the client manages to connect, resulting in no data and `xqry` waiting until it times out. The first command received from `xqry` (e.g. `-d` or `-s`) unblocks the processing loop. |
 | `noanykey` | No keypress interrupts the processing loop. Without this option, pressing any key stops the system. |
+| `service` | Service mode: the log goes to `stderr` (captured by journald), with no log file in the temporary directory, no timestamp of its own, and no ANSI codes. The mode can also be enabled through the `XRETRACTOR_SERVICE` environment variable set to any value other than empty or `0` — convenient in a systemd unit via `Environment=`. |
 | `realtime` | Enables real-time scheduling: `SCHED_FIFO`, `mlockall`, and absolute sleep for the processing thread. Requires `CAP_SYS_NICE` and `CAP_IPC_LOCK` capabilities (or root). Recommended in production environments requiring deterministic response time. |
-| `tlimitqry` | Limits the number of iterations in the query-execution loop. A value of `0` means no limit. |
+| `config` | Path to a configuration file in TOML format. It overrides the standard search order (`/etc/retractor/retractor.toml`, then `$XDG_CONFIG_HOME/retractor/retractor.toml` or `~/.config/retractor/retractor.toml`). A missing configuration file is a valid state — the program starts with built-in defaults. |
+| `llimitqry` | Limits the number of iterations in the query-execution loop. A value of `0` means no limit. |
 
 ---
 
@@ -64,6 +71,7 @@ Usage: xretractor -c queryfile [option]
 
 Available options:
   -h [ --help ]          show help options
+  -b [ --build-info ]    show optimizer build configuration
   -c [ --onlycompile ]   compile only mode
   -q [ --queryfile ] arg query set file
   -r [ --quiet ]         no output on screen, skip presenter
@@ -85,6 +93,7 @@ In this mode, options for creating diagrams and diagnostic dumps, described in m
 | Option | Meaning    |
 | ----- | ------------ |
 | `help` | Displays the help text (identical to processing mode; the list differs depending on the mode). |
+| `build-info` | Identical in meaning to processing mode — prints the optimizer configuration and exits. The `-c` flag does not affect the output; the option is available in both modes so that the configuration dump can be obtained regardless of how the program is invoked. |
 | `onlycompile` | On — this table describes the options that apply while the `-c` flag is active. |
 | `queryfile` | The name of the query file to compile. |
 | `quiet` | Tests only the compilation process itself, without presenting results. The other presentation options are not started. Included for development purposes. |

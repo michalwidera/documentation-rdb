@@ -16,7 +16,7 @@ Allowed options:
   -s [ --select ] arg         show this stream
   -t [ --detail ] arg         show details of this stream
   -a [ --adhoc ] arg          adhoc query mode
-  -m [ --tlimitqry ] arg (=0) limit of elements, 0 - no limit
+  -m [ --elimitqry ] arg (=0) limit of elements, 0 - no limit
   -n [ --null ]               if null row appear - skip it in output
   -l [ --hello ]              diagnostic - hello db world
   -k [ --kill ]               kill xretractor server
@@ -25,10 +25,14 @@ Allowed options:
   -r [ --raw ]                raw output mode (default)
   -g [ --graphite ]           graphite output mode
   -f [ --influxdb ]           influxDB output mode
-  -p [ --gnuplot ] arg        x,y or x,ymin,ymax - gnuplot output mode
+  -p [ --gnuplot ] arg        x,y - gnuplot output mode
+  -z [ --gnuplot-rtl ]        gnuplot output: newest samples on the right
+                              (right-to-left scroll)
+  -e [ --config ] arg         config file (TOML); overrides search
   -h [ --help ]               produce help message
   -c [ --needctrlc ]          force ctl+c for stop this tool
-  -w [ --wait-server ]        poll until xretractor server is available
+  -w [ --wait-server ]        poll until xretractor server is available before
+                              executing command
 ```
 
 ---
@@ -40,7 +44,7 @@ Allowed options:
 | `-s` / `select arg`     | Receives data from the given stream exposed by `xretractor`.                                       |
 | `-t` / `detail arg`     | Shows detailed information about a stream: its name, delta, query text, and field list with types (YAML).   |
 | `-a` / `adhoc arg`      | Attaches a query to the system while it's running (ad hoc mode).                                        |
-| `-m` / `tlimitqry arg`  | Limits the number of results received. A value of `0` means no limit. Especially useful with the `-k` option.   |
+| `-m` / `elimitqry arg`  | Limits the number of results received. A value of `0` means no limit. Especially useful with the `-k` option.   |
 | `-n` / `null`           | Skips rows where every field is null. Useful for streams with measurement gaps — it removes noise from the output without client-side filtering. |
 
 Example response for the `detail` option:
@@ -81,6 +85,7 @@ stream:
 | `-g` / `graphite`  | Graphite       | The `metric value timestamp` format — ready to send to Graphite.    |
 | `-f` / `influxdb`  | InfluxDB       | InfluxDB line protocol — ready to import into a time-series database.       |
 | `-p` / `gnuplot x,y` or `x,ymin,ymax` | Gnuplot | Aggregates for direct feeding into `gnuplot`. The argument `x,y` gives the time axis and the value; `x,ymin,ymax` additionally restricts the Y-axis range. The separator can be `,` or `:`. |
+| `-z` / `gnuplot-rtl` | Gnuplot      | A modifier for the gnuplot format: newest samples on the right (right-to-left scroll). Requires `-p`/`--gnuplot` to be used at the same time — on its own it is reported as an error. |
 
 ---
 
@@ -90,6 +95,7 @@ stream:
 | ------------------ | -------------------------------------------------------------------------------------------------- |
 | `-h` / `help`      | Displays the help text.                                                                        |
 | `-c` / `needctrlc` | In normal mode, any keypress stops receiving data. This option requires using `Ctrl+C` instead.      |
+| `-e` / `config arg` | Path to a TOML configuration file; overrides the standard search order. Identical in meaning to `xretractor`, but under a different shorthand: `xretractor` uses `-g`, which in `xqry` is taken by `--graphite`. |
 
 ---
 
