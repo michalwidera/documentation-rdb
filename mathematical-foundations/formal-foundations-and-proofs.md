@@ -267,6 +267,31 @@ Both streams carry ∆<sub>c</sub> = ∆<sub>a</sub>. They therefore coincide up
 
 The interleaving operation is not commutative in general: since 0 < z < 1, at n = 0 the equality branch of the interleaving definition always applies, so the stream φ(A, B) begins with element b₀, while the stream φ(B, A) begins with element a₀. Interleaving is, however, equivariant with respect to time shifts matched to the streams' rates — which is valuable for query-plan optimization.
 
+In the causal realization a stream has the form
+\\(\widehat{S}=((s_n,\Delta),W_S)\\), where \\(W_S\\) is its startup tail.
+We define conversion of a producer's tail into output slots as:
+
+\\[
+\operatorname{conv}(w,\Delta_s,\Delta_o)
+:=\left\lceil\frac{w\Delta_s}{\Delta_o}\right\rceil
+\\]
+
+For an interleave with interval
+\\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\), the tail is:
+
+\\[
+W_{\varphi(A,B)}
+=\max\left(
+\operatorname{conv}(W_A,\Delta_a,\Delta_c),
+\operatorname{conv}(W_B,\Delta_b,\Delta_c)
++\left\lceil\frac{\Delta_b}{\Delta_a}\right\rceil
+\right)
+\\]
+
+The final term is the interleave's own causal look-ahead on its second
+argument. Tail slots are not records, and the shift \\(\tau_m\\) does not
+change the record sequence — it increases the tail by \\(m\\).
+
 > **✅ Note**
 >
 > **Theorem.** If numbers i, k ∈ ℕ are chosen such that i·∆<sub>a</sub> = k·∆<sub>b</sub> (both arguments shifted by the same amount of time), then interleaving the shifted streams equals the interleaving of the original streams shifted by the sum of these numbers.
@@ -278,31 +303,40 @@ Formally:
 \varphi \left( \tau_{i}(A), \tau_{k}(B) \right) = \tau_{i+k}\left( \varphi (A, B) \right), \quad i\Delta_{a} = k\Delta_{b}, \quad i, k \in \mathbb{N}
 \\]
 
-**Proof.** Both sides carry the interval ∆<sub>c</sub> from the definition of interleaving, so it suffices to compare the elements. From the assumption i·∆<sub>a</sub> = k·∆<sub>b</sub>:
+**Proof.** A shift does not change the emitted record sequence, so both
+sides have the sequence defined by the interleave and the same interval
+∆<sub>c</sub>. It remains to compare tails. Let
+\\(h=\lceil\Delta_b/\Delta_a\rceil\\). From
+i·∆<sub>a</sub> = k·∆<sub>b</sub>:
 
 \\[
-(i+k) z = (i+k) \frac{\Delta_{b}}{\Delta_{a}+\Delta_{b}} = \frac{i\Delta_{b} + i\Delta_{a}}{\Delta_{a}+\Delta_{b}} = i \in \mathbb{N}
+\frac{i\Delta_a}{\Delta_c}
+=\frac{k\Delta_b}{\Delta_c}
+=i+k=:L\in\mathbb{N}
 \\]
 
-and hence, by the property ⌊x + C⌋ = ⌊x⌋ + C, for every n ≥ 0 and m := n + i + k:
+Because adding the integer \\(L\\) commutes with the ceiling, the
+left-hand side has tail:
 
 \\[
-\left\lfloor m z \right\rfloor = \left\lfloor n z + i \right\rfloor = \left\lfloor n z \right\rfloor + i
+\begin{aligned}
+W_{\mathrm{LHS}}
+&=\max\left(
+\operatorname{conv}(W_A+i,\Delta_a,\Delta_c),
+\operatorname{conv}(W_B+k,\Delta_b,\Delta_c)+h
+\right)\\\\
+&=L+\max\left(
+\operatorname{conv}(W_A,\Delta_a,\Delta_c),
+\operatorname{conv}(W_B,\Delta_b,\Delta_c)+h
+\right)\\\\
+&=L+W_{\varphi(A,B)}
+\end{aligned}
 \\]
 
-In particular ⌊mz⌋ = ⌊(m+1)z⌋ if and only if ⌊nz⌋ = ⌊(n+1)z⌋: position n on the left-hand side of the claim and position m of stream φ(A, B) select the same branch of the interleaving definition. On the equality branch the right-hand side selects the element:
-
-\\[
-b_{m - \left\lfloor m z \right\rfloor} = b_{n+i+k - \left\lfloor n z \right\rfloor - i} = b_{(n - \left\lfloor n z \right\rfloor) + k}
-\\]
-
-which is exactly the element (τ<sub>k</sub>(B))<sub>n−⌊nz⌋</sub> selected by the left-hand side; on the inequality branch it selects:
-
-\\[
-a_{\left\lfloor m z \right\rfloor} = a_{\left\lfloor n z \right\rfloor + i}
-\\]
-
-which is the element (τ<sub>i</sub>(A))<sub>⌊nz⌋</sub> — again matching the left-hand side. Both streams coincide element by element. ∎
+The right-hand side delays \\(\varphi(A,B)\\) by \\(i+k=L\\), so it has
+exactly the same tail. The interval, emitted records, and startup tail of
+both sides are equal. In the compiler, additional invariants preserve the
+field names of public streams, null maps, and materialization policy. ∎
 
 ## Why this matters
 
@@ -317,4 +351,3 @@ The branch of mathematics in which these equations are situated is the theory of
 > **ℹ️ Info**
 >
 > A numerical verification of the equations above — Python prototypes operating on rational numbers (the `Fraction` library) — can be found on the [Model Implementation](model-implementation.md) page and in the repository [github.com/michalwidera/equations](https://github.com/michalwidera/equations).
-

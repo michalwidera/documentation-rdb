@@ -2,7 +2,13 @@
 
 Query compilation in RetractorDB proceeds through multiple stages. Each stage transforms the internal representation of the queries — the `qTree` tree — and passes the result to the next one. The order is strictly fixed: every stage assumes the previous one succeeded.
 
-`qTree` is a topologically sorted `std::vector<query>` — the central data structure of the compiler and the executor. Every element of the vector corresponds to one query (`SELECT` or `DECLARE`) and stores its field schema, its stack-instruction sequence, its time interval, and references to its source streams. The topological sort guarantees that a source stream always precedes its output stream — stages can process `qTree` linearly, without backtracking.
+`qTree` is a `std::vector<query>` — the central data structure of the
+compiler and executor. Every element corresponds to one query (`SELECT` or
+`DECLARE`) and stores its field schema, stack-instruction sequence, time
+interval, startup tail, and references to source streams. Not every stage
+preserves vector order: interval resolution sorts it by `rInterval`.
+Compilation therefore ends with an unconditional topological sort, which
+guarantees that a producer precedes its consumer during execution.
 
 ## Running example
 
@@ -87,6 +93,10 @@ Determines the time interval (delta) of every stream based on the algebraic oper
 
 Recognizes matched shifts of interleave arguments. When `i·ΔA=k·ΔB`, it rewrites `(A>i)#(B>k)` as `(A#B)>(i+k)`, reducing two shift substrates to one interleave substrate. Unmatched cases and substrates shared with other consumers remain unchanged — see [Substrates](substrates.md).
 
+A shift increases the startup tail rather than inserting prefix records.
+Equality of the physical shifts makes both sides of the rule carry the same
+emitted sequence and the same tail after conversion to output slots.
+
 #### deduplicateSubstrats
 
 An optimization: if two queries use the same intermediate operation (e.g. `core0#core1`), this stage points the second query at the substrate created by the first. It avoids duplicate computation — see the example in [Substrates](substrates.md).
@@ -109,7 +119,10 @@ Converts field references (`b[x]`, `c[y]`) into indices in the flattened output 
 
 #### computeRequiredCapacities
 
-Computes the required buffer capacities for every stream, based on schema sizes and time-window requirements. A `>N` shift reads history slot `N`, so it requires `N+1` records (slot 0 is the current record).
+Computes required buffer capacities from schemas and time-window
+requirements. After its tail ends, a `>N` shift reads history slot `N`, so
+it requires `N+1` records (slot 0 is the current record). History capacity
+is an execution requirement, not a result prefix.
 
 #### validateConstraints
 
@@ -117,7 +130,28 @@ Verifies the semantic correctness of the compiled plan: type compatibility, wind
 
 #### applyCapacitiesToStreams
 
-Applies the computed capacities to the stream objects. After this stage, the plan is ready for execution by `dataModel`.
+Applies the computed capacities to the stream objects.
+
+#### computeStartupLatency
+
+Computes `query::startupLatency`, the number of initial slots of the
+stream's own interval for which its result is not yet defined. Sources have
+tail 0, `>N` adds `N`, interleave includes both input tails and its own
+look-ahead on the second argument, sum takes the maximum of converted
+tails, and left de-interleave `Theta` adds one slot. The plan listing shows
+the value as `tail=`. The runtime emits no record during the tail.
+
+#### topologicalSort
+
+Unconditionally restores final producer–consumer order. This is part of
+execution correctness, not presentation: a `#` result has a smaller
+interval than its inputs, so earlier interval sorting can place the
+consumer before its producers.
+
+Plan-rewriting passes are additionally wrapped in
+`verifyUserFieldNamesPreserved()`. Optimization may change or remove
+internal substrates, but it cannot change field names of a public stream,
+because those names enter the observable `.desc` descriptor.
 
 
 Every stage returns `"OK"` or an error message — in which case compilation stops.

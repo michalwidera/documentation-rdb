@@ -59,7 +59,12 @@ SELECT ... STREAM c FROM a > n
 
 \\[\Delta_c = \Delta_a\\]
 
-A shift does not change the stream's rate — it only shifts the read window by n samples.
+A shift changes neither the stream's rate nor its emitted record sequence.
+It is a causal delay: it increases the stream's startup tail by `n` slots
+of its own interval. Tail slots are not records and the runtime emits
+nothing in them; the plan listing shows the computed value as `tail=`.
+Source history still requires `n+1` records because, after the tail ends,
+the operator reads history slot `n` (slot 0 is the current record).
 
 ### Window aggregates (`.max`, `.min`, `.avg`, `.sum`)
 

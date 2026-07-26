@@ -96,13 +96,32 @@ c_{\left\lceil \frac{n\Delta_{a}}{\Delta_{b}}\right\rceil } & \Delta_{b}<\Delta_
 
 We denote these operations with the symbols + and -.
 
-We formally define the sequence shift operation as follows: for a stream S = (s<sub>n</sub>, ∆) and m ∈ ℕ
+Causal execution augments the mathematical stream S = (s<sub>n</sub>, ∆)
+with a **startup tail** W<sub>S</sub> ∈ ℕ. This is the number of initial
+slots of interval ∆ for which the result is not yet defined. Tail slots are
+not records: the first emitted record remains s<sub>0</sub>; the engine
+inserts neither zeros nor all-null placeholders.
 
 \\[
-\tau_{m}(S) := \left( \left( s_{n+m}\right)_{n=0}^{\infty },\ \Delta \right)
+\widehat{S} := \left((s_n,\Delta),W_S\right)
 \\]
 
-i.e. the stream shifted by m samples, that is, by a time of m·∆. Operationally, this means shifting access to the data by a given number of intervals between consecutive elements. For instance, for data arriving once per second from the source stream, a shift operation of 3 shifts the result by 3 seconds.
+We define the shift as a **delay** of the causal realization:
+
+\\[
+\tau_{m}\left(\widehat{S}\right)
+:= \left((s_n,\Delta),W_S+m\right), \qquad m\in\mathbb{N}
+\\]
+
+A shift by m samples postpones the first and every subsequent emission by
+m·∆, but it neither discards s<sub>0</sub>, …, s<sub>m−1</sub> nor creates
+a prefix. For data arriving once per second, a shift by 3 therefore delays
+the entire result by 3 seconds.
+
+This definition matches the engine's `STREAM_TIMEMOVE(N)` operator. The
+compiler reports the resulting tail as `tail=N` (increased by tails of
+preceding operators), and the runtime emits no records while counting it
+down.
 
 I denote the shift operation with the symbol >.
 

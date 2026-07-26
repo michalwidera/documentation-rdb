@@ -176,14 +176,15 @@ the binary is the final confirmation of the compiler definitions used.
 
 ## Tests in the ablation process
 
-Disabling an optimization can intentionally change the plan structure, the
-result prefix, or the behavior of a known execution case. Such a result must
-not automatically be classified as an unrelated regression.
+Disabling an optimization can intentionally change plan structure and the
+availability of tests that require a particular shape. It must not change
+the observable result: interval, startup tail, public descriptor, records
+with null maps, or materialization policy.
 
 CTest assigns `requires_*` labels to tests that need a specific optimization
-and can disable them for an incompatible configuration. Known, confirmed
-behavioral differences receive the `expected_ablation_failure` label; a test
-can also have the `WILL_FAIL` property.
+and can disable them for an incompatible configuration. The
+`expected_ablation_failure` label then describes the expected
+unavailability of a plan-shape test, not permission for semantic divergence.
 
 Use the following procedure to assess a failure:
 
@@ -191,8 +192,7 @@ Use the following procedure to assess a failure:
 2. confirm that it passes with the required optimizations;
 3. run it in the variant being studied;
 4. demonstrate that the failure is caused by the disabled switch;
-5. only then record it as an expected ablation difference or disable the test
-   for that variant;
+5. if the test requires the disabled pass, disable it for that variant;
 6. treat every other failure as a regression.
 
 The `it_optimizer_ablation-build-info` test verifies that the information
@@ -200,55 +200,32 @@ reported by the binary matches the CMake configuration. The other
 `it_optimizer_ablation-*` tests check plan structures and semantic comparisons
 between variants.
 
-### Result matrix relative to the non-ablation configuration
+### Named research profiles
 
-The baseline is the non-ablation configuration: all four optimizations are
-enabled and the probe is disabled. No absolute test count is recorded because
-the test suite can change over time.
+The G1 probe defines three profiles that should be recorded with results:
 
-The table uses the following abbreviations:
+| Profile | Deduplication | `SELECT` sharing | `+` commutativity | R1 factorization |
+| --- | :---: | :---: | :---: | :---: |
+| `OFF` | OFF | OFF | OFF | OFF |
+| `STRUCT` | ON | ON | OFF | OFF |
+| `ALGSTRUCT` | ON | ON | ON | ON |
 
-- `D` — substrate deduplication;
-- `S` — equivalent `SELECT` computation sharing;
-- `C` — commutative-add canonicalization;
-- `F` — matched hash/time-move factorization.
+`ALGSTRUCT` matches the default optimizer configuration. The profiles are
+built by `examples/experiment/results_20260726_G1/build_profiles.sh`; a
+binary's `--build-info` remains the source of truth for its exact settings.
 
-The “success Δ (expected/actual)” column contains two differences relative to
-the non-ablation configuration:
+After introducing causal startup tails, one `tau` convention, and final
+topological sorting, there are no expected semantic differences between
+profiles. The probe confirms for `OFF`, `STRUCT`, and the default
+configuration that R1 values, null maps, absence of prefixes, and tails
+agree. Two former `WILL_FAIL` cases — a different R1 result without
+factorization and an extra zero-valued prefix record — were removed together
+with their causes and are no longer permissible ablation outcomes.
 
-- the first number is the change expected from the `DISABLED` and `WILL_FAIL`
-  properties;
-- the second number is the change observed during a full CTest run.
-
-For example, `-2/-2` means two fewer successes were expected and two fewer were
-observed, while `+1/+1` means one additional success. A mismatch such as
-`-2/-3` would identify one unexpected failure. A test with the `WILL_FAIL`
-property is still a CTest success when its command fails as expected.
-
-| Active | Variant | D | S | C | F | Success Δ (expected/actual) |
-| ---: | --- | :---: | :---: | :---: | :---: | ---: |
-| 0 | `all_off` | OFF | OFF | OFF | OFF | -9/-9 |
-| 1 | `dedup_only` | ON | OFF | OFF | OFF | -4/-4 |
-| 1 | `share_only` | OFF | ON | OFF | OFF | -9/-9 |
-| 1 | `factor_only` | OFF | OFF | OFF | ON | -6/-6 |
-| 2 | `dedup_share` | ON | ON | OFF | OFF | -4/-4 |
-| 2 | `dedup_factor` | ON | OFF | OFF | ON | -1/-1 |
-| 2 | `share_comm` | OFF | ON | ON | OFF | -8/-8 |
-| 2 | `share_factor` | OFF | ON | OFF | ON | -6/-6 |
-| 3 | `dedup_share_comm` | ON | ON | ON | OFF | -3/-3 |
-| 3 | `dedup_share_factor` | ON | ON | OFF | ON | -1/-1 |
-| 3 | `share_comm_factor` | OFF | ON | ON | ON | -5/-5 |
-| 4 | `all_on` | ON | ON | ON | ON | 0/0 |
-
-Every observed result matches its expectation. The differences come from
-disjoint test requirements: disabling `D` removes five successes, disabling
-`F` removes three, and not having both `S` and `C` active removes one. The
-values can therefore be added without referring to a fixed test-suite size.
-
-Known execution differences marked with `WILL_FAIL` do not change the success
-count: without `F`, a different factorization-case result is expected; when
-`D`, `F`, and `S` are all disabled, an additional zero-valued prefix record is
-expected.
+These three profiles control “algebra together with structure,” but do not
+separate the cost of R1 from R2. An experiment attributing effects to
+individual rules should add `STRUCT+R1` and `STRUCT+R2` profiles and counters
+for applications of each rule.
 
 ## Packaging
 

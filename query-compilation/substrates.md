@@ -239,6 +239,21 @@ After extracting substrates and resolving their intervals, the compiler applies 
 
 The condition \\(i\Delta_{a}=k\Delta_{b}\\) means that both interleave arguments are shifted by the same physical time. Without this condition the transformation is not equivalent, so the compiler keeps the original plan.
 
+A shift delays a causal realization: it increases startup tail `W`, but
+does not change the record sequence or insert a prefix. For
+\\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\), the matching condition
+gives exactly:
+
+\\[
+\frac{i\Delta_a}{\Delta_c}
+=\frac{k\Delta_b}{\Delta_c}
+=i+k
+\\]
+
+The converted tails of both inputs on the left therefore increase by
+`i+k` output slots, exactly like the interleave tail on the right. The rule
+thus preserves not only the emitted sequence and interval, but also `tail=`.
+
 Before optimization the plan contains two substrates:
 
 ```
@@ -256,7 +271,15 @@ result = STREAM_HASH_A_B > (i + k)
 
 The `factorMatchedHashTimeMoves()` pass does not remove explicit user streams or substrates used by other consumers. It runs before deduplication so that the exposed `A # B` substrate can subsequently be shared with another equivalent plan.
 
-The `issue202_hash_shift_e2e` test executes both sides of the identity over independent copies of file-backed input streams. It compares the `matched` and `CC` artifacts byte for byte, compares their metadata after excluding the creation timestamp, and checks the complete sequence against a reference derived from the `B,A,A` interleave period. Because the resulting `>3` operator addresses history slot 3 (slot 0 is the current record), `computeRequiredCapacities()` allocates four records—generally `N+1` for a `>N` shift.
+The `issue202_hash_shift_e2e` test executes both sides of the identity over
+independent copies of file-backed input streams. It compares the `matched`
+and `CC` artifacts byte for byte, compares their metadata after excluding
+the creation timestamp, checks the complete sequence against a reference
+derived from the `B,A,A` interleave period, and verifies equal tails
+(`tail=5` in this case). Neither side emits placeholder records. Separately,
+`computeRequiredCapacities()` assigns four history records to the source
+because `>3` reads index 3 after its tail ends; generally this is `N+1` for
+a `>N` shift (slot 0 is the current record).
 
 ### The deduplication algorithm
 
@@ -289,11 +312,21 @@ Deduplication is the fifth step of the pipeline (the `compiler::compile()` funct
 10. computeRequiredCapacities   – required-history computation
 11. validateConstraints         – operator-constraint validation
 12. applyCapacitiesToStreams    – capacity application
+13. computeStartupLatency       – startup-tail computation
+14. topologicalSort             – final producer–consumer order
 ```
 
 Matched interleave-shift factorization and deduplication must happen after step 3 because both operations compare intervals. Deduplication follows the algebraic rewrite so that it can merge interleave substrates exposed by that rewrite.
 
 SELECT computation sharing runs only after field references and `[_]` have been expanded because it compares completed field programs. It must still precede field-offset localization so equivalent sources do not look different merely because of their order in the local input buffer.
+
+Every rewriting pass (`factorMatchedHashTimeMoves`,
+`deduplicateSubstrats`, and `shareEquivalentSelectComputations`) is wrapped
+in `verifyUserFieldNamesPreserved()`. Field names of public streams are part
+of the `.desc` descriptor and must not change because of optimization. The
+tail is computed only for the final plan. The final topological sort is
+unconditional because earlier interval sorting can place a faster `#`
+consumer before its producers.
 
 ### Effect on the dependency graph
 
