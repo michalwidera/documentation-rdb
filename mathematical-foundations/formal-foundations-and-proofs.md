@@ -279,18 +279,44 @@ We define conversion of a producer's tail into output slots as:
 For an interleave with interval
 \\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\), the tail is:
 
+Let \\(\Delta_a/\Delta_b=p/q\\), where \\(p,q\in\mathbb{N}_{>0}\\)
+and \\(\gcd(p,q)=1\\). In second-argument phase \\(j\\), the required
+causal look-ahead is:
+
+\\[
+h_j
+:=\left\lceil\frac{(j+1)q}{p}\right\rceil
+-\left\lfloor\frac{jq}{p}\right\rfloor,
+\qquad 0\le j<p
+\\]
+
+The interleave's own tail must cover the worst phase of the full period:
+
+\\[
+H_{a,b}
+:=\max_{0\le j<p}h_j
+=\left\lceil\frac{p+q-1}{p}\right\rceil
+\\]
+
+Writing \\(q=mp+r\\) and using the fact that, for coprime \\(p,q\\), the
+residues \\(jq\bmod p\\) visit every residue class in one period gives the
+closed form above. In particular,
+\\(\lceil\Delta_b/\Delta_a\rceil=\lceil q/p\rceil\\) protects the first B
+read, but not always the worst later phase.
+
 \\[
 W_{\varphi(A,B)}
 =\max\left(
 \operatorname{conv}(W_A,\Delta_a,\Delta_c),
 \operatorname{conv}(W_B,\Delta_b,\Delta_c)
-+\left\lceil\frac{\Delta_b}{\Delta_a}\right\rceil
++H_{a,b}
 \right)
 \\]
 
-The final term is the interleave's own causal look-ahead on its second
-argument. Tail slots are not records, and the shift \\(\tau_m\\) does not
-change the record sequence — it increases the tail by \\(m\\).
+The \\(H_{a,b}\\) term is the phase-safe own causal look-ahead on the
+interleave's second argument. Tail slots are not records, and the shift
+\\(\tau_m\\) does not change the record sequence — it increases the tail
+by \\(m\\).
 
 > **✅ Note**
 >
@@ -305,8 +331,7 @@ Formally:
 
 **Proof.** A shift does not change the emitted record sequence, so both
 sides have the sequence defined by the interleave and the same interval
-∆<sub>c</sub>. It remains to compare tails. Let
-\\(h=\lceil\Delta_b/\Delta_a\rceil\\). From
+∆<sub>c</sub>. It remains to compare tails. From
 i·∆<sub>a</sub> = k·∆<sub>b</sub>:
 
 \\[
@@ -323,11 +348,11 @@ left-hand side has tail:
 W_{\mathrm{LHS}}
 &=\max\left(
 \operatorname{conv}(W_A+i,\Delta_a,\Delta_c),
-\operatorname{conv}(W_B+k,\Delta_b,\Delta_c)+h
+\operatorname{conv}(W_B+k,\Delta_b,\Delta_c)+H_{a,b}
 \right)\\\\
 &=L+\max\left(
 \operatorname{conv}(W_A,\Delta_a,\Delta_c),
-\operatorname{conv}(W_B,\Delta_b,\Delta_c)+h
+\operatorname{conv}(W_B,\Delta_b,\Delta_c)+H_{a,b}
 \right)\\\\
 &=L+W_{\varphi(A,B)}
 \end{aligned}

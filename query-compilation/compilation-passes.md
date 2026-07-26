@@ -141,6 +141,26 @@ look-ahead on the second argument, sum takes the maximum of converted
 tails, and left de-interleave `Theta` adds one slot. The plan listing shows
 the value as `tail=`. The runtime emits no record during the tail.
 
+For an interleave, the compiler reduces
+\\(\Delta_a/\Delta_b=p/q\\) to coprime positive \\(p,q\\) and adds the
+phase-safe own look-ahead:
+
+\\[
+H_{a,b}
+=\max_{0\le j<p}\left(
+\left\lceil\frac{(j+1)q}{p}\right\rceil
+-\left\lfloor\frac{jq}{p}\right\rfloor
+\right)
+=\left\lceil\frac{p+q-1}{p}\right\rceil
+\\]
+
+The closed form is evaluated with a 64-bit intermediate result. The former
+\\(\lceil\Delta_b/\Delta_a\rceil=\lceil q/p\rceil\\) protected only the
+first phase of the second input. Regressions cover ratios including
+\\(3/5\\), \\(3/2\\), \\(7/11\\), and \\(160/147\\), including periodic
+all-`NULL` records in the blocked, non-rewritten left-hand side of the R1
+identity.
+
 #### topologicalSort
 
 Unconditionally restores final producer–consumer order. This is part of

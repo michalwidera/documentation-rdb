@@ -239,6 +239,18 @@ After extracting substrates and resolving their intervals, the compiler applies 
 
 The condition \\(i\Delta_{a}=k\Delta_{b}\\) means that both interleave arguments are shifted by the same physical time. Without this condition the transformation is not equivalent, so the compiler keeps the original plan.
 
+Let the reduced ratio \\(\Delta_a/\Delta_b\\) be \\(p/q\\). The
+interleave's own tail protects every phase of the period, so it uses:
+
+\\[
+H_{a,b}
+=\max_{0\le j<p}\left(
+\left\lceil\frac{(j+1)q}{p}\right\rceil
+-\left\lfloor\frac{jq}{p}\right\rfloor
+\right)
+=\left\lceil\frac{p+q-1}{p}\right\rceil
+\\]
+
 A shift delays a causal realization: it increases startup tail `W`, but
 does not change the record sequence or insert a prefix. For
 \\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\), the matching condition
@@ -251,8 +263,10 @@ gives exactly:
 \\]
 
 The converted tails of both inputs on the left therefore increase by
-`i+k` output slots, exactly like the interleave tail on the right. The rule
-thus preserves not only the emitted sequence and interval, but also `tail=`.
+`i+k` output slots. The same \\(H_{a,b}\\) term occurs on both sides, so the
+interleave tail on the right increases by exactly the same amount. The rule
+thus preserves not only the emitted sequence and interval, but also
+`tail=`.
 
 Before optimization the plan contains two substrates:
 
@@ -280,6 +294,15 @@ derived from the `B,A,A` interleave period, and verifies equal tails
 `computeRequiredCapacities()` assigns four history records to the source
 because `>3` reads index 3 after its tail ends; generally this is `N+1` for
 a `>N` shift (slot 0 is the current record).
+
+The `r1_identity_nulls` test checks the same identity for
+\\(\Delta_a/\Delta_b=3/2\\), which requires the phase maximum
+\\(H_{a,b}=2\\) even though the first phase requires only one slot. It
+compares the rewritten plan, a left-hand side blocked from rewriting, and
+an explicit right-hand side: all have `tail=7`, identical payloads, and
+identical `NULL` maps in `.meta`. A nonempty periodic all-`NULL` record
+prevents missing data from masking an incorrect tail. Compiler unit tests
+also cover the \\(3/5\\), \\(7/11\\), and \\(160/147\\) ratios.
 
 ### The deduplication algorithm
 
