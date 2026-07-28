@@ -4,6 +4,7 @@
 * [Mathematical Foundations](mathematical-foundations/README.md)
   * [Algebra of Regular Time Series](mathematical-foundations/algebra-of-regular-time-series.md)
   * [Formal Foundations and Proofs](mathematical-foundations/formal-foundations-and-proofs.md)
+  * [Operator Tails and Observability](mathematical-foundations/operator-tails-and-observability.md)
   * [Algebraic Expressions](mathematical-foundations/algebraic-expressions.md)
   * [Model Implementation](mathematical-foundations/model-implementation.md)
   * [Graphical Representation](mathematical-foundations/algebra-operator-relationships.md)

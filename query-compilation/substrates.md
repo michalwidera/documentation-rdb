@@ -332,10 +332,10 @@ Deduplication is the fifth step of the pipeline (the `compiler::compile()` funct
 7. expandIndexWildcards         – expansion of wildcard indices
 8. shareEquivalentSelectComputations – sharing equivalent SELECT computations
 9. localizeFieldOffsets         – field-offset computation
-10. computeRequiredCapacities   – required-history computation
-11. validateConstraints         – operator-constraint validation
-12. applyCapacitiesToStreams    – capacity application
-13. computeStartupLatency       – startup-tail computation
+10. computeStartupLatency       – startup-tail computation
+11. computeRequiredCapacities   – required-history computation
+12. validateConstraints         – operator-constraint validation
+13. applyCapacitiesToStreams    – capacity application
 14. topologicalSort             – final producer–consumer order
 ```
 

@@ -117,6 +117,19 @@ Detects explicit `SELECT` queries with equivalent field programs and `FROM` tree
 
 Converts field references (`b[x]`, `c[y]`) into indices in the flattened output schema (`merged[z]`). For ADD, the index follows from the sum of the field counts of the preceding streams; for HASH, every field gets index 0 (a single-argument schema). This stage accounts not only for direct sources, but also for transitive sources hidden behind automatic substrates.
 
+#### computeStartupLatency
+
+Computes `query::startupLatency`, the number of initial slots of the
+stream's own interval for which its result is not yet defined. Sources have
+tail 0, `>N` adds `N`, interleave includes both input tails and its own
+look-ahead on the second argument, sum takes the maximum of converted tails,
+left de-interleave `Theta` adds one slot, and `SUBTRACT` and AGSE use phase
+bounds. Reductions add no own tail. The plan listing shows `tail=` and the
+runtime emits no record during the tail.
+
+This pass precedes capacity computation because retained history depends on
+the consumer's first emission time.
+
 #### computeRequiredCapacities
 
 Computes required buffer capacities from schemas and time-window
@@ -131,15 +144,6 @@ Verifies the semantic correctness of the compiled plan: type compatibility, wind
 #### applyCapacitiesToStreams
 
 Applies the computed capacities to the stream objects.
-
-#### computeStartupLatency
-
-Computes `query::startupLatency`, the number of initial slots of the
-stream's own interval for which its result is not yet defined. Sources have
-tail 0, `>N` adds `N`, interleave includes both input tails and its own
-look-ahead on the second argument, sum takes the maximum of converted
-tails, and left de-interleave `Theta` adds one slot. The plan listing shows
-the value as `tail=`. The runtime emits no record during the tail.
 
 For an interleave, the compiler reduces
 \\(\Delta_a/\Delta_b=p/q\\) to coprime positive \\(p,q\\) and adds the
