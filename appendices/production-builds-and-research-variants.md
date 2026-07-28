@@ -149,6 +149,20 @@ result of optimizer passes. It is not zero-cost instrumentation, however:
 therefore semantically non-invasive, but its overhead can affect measured
 timings.
 
+When the binary has `RDB_BENCH_PROBE=ON` and `RDB_BENCH_PLAN` is set during
+compilation, the compiler writes the following stable line to standard error:
+
+```text
+REWRITE_APPLIED r1=<count> r2=<count>
+```
+
+The counters are reset before every compiler invocation. `r1` is the number of
+successful `(A > i) # (B > k) -> (A # B) > (i + k)` rewrites. `r2` is the
+number of unique `STREAM_ADD` nodes for which the canonical plan fingerprint
+actually swapped the children. `r2` is neither the number of removed nodes nor
+a speedup metric. With `RDB_BENCH_PROBE=OFF`, the counter code is absent from
+the binary and no `REWRITE_APPLIED` line is emitted.
+
 ## Inspecting a variant manually
 
 Every `xretractor` provides:
@@ -202,17 +216,23 @@ between variants.
 
 ### Named research profiles
 
-The G1 probe defines three profiles that should be recorded with results:
+The K4 methodology defines five profiles that should be recorded with results:
 
 | Profile | Deduplication | `SELECT` sharing | `+` commutativity | R1 factorization |
 | --- | :---: | :---: | :---: | :---: |
 | `OFF` | OFF | OFF | OFF | OFF |
 | `STRUCT` | ON | ON | OFF | OFF |
+| `STRUCT+R1` | ON | ON | OFF | ON |
+| `STRUCT+R2` | ON | ON | ON | OFF |
 | `ALGSTRUCT` | ON | ON | ON | ON |
 
 `ALGSTRUCT` matches the default optimizer configuration. The profiles are
-built by `examples/experiment/results_20260726_G1/build_profiles.sh`; a
-binary's `--build-info` remains the source of truth for its exact settings.
+defined in `rdb-experiment/results_20260728_K4/profiles.tsv` and built by the
+`build_profiles.sh` script in the same directory; a binary's `--build-info`
+remains the source of truth for its exact settings. Each intermediate profile
+changes only one rule relative to `STRUCT`: `STRUCT+R1` enables R1
+factorization, while `STRUCT+R2` enables commutative `STREAM_ADD`
+canonicalization.
 
 After introducing causal startup tails, one `tau` convention, and final
 topological sorting, there are no expected semantic differences between
@@ -222,10 +242,12 @@ agree. Two former `WILL_FAIL` cases — a different R1 result without
 factorization and an extra zero-valued prefix record — were removed together
 with their causes and are no longer permissible ablation outcomes.
 
-These three profiles control “algebra together with structure,” but do not
-separate the cost of R1 from R2. An experiment attributing effects to
-individual rules should add `STRUCT+R1` and `STRUCT+R2` profiles and counters
-for applications of each rule.
+The K4 campaign checked 80 existing RQL files in every profile: 75 compiled
+successfully, while 5 historical or intentionally invalid fixtures were
+explicit expected rejections. R1 was applied 5 times in 5 dedicated regression
+tests; no existing example activated it. R2 was applied 18 times in 13 files,
+including 4 examples. These results describe coverage of this corpus, not the
+general cost or performance benefit of either rule.
 
 ## Packaging
 
