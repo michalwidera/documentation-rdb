@@ -34,6 +34,7 @@ mdbook build               # output → book/
   - `\!` → `\\!`, `\#` → `\\#`, `\&` → `\\&`, `\%` → `\\%`
   - Alphabetic commands (`\frac`, `\left`, `\Delta`, etc.) need no extra escaping.
   - **Subscript after command:** write `\Delta_{a}` (no space before `_`), NOT `\Delta _{a}`. Space before `_` followed by `{` makes it a left-flanking emphasis opener; if a matching right-flanking `_` (e.g. `a_{`) appears later, Markdown consumes both as `<em>`, destroying the MathJax block. Rule: `_` must be immediately preceded by an alphanumeric character.
+  - **No line may start with `:`** inside `\\[...\\]`: a line like `:= ...` is parsed as a definition list (`<dl>/<dt>/<dd>`), which splits the math across HTML elements and MathJax leaves it unrendered. Put `:=` at the end of the previous line instead.
 - **Diagrams:** use standard ` ```mermaid ``` ` fenced blocks — rendered by `mdbook-mermaid` plugin.
 - **Callouts:** use blockquotes with bold prefix: `> **ℹ️ Info**` / `> **⚠️ Warning**` / `> **✅ Note**`.
 - **Images:** paths relative to each `.md` file pointing to `assets/` (e.g. `../assets/foo.png` from a subdirectory).

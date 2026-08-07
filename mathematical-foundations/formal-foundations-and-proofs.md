@@ -272,8 +272,8 @@ In the causal realization a stream has the form
 We define conversion of a producer's tail into output slots as:
 
 \\[
-\operatorname{conv}(w,\Delta_s,\Delta_o)
-:=\left\lceil\frac{w\Delta_s}{\Delta_o}\right\rceil
+\operatorname{conv}(w,\Delta_s,\Delta_o):=
+\left\lceil\frac{w\Delta_s}{\Delta_o}\right\rceil
 \\]
 
 The tail of an interleave with interval

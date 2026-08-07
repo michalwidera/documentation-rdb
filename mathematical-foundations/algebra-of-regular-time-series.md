@@ -109,8 +109,8 @@ inserts neither zeros nor all-null placeholders.
 We define the shift as a **delay** of the causal realization:
 
 \\[
-\tau_{m}\left(\widehat{S}\right)
-:= \left((s_n,\Delta),W_S+m\right), \qquad m\in\mathbb{N}
+\tau_{m}\left(\widehat{S}\right) :=
+\left((s_n,\Delta),W_S+m\right), \qquad m\in\mathbb{N}
 \\]
 
 A shift by m samples postpones the first and every subsequent emission by
