@@ -93,9 +93,14 @@ Determines the time interval (delta) of every stream based on the algebraic oper
 
 Recognizes matched shifts of interleave arguments. When `i·ΔA=k·ΔB`, it rewrites `(A>i)#(B>k)` as `(A#B)>(i+k)`, reducing two shift substrates to one interleave substrate. Unmatched cases and substrates shared with other consumers remain unchanged — see [Substrates](substrates.md).
 
-A shift increases the startup tail rather than inserting prefix records.
-Equality of the physical shifts makes both sides of the rule carry the same
-emitted sequence and the same tail after conversion to output slots.
+A shift moves silence into the logical origin rather than inserting prefix
+records. Equality of the physical shifts makes both sides of the rule carry the
+same emitted sequence and the same logical origin. **The tails are not equal**:
+the factored side reads content directly from the interleave, so it is ready no
+later — and usually earlier — than the side that reads components after their
+own shift. The rule is therefore a latency optimization, not a neutral rewrite;
+for the scope of theorem R1 and a counterexample see [Formal foundations and
+proofs](../mathematical-foundations/formal-foundations-and-proofs.md).
 
 #### deduplicateSubstrats
 
@@ -117,18 +122,34 @@ Detects explicit `SELECT` queries with equivalent field programs and `FROM` tree
 
 Converts field references (`b[x]`, `c[y]`) into indices in the flattened output schema (`merged[z]`). For ADD, the index follows from the sum of the field counts of the preceding streams; for HASH, every field gets index 0 (a single-argument schema). This stage accounts not only for direct sources, but also for transitive sources hidden behind automatic substrates.
 
+#### computeLogicalOrigin
+
+Computes `query::logicalOrigin`, the index of the first record that **exists at
+all**. The difference from the tail is qualitative: the tail says "not yet",
+the origin says "this record has no definition". The origin originates from the
+`@(k,L)` window stamped by the interval end — its early records would reach
+before the start of the source — and from the shift `>N`, whose record `n`
+carries record `n-N`. Every other operator merely propagates the origin, through
+the same index mapping it reads with.
+
+For `@` and `>N` the form is closed; for `+`, `#`, `-`, `Theta` and `~Theta` the
+pass **searches** for the smallest index reaching the component threshold, by
+bisection over a non-decreasing mapping. The plan listing shows `origin=`.
+
 #### computeStartupLatency
 
-Computes `query::startupLatency`, the number of initial slots of the
-stream's own interval for which its result is not yet defined. Sources have
-tail 0, `>N` adds `N`, interleave includes both input tails and its own
-look-ahead on the second argument, sum takes the maximum of converted tails,
-left de-interleave `Theta` adds one slot, and `SUBTRACT` and AGSE use phase
-bounds. Reductions add no own tail. The plan listing shows `tail=` and the
-runtime emits no record during the tail.
+Computes `query::startupLatency`, the number of initial slots of the stream's
+own interval in which an existing result is not yet ready. Sources have tail 0;
+`>N` gives `max(0, W_src − N)`, because it reads a record older than the current
+one; interleave includes both input tails and its own look-ahead on the second
+argument; sum takes the maximum of converted tails; left de-interleave `Theta`
+adds one slot; `SUBTRACT` and AGSE use phase bounds. Reductions add no own tail.
+The plan listing shows `tail=` and the runtime emits no record during the tail.
+The number of silent slots is `origin + tail`.
 
-This pass precedes capacity computation because retained history depends on
-the consumer's first emission time.
+This pass runs after `computeLogicalOrigin` and before capacity computation: the
+tail depends on which slots are records, and retained history depends on the
+consumer's first emission time.
 
 #### computeRequiredCapacities
 

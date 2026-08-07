@@ -314,54 +314,126 @@ W_{\varphi(A,B)}
 \\]
 
 The \\(H_{a,b}\\) term is the phase-safe own causal look-ahead on the
-interleave's second argument. Tail slots are not records, and the shift
-\\(\tau_m\\) does not change the record sequence — it increases the tail
-by \\(m\\).
+interleave's second argument. Tail slots are not records.
+
+The shift \\(\tau_m\\) does not change the emitted record sequence, but it does
+change the **index** at which that sequence appears: record \\(n\\) carries the
+content of record \\(n-m\\). Records with an index below \\(O_S+m\\) have no
+definition, hence
+
+\\[
+O_{\tau_m(S)}=O_S+m,
+\qquad
+W_{\tau_m(S)}=\max\left(0,\;W_S-m\right)
+\\]
+
+The tail **decreases**: record \\(n-m\\) is older than the current one and
+therefore all the more available — the slot deficit is \\(W_S-m\\) and is
+constant. Details and measurement: [Tails, logical origins and operator
+observability](operator-tails-and-observability.md).
 
 > **✅ Note**
 >
-> **Theorem.** If numbers i, k ∈ ℕ are chosen such that i·∆<sub>a</sub> = k·∆<sub>b</sub> (both arguments shifted by the same amount of time), then interleaving the shifted streams equals the interleaving of the original streams shifted by the sum of these numbers.
+> **Theorem (R1, commuting a shift with an interleave).** If numbers
+> i, k ∈ ℕ are chosen such that i·∆<sub>a</sub> = k·∆<sub>b</sub> (both arguments
+> shifted by the same amount of time), then interleaving the shifted streams and
+> the interleaving of the original streams shifted by the sum of these numbers
+> have **the same record sequence, the same interval and the same logical
+> origin**. Their tails satisfy an inequality — the factored side is never the
+> later one.
 
-
-Formally:
+Formally, with \\(L:=i+k\\):
 
 \\[
-\varphi \left( \tau_{i}(A), \tau_{k}(B) \right) = \tau_{i+k}\left( \varphi (A, B) \right), \quad i\Delta_{a} = k\Delta_{b}, \quad i, k \in \mathbb{N}
+\operatorname{Obs}\Bigl(\varphi\bigl(\tau_{i}(A),\tau_{k}(B)\bigr)\Bigr)
+=\operatorname{Obs}\Bigl(\tau_{i+k}\bigl(\varphi(A,B)\bigr)\Bigr),
+\qquad i\Delta_{a}=k\Delta_{b},\quad i,k\in\mathbb{N}
 \\]
 
-**Proof.** A shift does not change the emitted record sequence, so both
-sides have the sequence defined by the interleave and the same interval
-∆<sub>c</sub>. It remains to compare tails. From
-i·∆<sub>a</sub> = k·∆<sub>b</sub>:
+\\[
+W_{\mathrm{RHS}}=\max\left(0,\;W_{\varphi(A,B)}-L\right)\le W_{\mathrm{LHS}}
+\\]
+
+where \\(\operatorname{Obs}\\) is the value part of the observation (interval,
+logical origin, record sequence with its `NULL` map, descriptor, gap trace,
+materialization policy) — see [Tails, logical origins and operator
+observability](operator-tails-and-observability.md).
+
+**Proof.**
+
+*Interval.* Both sides arise from the same interleave, so both have
+\\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\).
+
+*Auxiliary step.* From i·∆<sub>a</sub> = k·∆<sub>b</sub> it follows that
 
 \\[
 \frac{i\Delta_a}{\Delta_c}
-=\frac{k\Delta_b}{\Delta_c}
-=i+k=:L\in\mathbb{N}
+=\frac{i\Delta_a(\Delta_a+\Delta_b)}{\Delta_a\Delta_b}
+=\frac{i\Delta_a}{\Delta_b}+i
+=k+i
+=L\in\mathbb{N},
 \\]
 
-Because adding the integer \\(L\\) commutes with the ceiling, the
-left-hand side has tail:
+and symmetrically \\(k\Delta_b/\Delta_c=L\\). Shifting each argument by its own
+number of slots therefore corresponds to **the same** number \\(L\\) of result
+slots.
+
+*Record sequence and logical origin.* Within one period the interleave takes
+\\(i\\) records from A and \\(k\\) records from B, filling exactly \\(L=i+k\\)
+slots of C. Shifting A by \\(i\\) and B by \\(k\\) therefore moves the mapping
+threshold of both components by exactly \\(L\\) result slots without changing
+their relative phase: \\(O_{\mathrm{LHS}}=O_{\varphi(A,B)}+L=O_{\mathrm{RHS}}\\).
+The content of a record at a given logical index is the same on both sides,
+because the choice of component depends only on phase, which is unchanged.
+
+*Tails.* Because adding the integer \\(L\\) commutes with the ceiling,
+\\(\operatorname{conv}(W_A-i,\Delta_a,\Delta_c)=\operatorname{conv}(W_A,\Delta_a,\Delta_c)-L\\)
+and analogously for B. From \\(\max(0,W-m)\ge W-m\\) and monotonicity of
+\\(\operatorname{conv}\\) we obtain
 
 \\[
 \begin{aligned}
 W_{\mathrm{LHS}}
 &=\max\left(
-\operatorname{conv}(W_A+i,\Delta_a,\Delta_c),
-\operatorname{conv}(W_B+k,\Delta_b,\Delta_c)+H_{a,b}
+\operatorname{conv}\bigl(\max(0,W_A-i),\Delta_a,\Delta_c\bigr),
+\operatorname{conv}\bigl(\max(0,W_B-k),\Delta_b,\Delta_c\bigr)+H_{a,b}
 \right)\\\\
-&=L+\max\left(
-\operatorname{conv}(W_A,\Delta_a,\Delta_c),
-\operatorname{conv}(W_B,\Delta_b,\Delta_c)+H_{a,b}
-\right)\\\\
-&=L+W_{\varphi(A,B)}
+&\ge\max\left(
+\operatorname{conv}(W_A,\Delta_a,\Delta_c)-L,
+\operatorname{conv}(W_B,\Delta_b,\Delta_c)+H_{a,b}-L
+\right)
+=W_{\varphi(A,B)}-L,
 \end{aligned}
 \\]
 
-The right-hand side delays \\(\varphi(A,B)\\) by \\(i+k=L\\), so it has
-exactly the same tail. The interval, emitted records, and startup tail of
-both sides are equal. In the compiler, additional invariants preserve the
-field names of public streams, null maps, and materialization policy. ∎
+and since \\(W_{\mathrm{LHS}}\ge 0\\), we get
+\\(W_{\mathrm{LHS}}\ge\max(0,W_{\varphi(A,B)}-L)=W_{\mathrm{RHS}}\\). ∎
+
+> **⚠️ Scope of the theorem**
+>
+> Equality of tails **does not hold**. Counterexample: \\(\Delta_a=1/10\\),
+> \\(\Delta_b=1/5\\), \\(W_A=W_B=0\\), \\(H_{a,b}=2\\), \\(i=2\\), \\(k=1\\),
+> \\(L=3\\). Then \\(W_{\mathrm{LHS}}=2\\) while
+> \\(W_{\mathrm{RHS}}=\max(0,2-3)=0\\). The unfactored side reads its components
+> **after** their own shift, so it waits longer for the same content; the
+> factored side reads it directly from the interleave.
+>
+> Practical consequence: the rewrite rule
+> \\(\varphi(\tau_i(A),\tau_k(B))\to\tau_{i+k}(\varphi(A,B))\\) is a **latency
+> optimization**, not a neutral rewrite. It preserves the entire value part of
+> the observation and never emits a record before its dependencies are
+> determined, but the result is ready sooner.
+>
+> Until 2026-08-07 both sides had the same tail solely because the realization
+> of \\(\tau_m\\) overestimated its own tail by \\(\min(W_S,m)\\). The
+> overestimate was measured in the campaign
+> `rdb-experiment/results_20260807_K24p` (6.6% of `>N` class nodes) and removed
+> by addressing the producer with a logical index. Regressions guarding this
+> scope: `it_r1_identity_nulls`,
+> `it_optimizer_ablation-factor-name-collision-semantic`.
+
+In the compiler, additional invariants preserve public stream field names, null
+value maps, and the materialization policy.
 
 ## Why this matters
 

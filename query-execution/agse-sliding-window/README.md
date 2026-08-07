@@ -72,11 +72,20 @@ Input data:       0  1  2  3  4  5  6  7  8  9  ...
   [0,1]    [2,3]    [4,5]    [6,7]    ...
 ```
 
-AGSE emits only complete windows. Initial slots missing any field form the
-`tail=` reported in the plan and are not records. A genuine `NULL` in source
-data remains an element of the complete window. The formal tail and history
+The window is stamped by the interval **end**: the record with logical index `n`
+spans positions `n·k−(|w|−1) … n·k`, so its newest field lies exactly at position
+`n·k`. The window's logical index therefore denotes the same instant as the
+source's logical index, and joining a window with its own source (a FIR pipeline)
+does not lead the signal. The illustration above shows the sequence of emitted
+windows; the first of them carries index `origin`, not zero.
+
+AGSE emits only complete windows. Initial slots in which the window would reach
+before the start of the source **are not records and have no definition** — they
+form the `origin=` reported in the plan. Slots in which the window is defined but
+its newest field has not yet been produced form the `tail=`. A genuine `NULL` in
+source data remains an element of the complete window. The formal tail and history
 capacity bounds are given in
-[Operator Tails and Observability](../../mathematical-foundations/operator-tails-and-observability.md).
+[Tails, Logical Origins and Operator Observability](../../mathematical-foundations/operator-tails-and-observability.md).
 
 ## Examples
 

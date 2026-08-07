@@ -119,9 +119,13 @@ a prefix. For data arriving once per second, a shift by 3 therefore delays
 the entire result by 3 seconds.
 
 This definition matches the engine's `STREAM_TIMEMOVE(N)` operator. The
-compiler reports the resulting tail as `tail=N` (increased by tails of
-preceding operators), and the runtime emits no records while counting it
-down.
+compiler reports the shift in the **logical origin** as `origin=N` (increased by
+the origins of preceding operators), while the operator's own tail is
+`max(0, W_src − N)` and can be smaller than the producer's tail. The runtime
+emits no records in any silent slot, of which there are `origin + tail`. Details:
+[Tails, logical origins and operator
+observability](operator-tails-and-observability.md).
+
 
 I denote the shift operation with the symbol >.
 

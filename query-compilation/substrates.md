@@ -251,8 +251,9 @@ H_{a,b}
 =\left\lceil\frac{p+q-1}{p}\right\rceil
 \\]
 
-A shift delays a causal realization: it increases startup tail `W`, but
-does not change the record sequence or insert a prefix. For
+A shift delays a causal realization: it moves the **logical origin** `O` by `N`
+and sets its own tail to \\(\max(0,W_S-N)\\) — it does not change the record
+sequence or insert a prefix. For
 \\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\), the matching condition
 gives exactly:
 
@@ -262,11 +263,20 @@ gives exactly:
 =i+k
 \\]
 
-The converted tails of both inputs on the left therefore increase by
-`i+k` output slots. The same \\(H_{a,b}\\) term occurs on both sides, so the
-interleave tail on the right increases by exactly the same amount. The rule
-thus preserves not only the emitted sequence and interval, but also
-`tail=`.
+Shifting each input therefore corresponds to the same number `i+k` of output
+slots, and the logical origin of both sides is identical. **The tails are not
+identical.** The factored side reads content directly from the interleave, while
+the unfactored side reads it only after shifting its components, so it waits
+longer:
+
+\\[
+W_{\mathrm{RHS}}=\max\left(0,\;W_{\varphi(A,B)}-(i+k)\right)\le W_{\mathrm{LHS}}
+\\]
+
+The rule thus preserves the emitted sequence, the interval and `origin=`, and may
+**decrease** `tail=`. It is a latency optimization, not a neutral rewrite; for
+the full proof and a counterexample see [Formal foundations and
+proofs](../mathematical-foundations/formal-foundations-and-proofs.md).
 
 Before optimization the plan contains two substrates:
 
@@ -290,18 +300,23 @@ independent copies of file-backed input streams. It compares the `matched`
 and `CC` artifacts byte for byte, compares their metadata after excluding
 the creation timestamp, checks the complete sequence against a reference
 derived from the `B,A,A` interleave period, and verifies equal tails
-(`tail=5` in this case). Neither side emits placeholder records. Separately,
-`computeRequiredCapacities()` assigns four history records to the source
-because `>3` reads index 3 after its tail ends; generally this is `N+1` for
-a `>N` shift (slot 0 is the current record).
+(`origin=3` with a zero tail — \\(\tau_3\\) over an interleave of tail 2
+absorbs it entirely). Both sides are factored to the same shape here, so the
+comparison is exhaustive. Neither side emits placeholder records. Separately,
+`computeRequiredCapacities()` assigns `N+1+2` history records to a declared
+source: `N+1` for the read range itself and two for the declaration's head
+lead, which logical-index addressing does not shorten.
 
 The `r1_identity_nulls` test checks the same identity for
 \\(\Delta_a/\Delta_b=3/2\\), which requires the phase maximum
 \\(H_{a,b}=2\\) even though the first phase requires only one slot. It
 compares the rewritten plan, a left-hand side blocked from rewriting, and
-an explicit right-hand side: all have `tail=7`, identical payloads, and
-identical `NULL` maps in `.meta`. A nonempty periodic all-`NULL` record
-prevents missing data from masking an incorrect tail. Compiler unit tests
+an explicit right-hand side. The rewritten plan and the explicit right-hand side
+are equal in full. The **blocked** left-hand side has the same logical origin and
+the same content but a strictly larger tail — the comparison therefore covers the
+common prefix of the payload and of the `NULL` map, with a separate assertion
+requiring the factored side to be strictly longer. A nonempty periodic
+all-`NULL` record prevents missing data from masking an incorrect tail. Compiler unit tests
 also cover the \\(3/5\\), \\(7/11\\), and \\(160/147\\) ratios.
 
 ### The deduplication algorithm
