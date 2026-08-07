@@ -43,7 +43,7 @@ Allowed options:
 | ----------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `-s` / `select arg`     | Receives data from the given stream exposed by `xretractor`.                                       |
 | `-t` / `detail arg`     | Shows detailed information about a stream: its name, delta, query text, and field list with types (YAML).   |
-| `-a` / `adhoc arg`      | Attaches a query to the system while it's running (ad hoc mode).                                        |
+| `-a` / `adhoc arg`      | Attaches a query to the system while it's running (ad hoc mode). Only a `SELECT` statement is accepted — `DECLARE` is rejected with `Fail parse: AdHoc DECLARE not supported`. See: [Ad Hoc Queries](../../query-execution/ad-hoc-queries.md). |
 | `-m` / `elimitqry arg`  | Limits the number of results received. A value of `0` means no limit. Especially useful with the `-k` option.   |
 | `-n` / `null`           | Skips rows where every field is null. Useful for streams with measurement gaps — it removes noise from the output without client-side filtering. |
 

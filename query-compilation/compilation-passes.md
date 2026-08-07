@@ -167,24 +167,32 @@ Verifies the semantic correctness of the compiled plan: type compatibility, wind
 Applies the computed capacities to the stream objects.
 
 For an interleave, the compiler reduces
-\\(\Delta_a/\Delta_b=p/q\\) to coprime positive \\(p,q\\) and adds the
-phase-safe own look-ahead:
+\\(\Delta_a/\Delta_b=p/q\\) to coprime positive \\(p,q\\) and scans **one full
+phase period** \\(p+q\\). For each slot \\(i\\) of that period it determines
+which component the interleave selects and at which index \\(j(i)\\), then takes
+the maximum of the required latency:
 
 \\[
-H_{a,b}
-=\max_{0\le j<p}\left(
-\left\lceil\frac{(j+1)q}{p}\right\rceil
--\left\lfloor\frac{jq}{p}\right\rfloor
+W_{\\#}
+=\max_{0\le i<p+q}\left(
+\left\lceil\frac{\bigl(j(i)+1+W_{s(i)}\bigr)\Delta_{s(i)}}{\Delta_c}\right\rceil
+-1-i
 \right)
-=\left\lceil\frac{p+q-1}{p}\right\rceil
 \\]
 
-The closed form is evaluated with a 64-bit intermediate result. The former
-\\(\lceil\Delta_b/\Delta_a\rceil=\lceil q/p\rceil\\) protected only the
-first phase of the second input. Regressions cover ratios including
-\\(3/5\\), \\(3/2\\), \\(7/11\\), and \\(160/147\\), including periodic
-all-`NULL` records in the blocked, non-rewritten left-hand side of the R1
-identity.
+The result is exact — it neither undershoots nor overshoots the causal bound.
+The arithmetic runs in 64 bits, because the product
+\\((j+1+W)\cdot\text{numerator}\cdot\text{denominator}\\) exceeds `int` range
+already for moderate intervals. Above the `kHashPhaseScanLimit` threshold
+(`SOperations.hpp`) the scan stops being affordable and the former closed form
+\\(\lceil(p+q-1)/p\rceil\\) takes over; it overshoots the tail by one slot — a
+safe choice, since undershooting would mean emitting a record before its
+dependency is determined.
+
+Regressions cover ratios including \\(3/5\\), \\(3/2\\), \\(7/11\\), and
+\\(160/147\\), including periodic all-`NULL` records in the blocked,
+non-rewritten left-hand side of the R1 identity; the operator formula itself is
+guarded by `ut_h10aGate`.
 
 #### topologicalSort
 

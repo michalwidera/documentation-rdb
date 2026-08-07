@@ -23,4 +23,8 @@ Besides directing data for delivery through shared memory, RetractorDB also writ
 > The "Database" shown in the figure is not a relational database. By "database" in the figure shown, we mean a set of binary or text files managed by RetractorDB. Data is pulled from devices and written to rotating or non-rotating binary or text files. Access to this data is carried out via the xtrdb tool, or, while the system is running, via the xqry process.
 
 
-The file with RQL queries and directives is given as the required first argument to the command that starts the system. This behavior will probably change in the future — eventually the system should start as a service and wait for the operator to supply a file with directives. For now, though, we start the system with an initial input. If you want to add something while the system is running, see the chapter titled Ad Hoc Queries.
+The file with RQL queries and directives is given as the first argument to the command that starts the system. That argument is **optional**: invoking `xretractor` without a query file starts it in **idle mode** — the process comes up, takes the service lock, opens the IPC channel and waits, building neither a plan nor a timeline. This lets a systemd unit come up together with the operating system, before the operator supplies a query set. The exception is `--onlycompile` mode, where a missing file remains an error — there is nothing to compile.
+
+A query set is attached later by one of two routes: the `xqry -a` command (see [Ad Hoc Queries](../query-execution/ad-hoc-queries.md), restricted to `SELECT`), or by handing the service a query file and restarting it — the latter being the only route that brings in `RULE`, `STORAGE`, and `SUBSTRAT` directives.
+
+> **_NOTE:_** Idle mode is covered by the `service_idle` test (variants using the `--service` flag and the `XRETRACTOR_SERVICE` environment variable).

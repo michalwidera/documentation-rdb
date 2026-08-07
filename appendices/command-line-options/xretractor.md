@@ -109,6 +109,50 @@ In this mode, options for creating diagrams and diagnostic dumps, described in m
 
 ---
 
+## Configuration file (TOML)
+
+The `--config` option points at a configuration file; without it the program searches two locations in layered fashion, in the order given, each later layer overriding keys from the previous one:
+
+1. `/etc/retractor/retractor.toml` — system layer,
+2. `$XDG_CONFIG_HOME/retractor/retractor.toml` (or `~/.config/retractor/retractor.toml`) — user layer.
+
+The absence of any file is a **valid state** — the program starts with default values. A TOML syntax error in a searched layer produces a warning and skips that layer; with an explicitly given path (`--config`), a missing file or a syntax error is hard, because it is an explicit user request. The same file is also read by `xqry` (under the `-e` short option), so the `[ipc]` and `[timing]` sections apply to both processes.
+
+| Key | Default | Meaning |
+| --- | ------- | ------- |
+| `storage.dir` | _(none)_ | Default artifact directory. Applied **only** when the RQL set contains no `:STORAGE` directive — RQL wins. The directory must exist and be writable, otherwise the program exits with `Configuration error: storage.dir …`. |
+| `ipc.queue_buffer_seconds` | `10` | IPC queue depth expressed in seconds of stream; the element count is `seconds / interval`. |
+| `ipc.min_queue_elements` | `100` | Lower bound on queue capacity, independent of the stream interval. |
+| `ipc.client_response_max_fails` | `300` | Number of attempts `xqry` makes to read a response from shared memory. The effective wait is this value times the polling interval. |
+| `timing.server_startup_wait_s` | `30` | Maximum time `xqry --wait-server` waits for server readiness. |
+| `timing.server_startup_poll_ms` | `100` | Polling interval while waiting for the server to start. |
+| `timing.query_no_data_timeout_ms` | `10000` | No-data timeout after which the `xqry` client considers the server dead. |
+| `scheduling.rt_priority` | `50` | `SCHED_FIFO` priority in `--realtime` mode; allowed range 1–99. |
+| `paths.lock_dir` | _(system temp directory)_ | Directory for the singleton lock file. For systemd services, `/var/run/retractor` or `$XDG_RUNTIME_DIR` is recommended. The path must be absolute. |
+| `service.query_file` | _(value from the build configuration)_ | The query file overwritten when a set is handed to a running service. Used only as a fallback, when the service did not report its own `QUERYFILE` in the lock file. It must match the `ExecStart` argument of the systemd unit — configuration does not change `ExecStart`. |
+
+Out-of-range values do not stop the service: the program logs a warning and uses the default. The exception is `storage.dir`, whose invalidity is a hard error — it would mean results landing somewhere unintended, or nowhere.
+
+Example file:
+
+```toml
+[storage]
+dir = "/var/lib/retractor"
+
+[ipc]
+queue_buffer_seconds = 30
+
+[scheduling]
+rt_priority = 60
+
+[paths]
+lock_dir = "/var/run/retractor"
+```
+
+> **_NOTE:_** Layer loading and validation are covered by the `ut_appConfig` unit test; hard rejection of an invalid `storage.dir` by the `config_storage_validation` integration test.
+
+---
+
 ## Version Information
 
 At the end of every help message, a line with build information is displayed:

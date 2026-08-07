@@ -239,17 +239,11 @@ After extracting substrates and resolving their intervals, the compiler applies 
 
 The condition \\(i\Delta_{a}=k\Delta_{b}\\) means that both interleave arguments are shifted by the same physical time. Without this condition the transformation is not equivalent, so the compiler keeps the original plan.
 
-Let the reduced ratio \\(\Delta_a/\Delta_b\\) be \\(p/q\\). The
-interleave's own tail protects every phase of the period, so it uses:
-
-\\[
-H_{a,b}
-=\max_{0\le j<p}\left(
-\left\lceil\frac{(j+1)q}{p}\right\rceil
--\left\lfloor\frac{jq}{p}\right\rfloor
-\right)
-=\left\lceil\frac{p+q-1}{p}\right\rceil
-\\]
+Let the reduced ratio \\(\Delta_a/\Delta_b\\) be \\(p/q\\). The interleave tail
+protects every phase of the period \\(p+q\\), because the compiler scans that
+period slot by slot and takes the maximum required latency — formula and
+justification in [Formal Foundations and
+Proofs](../mathematical-foundations/formal-foundations-and-proofs.md).
 
 A shift delays a causal realization: it moves the **logical origin** `O` by `N`
 and sets its own tail to \\(\max(0,W_S-N)\\) — it does not change the record

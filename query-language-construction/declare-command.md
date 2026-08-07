@@ -82,5 +82,5 @@ The three optional directives (`ONESHOT`, `DISPOSABLE`, `HOLD`) control the data
 
 > **ℹ️ Info**
 >
-> Support for NULL values (per field) is implemented in RetractorDB. Null metadata is stored in the `.meta` file alongside the binary data, managed by the `metaDataStream` class.
+> Support for NULL values (per field) is implemented in RetractorDB. Null metadata is stored in the `.meta` file alongside the binary data, managed by the `metaData` class.
 

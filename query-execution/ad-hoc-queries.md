@@ -8,6 +8,35 @@ During development, however, additional scenarios emerged, assuming that the sys
 
 Fig. 47 shows the control flow described above. A file with queries and directives is first directed to the xretractor process. Then, through shared memory, the xqry process pulls data from xretractor. Using that same process, we can send a command to the xretractor process. In this command we include the text of the additional query that xretractor should attach to the tree being processed.
 
+### What can be attached at run time
+
+The ad hoc channel accepts **`SELECT` only**. Every data source must already
+exist in the plan — adding a new declaration to a running system is not
+supported and yields:
+
+```
+$ xqry -a "DECLARE a BYTE STREAM C, 1 FILE 'data3.txt'"
+rcv: db Fail parse: AdHoc DECLARE not supported
+```
+
+The reason is executional, not syntactic: a declaration added at run time does
+not receive a runtime logical-index base (the processing loop skips declarations
+when deriving it), so the first read of such a stream by any operator would be a
+read outside the defined range. The restriction will go away once ad hoc
+`DECLARE` gets its own path for deriving that base.
+
+### Where an ad hoc stream begins
+
+A plan built from the start of system operation numbers records from the logical
+origin computed by the compiler. A query attached ad hoc has no such history —
+its first record is **the first slot in which the runtime saw it**, not slot zero
+of the plan. The import is atomic: the compiled tree and its stream instances are
+published under a common lock, and the execution loop rebuilds the timeline
+without rewinding, even when the new query introduces a new rate to the system.
+
+> **_NOTE:_** This behavior is covered by the `issue227_join_alignment` test
+> (the `adhoc-origin` case).
+
 ### Example
 
 We'll start the example by preparing a simple query:

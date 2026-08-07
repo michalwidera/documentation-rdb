@@ -25,14 +25,15 @@ The `TYPE` field in the descriptor (or the `STORAGE` directive in RQL) selects t
 
 ## The artifact and substrate file set
 
-Artifacts and substrates written to disk can be associated with up to four files:
+Artifacts and substrates written to disk can be associated with up to five files:
 
 | File                  | Extension            | Purpose                                                    |
 | ---------------------- | -------------------- | --------------------------------------------------------- |
 | Binary data file       | _(stream name)_      | The main record stream — append-only                      |
 | Descriptor file        | `.desc`               | Record schema (fields, types, sizes, storage type)         |
 | Metadata file           | `.meta`               | Index of null values and transmission gaps (RLE)           |
-| Shadow file            | `.shadow`              | Record modifications without overwriting original data     |
+| Data shadow file       | `.shadow`              | Record modifications without overwriting original data     |
+| Index shadow file      | `.meta.shadow`         | Null-pattern overrides accompanying `.shadow`              |
 
 ```mermaid
 %% pdf-width: 70%
@@ -40,23 +41,27 @@ graph TD
   D[".desc: descriptor (record schema)"]
   B["Binary data file (N×R-byte records)"]
   M[".meta: metadata (null and gap index)"]
-  S[".shadow: shadow file (record modifications)"]
+  S[".shadow: data shadow file (record modifications)"]
+  MS[".meta.shadow: index shadow (null overrides)"]
 
     D -->|"describes structure"| B
     B -->|"companion index"| M
     B -->|"optional overrides"| S
+    S -.->|"consistency pair"| MS
+    M -->|"pattern overrides"| MS
 
     style S fill:#f9c,color:#000
+    style MS fill:#f9c,color:#000
     style M fill:#cdf,color:#000
 ```
 
 _Fig. 14. The artifact file set and their relationships_
 
-The diagram in Fig. 14 shows the static relationship between artifact files: `.desc` defines the record structure, `.meta` indexes nulls and gaps, and `.shadow` stores optional record overrides.
+The diagram in Fig. 14 shows the static relationship between artifact files: `.desc` defines the record structure, `.meta` indexes nulls and gaps, `.shadow` stores optional record overrides, and `.meta.shadow` the null-pattern overrides that correspond to them. The two shadow files always go together.
 
-The shadow file and the metadata file are optional. With continuous, gap-free, unmodified data arrival, the binary data file and the descriptor alone are enough.
+The shadow files and the metadata file are optional. With continuous, gap-free, unmodified data arrival, the binary data file and the descriptor alone are enough.
 
-Ephemerides **have no files on disk at all** — they exist only in the process's working memory and disappear once it ends.
+Ephemerides **have no data file of their own** — their source is an external object (a text file, a device) that the system neither creates nor deletes. A `.desc` descriptor describing the read schema is created for them, however. No `.meta` index appears: declared sources get an inert metadata-index variant that works purely in memory.
 
 ***
 

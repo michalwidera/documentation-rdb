@@ -226,12 +226,10 @@ The K4 methodology defines five profiles that should be recorded with results:
 | `STRUCT+R2` | ON | ON | ON | OFF |
 | `ALGSTRUCT` | ON | ON | ON | ON |
 
-`ALGSTRUCT` matches the default optimizer configuration. The profiles are
-defined in `rdb-experiment/results_20260728_K4/profiles.tsv` and built by the
-`build_profiles.sh` script in the same directory; a binary's `--build-info`
-remains the source of truth for its exact settings. Each intermediate profile
-changes only one rule relative to `STRUCT`: `STRUCT+R1` enables R1
-factorization, while `STRUCT+R2` enables commutative `STREAM_ADD`
+`ALGSTRUCT` matches the default optimizer configuration. A binary's
+`--build-info` remains the source of truth for its exact settings. Each
+intermediate profile changes only one rule relative to `STRUCT`: `STRUCT+R1`
+enables R1 factorization, while `STRUCT+R2` enables commutative `STREAM_ADD`
 canonicalization.
 
 After introducing causal startup tails, one `tau` convention, and final
@@ -242,12 +240,12 @@ agree. Two former `WILL_FAIL` cases — a different R1 result without
 factorization and an extra zero-valued prefix record — were removed together
 with their causes and are no longer permissible ablation outcomes.
 
-The K4 campaign checked 80 existing RQL files in every profile: 75 compiled
-successfully, while 5 historical or intentionally invalid fixtures were
-explicit expected rejections. R1 was applied 5 times in 5 dedicated regression
-tests; no existing example activated it. R2 was applied 18 times in 13 files,
-including 4 examples. These results describe coverage of this corpus, not the
-general cost or performance benefit of either rule.
+Ablation variants exist purely for correctness control: they let you check that
+disabling a single rule does not change the observable result, and that the
+optimizer is not hiding a defect that would surface without it. Measurements of
+the cost and performance benefit of individual rules do not belong to this
+documentation — they are carried out in a separate experimental repository and
+reported in a separate publication.
 
 ## Packaging
 

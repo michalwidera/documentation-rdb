@@ -1,10 +1,10 @@
 # Summary: Rationale for the Chosen Structure
 
-This chapter draws together the conclusions from every part of the data-storage-format documentation and explains why the adopted four-file structure is minimal and sufficient for a real-time time-series recording system.
+This chapter draws together the conclusions from every part of the data-storage-format documentation and explains why the adopted file structure is minimal and sufficient for a real-time time-series recording system.
 
 ## The file set and accessor types
 
-Every artifact or substrate consists of up to four files — the binary data file, the `.desc` descriptor, the `.meta` index, and the `.shadow` file. The `TYPE` field in the descriptor selects the `FileInterface` implementation: `DEFAULT` (data + shadow + retention), `MEMORY` (RAM only, ephemerides), `DEVICE` / `TEXTSOURCE` (read-only external sources), and intermediate variants. The accessor is chosen once, when `storage` is initialized — the RQL query logic knows nothing about storage details.
+Every artifact or substrate consists of up to five files — the binary data file, the `.desc` descriptor, the `.meta` index, the `.shadow` data shadow, and the `.meta.shadow` index shadow. The last two form a pair: the data shadow preserves the originally recorded content, and the index shadow preserves the null patterns that go with it, so correcting a record does not desynchronize data from metadata. The `TYPE` field in the descriptor selects the `FileInterface` implementation: `DEFAULT` (data + shadow + retention), `MEMORY` (RAM only, ephemerides), `DEVICE` / `TEXTSOURCE` (read-only external sources), and intermediate variants. The accessor is chosen once, when `storage` is initialized — the RQL query logic knows nothing about storage details.
 
 ## Artifact files
 
@@ -12,9 +12,11 @@ Every artifact or substrate consists of up to four files — the binary data fil
 
 **The binary data file** is a flat sequence of fixed-length `R`-byte records with no header. Record `i` always sits at offset `i × R`. An `append` operation writes to the end; an `update` operation — when a `.shadow` file is present — goes to the shadow file, rather than overwriting the main file.
 
-**The metadata file (`.meta`)** stores a compressed RLE index of null values and transmission gaps. Each RLE entry describes a run of consecutive records sharing an identical null pattern: an `isGap` flag, a `recordCount`, the bitset size, and the bitset itself. A transmission gap (`gap`) exists only in `.meta` — the binary file does not record it and stays dense. The managing class is `rdb::metaDataStream`: it buffers the current segment in `currentEntry_`, writes a segment to disk only when the pattern changes, and the `tailDirty_` mechanism ensures the file size does not grow under continuous, uniform data arrival. After a restart, `loadIndex()` restores the state and brings the last non-gap segment back into memory, allowing the RLE run to continue.
+**The metadata file (`.meta`)** stores a compressed RLE index of null values and transmission gaps. Each RLE entry describes a run of consecutive records sharing an identical null pattern: an `isGap` flag, a `recordCount`, the bitset size, and the bitset itself. A transmission gap (`gap`) exists only in `.meta` — the binary file does not record it and stays dense. The managing class is `rdb::metaData`: it buffers the current segment in `currentEntry_`, writes a segment to disk only when the pattern changes, and the `DiskTailState` state (lazy overwrite of the last on-disk entry) ensures the file size does not grow under continuous, uniform data arrival. After a restart, `loadIndex()` restores the state and brings the last non-gap segment back into memory, allowing the RLE run to continue. The file I/O itself is handled by `MetaIndexStore`, and gap detection by `GapDetector`.
 
 **The shadow file (`.shadow`)** collects record modifications as a sequence of `(position, data)` entries. Reading a record checks `.shadow` from the end (the most recent modification wins); if there's no entry, it reads from the main file. Deleting `.shadow` fully restores the original state. The `merge()` operation writes the corrections back into the main file and clears the shadow file.
+
+**The index shadow file (`.meta.shadow`)** is the counterpart of `.shadow` at the null-pattern level. It appears for stores that maintain a data shadow: the `makeMetaIndex()` factory then injects a `storageShadow` object into `storage` instead of the base `metaData`, and that object routes updates to its `metaShadow` member. Without this file, correcting a record would change its null pattern in `.meta` even though the original content still sits untouched in the main file — the "data ↔ metadata" pair would drift apart on the first `merge()` or shadow discard.
 
 ## The rotation mechanism
 

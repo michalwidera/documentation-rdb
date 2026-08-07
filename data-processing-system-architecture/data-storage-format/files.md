@@ -1,6 +1,6 @@
 # Files
 
-This chapter describes the five files that make up the complete file set of an artifact or substrate: the schema descriptor (`.desc`), the main binary data file, the metadata index (`.meta`), the data shadow file (`.shadow`), and the index shadow file (`.meta.shadow`). For each file, the binary format, field semantics, and read/write rules are presented. The chapter also covers the `metaDataStream` class — the RLE compression mechanism, transmission-gap handling, the update interface, and persistence across restarts. The final section shows the relationships between all the files at the level of `append`, `update`, and `read` operations.
+This chapter describes the five files that make up the complete file set of an artifact or substrate: the schema descriptor (`.desc`), the main binary data file, the metadata index (`.meta`), the data shadow file (`.shadow`), and the index shadow file (`.meta.shadow`). For each file, the binary format, field semantics, and read/write rules are presented. The chapter also covers the `metaData` class — the RLE compression mechanism, transmission-gap handling, the update interface, and persistence across restarts. The final section shows the relationships between all the files at the level of `append`, `update`, and `read` operations.
 
 The scope of this chapter **does not include** the file-rotation mechanism between sessions (→ [Rotation](rotation.md)) or the `xtrdb -s` inspection tool (→ [Inspection Tool](inspection-tool.md)).
 
@@ -190,9 +190,19 @@ A transmission gap (e.g. a system shutdown, a lost signal) is recorded as an ent
 
 ---
 
-### The metaDataStream class
+### The metaData class
 
-The `.meta` file is managed by the `rdb::metaDataStream` class. It encapsulates three areas of responsibility:
+The `.meta` file is managed by the `rdb::metaData` class. It acts as a coordinator: it keeps the RLE policy itself (lazy overwrite of the last entry, record numbering) and delegates the specialized parts to separate units:
+
+| Unit | Header | Role |
+| ---- | ------ | ---- |
+| `IndexRecord` | `indexRecord.hpp` | format of a single entry and its (de)serialization |
+| `MetaIndexStore` | `metaIndexStore.hpp` | raw `.meta` file I/O — header, committed entries, cache |
+| `GapDetector` | `gapDetector.hpp` | gap-detection state machine (nullfill, absorption, pending gap) |
+| `splitSegment()`, `sumNonGapRecords()` | `rleSegment.hpp` | RLE segment operations |
+| `storageShadow` | `storageShadow.hpp` | variant that routes updates to the index shadow (`.meta.shadow`) |
+
+`metaData` itself encapsulates three areas of responsibility:
 
 1. **In-memory RLE aggregation** — it buffers the current segment (the most recent run of records with an identical null pattern) in the `currentEntry_` field, without writing it to the file on every record.
 2. **Data persistence** — only completed segments (when the pattern changes, or on an explicit call to `flushCurrentEntry()`) are written to the file as committed entries.
@@ -207,7 +217,7 @@ The class holds two states:
 
 ### Object lifecycle
 
-The state diagram (Fig. 15) shows the transitions between phases of a `metaDataStream` object:
+The state diagram (Fig. 15) shows the transitions between phases of a `metaData` object:
 
 ```mermaid
 %% pdf-width: 30%
@@ -221,9 +231,9 @@ stateDiagram-v2
     Active --> [*] : destructor (auto flush)
 ```
 
-_Fig. 15. Lifecycle of a metaDataStream object_
+_Fig. 15. Lifecycle of a metaData object_
 
-**Constructor** (`metaDataStream(descriptor, path)`):
+**Constructor** (`metaData(descriptor, path)`):
 - Initializes an empty `currentEntry_` based on the number of fields in the descriptor.
 - Calls `loadIndex()` — if the file exists, it loads all committed segments, determines `committedRecordCount_`, and moves the last non-gap segment back into `currentEntry_` (allowing the RLE run to continue after a restart).
 - If the file does not exist, it creates it and writes the header (the stream's creation timestamp).
@@ -266,12 +276,12 @@ Before: [allNull × 5]
 After:  [allNull × 2] [allPresent × 1] [allNull × 2]
 ```
 
-**Shadow mode** (`shadowMode_ = true`, activated via `setShadowMode(true)`): instead of modifying the main index, it appends a single null-pattern override to the `.meta.shadow` file. The main `.meta` index remains untouched and consistent with the main data file.
+**Shadow variant** (`storageShadow`, injected in place of the base `metaData` for stores that maintain a `.shadow` file): instead of modifying the main index, it appends a single null-pattern override to the `.meta.shadow` file. The main `.meta` index remains untouched and consistent with the main data file.
 
 ```
-shadowMode_?
-├─ YES → appendShadowOverride(index, nullBitset) → entry in .meta.shadow
-└─ NO  → applyModificationToMainIndex(index, nullBitset) → splitSegment()
+index object is a storageShadow?
+├─ YES → metaShadow::appendOverride(index, nullBitset) → entry in .meta.shadow
+└─ NO  → modify the main index → splitSegment()
 ```
 
 #### `onTransmissionGap(duration)`
@@ -281,7 +291,7 @@ Records a transmission gap of the given length (in units of the stream's interva
 ```mermaid
 sequenceDiagram
     participant S as storage
-    participant M as metaDataStream
+    participant M as metaData
     participant F as .meta file
 
     S->>M: onTransmissionGap(5)
@@ -292,17 +302,17 @@ sequenceDiagram
 
 _Fig. 16. Gap-recording sequence — onTransmissionGap_
 
-### Safety mechanism: `flushCurrentEntry()` and overwriting (tailDirty\_)
+### Safety mechanism: `flushCurrentEntry()` and overwriting (tail_.dirty)
 
 The `storage` class calls `flushCurrentEntry()` after **every** call to `write()`, to guarantee survival of a process crash. A naive implementation would append a new entry to the file on every flush — causing file growth proportional to the number of records, even without any change in the null pattern.
 
-The solution: a **lazy overwrite** mechanism flagged by `tailDirty_`.
+The solution: a **lazy overwrite** mechanism flagged by `tail_.dirty`.
 
 ```
 flushCurrentEntry() → write [pattern, count=2] to disk
 onRecordAppended(the same pattern):
     currentEntry_.count = 2 (restored from disk)
-    tailDirty_ = true        ← the next flush will overwrite, not append
+    tail_.markDirty()        ← the next flush will overwrite, not append
     currentEntry_.count++    → count = 3
 flushCurrentEntry() → seek to the last entry, overwrite [pattern, count=3]
     (file size unchanged)
@@ -313,7 +323,7 @@ The sequence diagram for `storage`'s typical pattern (append + flush after every
 ```mermaid
 sequenceDiagram
     participant S as storage
-    participant M as metaDataStream
+    participant M as metaData
     participant F as .meta file
 
     S->>M: onRecordAppended([F,F])
@@ -322,7 +332,7 @@ sequenceDiagram
 
     S->>M: onRecordAppended([F,F])
     S->>M: flushCurrentEntry()
-    Note over M: tailDirty_=true, overwrite last entry
+    Note over M: tail_.dirty=true, overwrite last entry
     M->>F: overwrite last entry: [F,F] count=2
 
     S->>M: onRecordAppended([F,F])
@@ -341,7 +351,7 @@ Thanks to this, the `.meta` file grows only when the **null pattern changes** �
 
 ### Persistence and state recovery
 
-After the process restarts, a new `metaDataStream` object loads the file via `loadIndex()` (sequence shown in Fig. 18):
+After the process restarts, a new `metaData` object loads the file via `loadIndex()` (sequence shown in Fig. 18):
 
 1. It reads the header — the timestamp (`creationTimeNs`), stored as `int64` nanoseconds since the epoch.
 2. It loads all committed entries from the file.
@@ -371,7 +381,8 @@ _Fig. 18. Persistence and state recovery after a restart_
 
 | Method | Description  |
 | ----   | ------------ |
-| `getNullBitset(i)` | Returns the null pattern for record `i`. In shadow mode, it first checks overrides in `shadowOverrides_` (from the end — the most recent wins), and only falls back to the main index if there's no entry. |
+| `getNullBitset(i)` | Returns the null pattern for record `i`. Virtual: in the `storageShadow` variant it first checks overrides in `metaShadow` (from the end — the most recent wins), and only falls back to the main index if there's no entry. |
+| `nullBitsetFor(i)` | As above, but for a record outside the index range it returns an all-false pattern instead of throwing. Lets `storage::read()` apply null metadata without range checks. |
 | `isGapBefore(i)` | Returns `true` if, in the RLE index, an entry with `isGap=true` sits immediately before record `i`. Record 0 never has a gap before it. |
 | `segments()` | Returns all RLE segments: committed (from disk) plus the current one (from memory), if non-empty. Does not include overrides from `.meta.shadow`. Used for inspection and tests. |
 | `totalRecords()` | The sum of records across all segments (committed + pending). |
@@ -381,13 +392,14 @@ _Fig. 18. Persistence and state recovery after a restart_
 
 ### The index-shadow interface
 
-A set of methods for managing the `.meta.shadow` file. Called by `storage::attachStorage()` and the related operations on the data shadow file.
+Methods of the `storageShadow` class — the index variant injected by `makeMetaIndex()` for stores that maintain a data shadow file. The base `metaData` does not have them, and there is no mode switch: the presence of a shadow is decided by the choice of class at store initialization.
 
 | Method | Description  |
 | ----   | ------------ |
-| `setShadowMode(enabled)` | Enables or disables shadow mode. With `enabled=true` it calls `loadShadow()` — loading existing overrides from the `.meta.shadow` file. |
-| `mergeShadow()` | Merges the shadow overrides into the main index (calling `applyModificationToMainIndex()` for each override, in write order — the last one wins), then deletes the `.meta.shadow` file. The counterpart to `merge()` for the data shadow file. |
+| constructor | Loads existing overrides from the `.meta.shadow` file (`metaShadow::load()`), restoring the shadow state after a process restart. |
+| `mergeShadow()` | Merges the shadow overrides into the main index (applying each override in write order — the last one wins), then deletes the `.meta.shadow` file. The counterpart to `merge()` for the data shadow file. |
 | `discardShadow()` | Clears the in-memory list of overrides and deletes the `.meta.shadow` file. Called when discarding the data shadow (purge, reset, rotation). |
+| `metaShadowFilePath(p)` | Static: returns the index shadow path corresponding to a given `.meta` file, without instantiating an object. Used by `storage` when cleaning up resources. |
 
 ### Usage example — a typical production scenario
 
@@ -484,12 +496,20 @@ The `.meta.shadow` file is the counterpart of `.shadow` at the null-index level.
 
 ### When it's created
 
-The `.meta.shadow` file is created automatically by `metaDataStream` when two conditions are met:
+The `.meta.shadow` file is created automatically when two conditions are met:
 
 1. The store is of type `DEFAULT` or `POSIXSHD` — i.e. one that keeps record modifications in a `.shadow` file (not in the main file).
 2. At least one modification of an existing record (`storage::write()` at an index other than the maximum) is made during the given session.
 
-Condition 1 is checked during `storage::attachStorage()` — if it holds, `metaDataStream::setShadowMode(true)` is called.
+Condition 1 is not a mode switch but a **choice of class**. At store initialization the `makeMetaIndex()` factory (`accessorFactory.hpp`) asks the accessor for `hasShadow()` and returns:
+
+| Condition | Returned object | Behavior |
+| --------- | --------------- | -------- |
+| declared source (`DECLARE`) | `metaData` with an empty path | inert variant — the index works in memory, nothing reaches disk |
+| accessor has a data shadow file | `storageShadow` | `onRecordModified()` routes overrides to `metaShadow` (`.meta.shadow`) |
+| everything else | `metaData` | modifications rewrite the main `.meta` index |
+
+`storageShadow` derives from `metaData` and overrides the virtual `onRecordModified()`, `getNullBitset()`, and `reset()`; the `.meta.shadow` file itself is managed by its `metaShadow` member. As a result, `storage` contains no branching on shadow mode.
 
 ### File format
 
@@ -506,13 +526,13 @@ Every call to `onRecordModified()` in shadow mode appends one entry to the end o
 
 ### Read priority
 
-In shadow mode, `getNullBitset(i)` scans the list of overrides from the end. If it finds an entry for index `i`, it returns that entry's null pattern without consulting the main index (Fig. 21):
+`storageShadow::getNullBitset(i)` scans the list of overrides from the end. If it finds an entry for index `i`, it returns that entry's null pattern without consulting the main index (Fig. 21):
 
 ```mermaid
 flowchart TD
     Q["getNullBitset(i)"]
-    Q --> SM{"shadowMode_?"}
-    SM -->|yes| SCAN{"shadowOverrides_\n(from the end): entry for i?"}
+    Q --> SM{"object is a storageShadow?"}
+    SM -->|yes| SCAN{"metaShadow::lookup(i)\n(from the end): entry for i?"}
     SCAN -->|found| RET1["Return the nullBitset from the override\n(the most recent wins)"]
     SCAN -->|not found| MAIN["Look up in the main index\n(RLE segments on disk)"]
     SM -->|no| MAIN
@@ -531,15 +551,15 @@ The `.meta.shadow` file is managed in parallel with the data shadow file:
 | Subsequent modifications     | Further entries appended |
 | `merge()` — merging the shadow into the main file | `mergeShadow()` — overrides applied to `.meta`; file deleted |
 | `purge()` / `reset()` — discarding the shadow | `discardShadow()` — file deleted without merging |
-| Process restart               | `setShadowMode(true)` → `loadShadow()` — file read; overrides restored in memory |
+| Process restart               | `storageShadow` constructor → `metaShadow::load()` — file read; overrides restored in memory |
 | Removal of a temporary store (destructor) | `.meta.shadow` file deleted along with `.meta` |
 
 ### Persistence across restarts
 
-After the process restarts, a new `metaDataStream` object restores the shadow state via `loadShadow()` (Fig. 22):
+After the process restarts, a new `storageShadow` object restores the shadow state already in its constructor, via `metaShadow::load()` (Fig. 22):
 
 1. It reads all entries from `.meta.shadow` (no header — a direct format).
-2. It loads them into `shadowOverrides_` in write order.
+2. It loads them into the override list in write order.
 3. `getNullBitset()` and subsequent calls to `onRecordModified()` behave exactly as they did before the restart.
 
 ```mermaid
@@ -557,7 +577,7 @@ sequenceDiagram
     Note over Proc1: restart
 
     participant Proc2 as Second session
-    Proc2->>MS: setShadowMode(true) → loadShadow()
+    Proc2->>MS: storageShadow constructor → metaShadow::load()
     MS-->>Proc2: [(index=2, [T,T,T])]
     Note over Proc2: getNullBitset(2) → [T,T,T]
     Proc2->>Meta: mergeShadow() → applyModificationToMainIndex(2, [T,T,T])
@@ -576,8 +596,8 @@ _Fig. 22. Index shadow — restoring null patterns after a restart_
 # Operations:
 storage.write(rec2_corrected, pos=2)
   → .shadow: append (position=2, data_corrected)
-  → metaDataStream.onRecordModified(2, [F,F,F])
-    → shadow mode: .meta.shadow: append (index=2, [F,F,F])
+  → storageShadow.onRecordModified(2, [F,F,F])
+    → .meta.shadow: append (index=2, [F,F,F])
 
 # File state:
 # .meta        — unchanged: [isGap=F, count=2, [F,F,F]], 
@@ -590,11 +610,11 @@ getNullBitset(1) → [F,F,F]  (from .meta)
 
 # After merging:
 storage.merge() → .shadow absorbed into the main file
-metaDataStream.mergeShadow() → .meta rebuilt, .meta.shadow deleted
+storageShadow.mergeShadow() → .meta rebuilt, .meta.shadow deleted
 # .meta after merge: [isGap=F, count=5, [F,F,F]]  (all records complete)
 ```
 
-> **_NOTE:_** The `.meta.shadow` mechanism is tested in the unit test `index_shadow_scenario` (`test_metaDataStream_usage.cpp`).
+> **_NOTE:_** The `.meta.shadow` mechanism is covered by the unit tests `ut_metaShadow_usage` (shadow-file format and lifecycle) and `ut_storageShadow_usage` (integration with `metaData` and the accessor).
 
 ---
 

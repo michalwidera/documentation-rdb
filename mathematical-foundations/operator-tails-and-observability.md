@@ -29,7 +29,7 @@ availability. Producer tails are converted to result slots beforehand.
 | projection / `PUSH_STREAM` | current tuple | \\(O_S\\) | 0 | `ut_compiler` |
 | shift `>N` | record \\(n-N\\) | \\(O_S+N\\) | \\(-N\\), see below | `ut_compiler`, `ut_h10aGate` |
 | sum `+` | current co-indexed tuples | mapping threshold | 0 | `ut_compiler` |
-| interleave `#` | phase maximum \\(H_{a,b}\\) | mapping threshold | \\(H_{a,b}\\) | `deinterleave_roundtrip` |
+| interleave `#` | record \\(j(i)\\) of the component selected in slot \\(i\\) | mapping threshold | formula below | `deinterleave_roundtrip`, `ut_h10aGate` |
 | left de-interleave `&` (`DIV`) | \\(n+\lceil(n+1)\Delta_a/\Delta_b\rceil\\) | mapping threshold | 1 | `deinterleave_roundtrip` |
 | right de-interleave `%` (`MOD`) | \\(n+\lfloor n\Delta_b/\Delta_a\rfloor\\) | mapping threshold | 0 | `deinterleave_roundtrip` |
 | difference `C-Delta` | \\(\lceil n\Delta/\Delta_C\rceil\\) | mapping threshold | phase-dependent, at most 1 when \\(\Delta\ge\Delta_C\\) | `it_k19_boundaries` |
@@ -52,6 +52,32 @@ smaller than the source interval \\(\Delta_C\\). For the ratio
 even in integral phase, because it publishes the next record after consumers
 read within the same tick.
 
+## The interleave tail
+
+The interleave is the only operator whose tail does not decompose into
+"converted producer tails plus an own constant". Record \\(i\\) carries the
+content of record \\(j(i)\\) of just one component — the one the operator
+definition selects in slot \\(i\\) — so the required latency depends on which
+component, and which of its phases, a given slot falls on:
+
+\\[
+W_{\\#}
+=\max_{0\le i<p+q}\left(
+\left\lceil\frac{\bigl(j(i)+1+W_{s(i)}\bigr)\Delta_{s(i)}}{\Delta_c}\right\rceil
+-1-i
+\right),
+\qquad \frac{\Delta_a}{\Delta_b}=\frac{p}{q},\quad \gcd(p,q)=1
+\\]
+
+The component selection and the phase repeat with period \\(p+q\\), so the
+maximum over one period is the maximum over all records; the logical origin
+shifts both indices equally and does not change the result. The formula is
+exact. The former closed form \\(\lceil(p+q-1)/p\rceil\\) protected the worst
+read phase of the second argument, but did not check whether that phase falls on
+the record that waits longest — so it overshot the tail by one slot. It remains
+in the implementation as the fallback for very long periods, where scanning
+would be too costly.
+
 ## The shift \\(\tau_N\\)
 
 Record \\(n\\) carries the content of producer record \\(n-N\\). Hence both
@@ -72,9 +98,8 @@ origin, and additionally absorbs the producer tail whenever \\(N\ge W_S\\).
 The sum \\(O+W\\) is not invariant here: for \\(N<W_S\\) it equals \\(W_S\\),
 whereas the realization from before the separation gave \\(W_S+N\\). That
 earlier realization overestimated the tail by \\(\min(W_S,N)\\); the
-overestimate was measured on 6.6% of `>N` class nodes in the campaign
-`rdb-experiment/results_20260807_K24p` and removed by addressing the producer
-with a logical index instead of a relative offset.
+overestimate was removed by addressing the producer with a logical index
+instead of a relative offset.
 
 ## The full AGSE window
 
@@ -178,7 +203,7 @@ slots without a definition, `startupLatency` skips slots not yet determined, and
 the history capacity retains every required index. The `it_k19_boundaries` test
 distinguishes this case from a genuine `NULL` located inside a full window.
 
-The independent oracle and the full phase campaigns live in
-`rdb-experiment/results_20260728_K19` (operator boundaries) and
-`rdb-experiment/results_20260807_K24p` (separation of logical origin and tail,
-nine operator classes, two seeds).
+The operator formulas in this chapter are enforced on every commit: boundaries
+and observability by `it_k19_boundaries`, history depths by `it_k24_capacity`,
+and agreement of logical origin and tail for the `@` and `>` classes by the
+`ut_h10aGate` unit test.

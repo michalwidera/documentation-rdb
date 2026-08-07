@@ -276,33 +276,42 @@ We define conversion of a producer's tail into output slots as:
 :=\left\lceil\frac{w\Delta_s}{\Delta_o}\right\rceil
 \\]
 
-For an interleave with interval
-\\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\), the tail is:
+The tail of an interleave with interval
+\\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\) follows directly from the
+operator definition, without going through a single phase term.
+
+Record \\(i\\) of \\(\varphi(A,B)\\) carries the content of record \\(j(i)\\)
+of exactly one component — the one the interleave definition selects in slot
+\\(i\\). Write \\(\Delta_{s(i)}\\) and \\(W_{s(i)}\\) for the interval and tail
+of the selected component. Record \\(j(i)\\) is determined at time
+\\(\bigl(j(i)+1+W_{s(i)}\bigr)\Delta_{s(i)}\\), while consumer slot \\(i\\) ends
+at \\((i+1+W)\Delta_c\\). The causality condition for every \\(i\\) is:
+
+\\[
+W\ge
+\left\lceil\frac{\bigl(j(i)+1+W_{s(i)}\bigr)\Delta_{s(i)}}{\Delta_c}\right\rceil
+-1-i
+\\]
 
 Let \\(\Delta_a/\Delta_b=p/q\\), where \\(p,q\in\mathbb{N}_{>0}\\)
-and \\(\gcd(p,q)=1\\). In second-argument phase \\(j\\), the required
-causal look-ahead is:
+and \\(\gcd(p,q)=1\\). Both the component selection and the residue determining
+\\(j(i)\\) repeat with period \\(p+q\\), so the maximum of the right-hand side
+over **one** period is the maximum over all records:
 
 \\[
-h_j
-:=\left\lceil\frac{(j+1)q}{p}\right\rceil
--\left\lfloor\frac{jq}{p}\right\rfloor,
-\qquad 0\le j<p
+W_{\varphi(A,B)}
+=\max_{0\le i<p+q}\left(
+\left\lceil\frac{\bigl(j(i)+1+W_{s(i)}\bigr)\Delta_{s(i)}}{\Delta_c}\right\rceil
+-1-i
+\right)
 \\]
 
-The interleave's own tail must cover the worst phase of the full period:
+The formula is **exact**: it neither overshoots nor undershoots the event-model
+bound for any node. The period scan starts at zero — the logical origin shifts
+the consumer index and the component index by the same amount, so the window
+\\([0,\,p+q)\\) yields the same value as any shifted window.
 
-\\[
-H_{a,b}
-:=\max_{0\le j<p}h_j
-=\left\lceil\frac{p+q-1}{p}\right\rceil
-\\]
-
-Writing \\(q=mp+r\\) and using the fact that, for coprime \\(p,q\\), the
-residues \\(jq\bmod p\\) visit every residue class in one period gives the
-closed form above. In particular,
-\\(\lceil\Delta_b/\Delta_a\rceil=\lceil q/p\rceil\\) protects the first B
-read, but not always the worst later phase.
+The earlier closed form
 
 \\[
 W_{\varphi(A,B)}
@@ -310,11 +319,18 @@ W_{\varphi(A,B)}
 \operatorname{conv}(W_A,\Delta_a,\Delta_c),
 \operatorname{conv}(W_B,\Delta_b,\Delta_c)
 +H_{a,b}
-\right)
+\right),
+\qquad
+H_{a,b}=\left\lceil\frac{p+q-1}{p}\right\rceil
 \\]
 
-The \\(H_{a,b}\\) term is the phase-safe own causal look-ahead on the
-interleave's second argument. Tail slots are not records.
+protected the worst read phase of the second argument, but did not check whether
+that phase actually falls on the record that waits longest — hence it overshot
+the tail by one slot for some nodes. It survives in the implementation as the
+fallback for \\(p+q\\) above the scan threshold (`kHashPhaseScanLimit` in
+`SOperations.hpp`): overshooting costs one slot of latency, whereas
+undershooting would mean emitting a record before its dependency is determined.
+Tail slots are not records.
 
 The shift \\(\tau_m\\) does not change the emitted record sequence, but it does
 change the **index** at which that sequence appears: record \\(n\\) carries the
@@ -424,12 +440,11 @@ and since \\(W_{\mathrm{LHS}}\ge 0\\), we get
 > the observation and never emits a record before its dependencies are
 > determined, but the result is ready sooner.
 >
-> Until 2026-08-07 both sides had the same tail solely because the realization
+> Previously both sides had the same tail solely because the realization
 > of \\(\tau_m\\) overestimated its own tail by \\(\min(W_S,m)\\). The
-> overestimate was measured in the campaign
-> `rdb-experiment/results_20260807_K24p` (6.6% of `>N` class nodes) and removed
-> by addressing the producer with a logical index. Regressions guarding this
-> scope: `it_r1_identity_nulls`,
+> overestimate was removed by addressing the producer with a logical index
+> instead of a relative offset. Regressions guarding this scope:
+> `it_r1_identity_nulls`,
 > `it_optimizer_ablation-factor-name-collision-semantic`.
 
 In the compiler, additional invariants preserve public stream field names, null
