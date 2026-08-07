@@ -1,12 +1,51 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="railroad-diagram" height="122" viewBox="0 0 356.0 122" width="356.0">
+<svg class="railroad-diagram" height="122" viewBox="0 0 364.5 122" width="364.5" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g transform="translate(.5 .5)">
 <g>
-<path d="M20 21v20m0 -10h20" fill="none" stroke="#000000" stroke-width="2.2" /></g><path d="M40 31h10" fill="none" stroke="#000000" stroke-width="2.2" /><g>
-<path d="M50 31h0.0" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M306.0 31h0.0" fill="none" stroke="#000000" stroke-width="2.2" /><g>
-<path d="M50.0 31h0.0" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M178.0 31h0.0" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M50.0 31h20" fill="none" stroke="#000000" stroke-width="2.2" /><g class="terminal ">
-<path d="M70.0 31h4.25" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M153.75 31h4.25" fill="none" stroke="#000000" stroke-width="2.2" /><rect height="22" rx="10" ry="10" width="79.5" x="74.25" y="20" stroke="#000000" stroke-width="2.2" fill="#d7f4d7" /><text x="114" y="35" font-family="DejaVu Sans Mono, monospace" font-size="14" font-weight="bold" text-anchor="middle" fill="#000000">STORAGE</text></g><path d="M158.0 31h20" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M50.0 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" fill="none" stroke="#000000" stroke-width="2.2" /><g class="terminal ">
-<path d="M70.0 61h0.0" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M158.0 61h0.0" fill="none" stroke="#000000" stroke-width="2.2" /><rect height="22" rx="10" ry="10" width="88" x="70" y="50" stroke="#000000" stroke-width="2.2" fill="#d7f4d7" /><text x="114" y="65" font-family="DejaVu Sans Mono, monospace" font-size="14" font-weight="bold" text-anchor="middle" fill="#000000">SUBSTRAT</text></g><path d="M158.0 61a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M50.0 31a10 10 0 0 1 10 10v40a10 10 0 0 0 10 10" fill="none" stroke="#000000" stroke-width="2.2" /><g class="terminal ">
-<path d="M70.0 91h0.0" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M158.0 91h0.0" fill="none" stroke="#000000" stroke-width="2.2" /><rect height="22" rx="10" ry="10" width="88" x="70" y="80" stroke="#000000" stroke-width="2.2" fill="#d7f4d7" /><text x="114" y="95" font-family="DejaVu Sans Mono, monospace" font-size="14" font-weight="bold" text-anchor="middle" fill="#000000">ROTATION</text></g><path d="M158.0 91a10 10 0 0 0 10 -10v-40a10 10 0 0 1 10 -10" fill="none" stroke="#000000" stroke-width="2.2" /></g><g>
-<path d="M178.0 31h0.0" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M306.0 31h0.0" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M178.0 31h20" fill="none" stroke="#000000" stroke-width="2.2" /><g class="non-terminal ">
-<path d="M198.0 31h4.25" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M281.75 31h4.25" fill="none" stroke="#000000" stroke-width="2.2" /><rect height="22" width="79.5" x="202.25" y="20" stroke="#000000" stroke-width="2.2" fill="#ffffff" /><text x="242" y="35" font-family="DejaVu Sans Mono, monospace" font-size="14" font-weight="normal" font-style="italic" text-anchor="middle" fill="#000000">'tekst'</text></g><path d="M286.0 31h20" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M178.0 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" fill="none" stroke="#000000" stroke-width="2.2" /><g class="non-terminal ">
-<path d="M198.0 61h0.0" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M286.0 61h0.0" fill="none" stroke="#000000" stroke-width="2.2" /><rect height="22" width="88" x="198" y="50" stroke="#000000" stroke-width="2.2" fill="#ffffff" /><text x="242" y="65" font-family="DejaVu Sans Mono, monospace" font-size="14" font-weight="normal" font-style="italic" text-anchor="middle" fill="#000000">'profil'</text></g><path d="M286.0 61a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" fill="none" stroke="#000000" stroke-width="2.2" /></g></g><path d="M306.0 31h10" fill="none" stroke="#000000" stroke-width="2.2" /><path d="M 316.0 31 h 20 m 0 -10 v 20" fill="none" stroke="#000000" stroke-width="2.2" /></g></svg>
+<path d="M20 21v20m10 -20v20m-10 -10h20" /></g><path d="M40 31h10" /><g>
+<path d="M50 31h0.0" /><path d="M314.5 31h0.0" /><g>
+<path d="M50.0 31h0.0" /><path d="M178.0 31h0.0" /><path d="M50.0 31h20" /><g class="terminal ">
+<path d="M70.0 31h0.0" /><path d="M158.0 31h0.0" /><rect height="22" rx="10" ry="10" width="88" x="70" y="20"></rect><text x="114" y="35">ROTATION</text></g><path d="M158.0 31h20" /><path d="M50.0 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g class="terminal ">
+<path d="M70.0 61h4.25" /><path d="M153.75 61h4.25" /><rect height="22" rx="10" ry="10" width="79.5" x="74.25" y="50"></rect><text x="114" y="65">STORAGE</text></g><path d="M158.0 61a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /><path d="M50.0 31a10 10 0 0 1 10 10v40a10 10 0 0 0 10 10" /><g class="terminal ">
+<path d="M70.0 91h0.0" /><path d="M158.0 91h0.0" /><rect height="22" rx="10" ry="10" width="88" x="70" y="80"></rect><text x="114" y="95">SUBSTRAT</text></g><path d="M158.0 91a10 10 0 0 0 10 -10v-40a10 10 0 0 1 10 -10" /></g><g>
+<path d="M178.0 31h0.0" /><path d="M314.5 31h0.0" /><path d="M178.0 31h20" /><g class="non-terminal ">
+<path d="M198.0 31h0.0" /><path d="M294.5 31h0.0" /><rect height="22" width="96.5" x="198" y="20"></rect><text x="246.25" y="35">&apos;profile&apos;</text></g><path d="M294.5 31h20" /><path d="M178.0 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g class="non-terminal ">
+<path d="M198.0 61h12.75" /><path d="M281.75 61h12.75" /><rect height="22" width="71" x="210.75" y="50"></rect><text x="246.25" y="65">&apos;text&apos;</text></g><path d="M294.5 61a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /></g></g><path d="M314.5 31h10" /><path d="M 324.5 31 h 20 m -10 -10 v 20 m 10 -20 v 20"></path></g><style>/* <![CDATA[ */
+	svg.railroad-diagram {
+		background-color: transparent;
+	}
+	svg.railroad-diagram path {
+		stroke-width: 2.2;
+		stroke: #000000;
+		fill: none;
+	}
+	svg.railroad-diagram text {
+		font: bold 14px "DejaVu Sans Mono", monospace;
+		text-anchor: middle;
+		fill: #000000;
+	}
+	svg.railroad-diagram text.label {
+		text-anchor: start;
+	}
+	svg.railroad-diagram text.comment {
+		font: italic 12px "DejaVu Sans Mono", monospace;
+	}
+	svg.railroad-diagram rect {
+		stroke-width: 2.2;
+		stroke: #000000;
+		fill: #d7f4d7;
+	}
+	svg.railroad-diagram rect.group-box {
+		stroke: gray;
+		stroke-dasharray: 10 5;
+		fill: none;
+	}
+	svg.railroad-diagram g.non-terminal rect {
+		fill: #ffffff;
+	}
+	svg.railroad-diagram g.non-terminal text {
+		font-style: italic;
+		font-weight: normal;
+	}
+
+/* ]]> */
+</style></svg>
