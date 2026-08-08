@@ -71,6 +71,7 @@ jobs:
           \floatplacement{figure}{H}
           \usepackage{amssymb}
           \usepackage{tcolorbox}
+          \usepackage{eso-pic}
           \let\origmaketitle\maketitle
           \renewcommand{\maketitle}{\AtEndDocument{\clearpage\origmaketitle}}
           \usepackage{titlesec}
@@ -95,9 +96,12 @@ jobs:
 
           cat > /tmp/cover.tex << COVEOF
           \thispagestyle{empty}
-          \newgeometry{margin=0cm}
-          \includegraphics[width=\paperwidth,height=\paperheight]{${PWD}/assets/book-cover.png}
-          \restoregeometry
+          \AddToShipoutPictureBG*{%
+            \AtPageLowerLeft{%
+              \includegraphics[width=\paperwidth,height=\paperheight]{${PWD}/assets/book-cover.png}%
+            }%
+          }
+          \null
           \clearpage
           COVEOF
 
@@ -144,6 +148,32 @@ jobs:
             return el
           end
           CODELUAEOF
+
+          cat > /tmp/table_breaks.lua << 'TABLELUAEOF'
+          local function break_long_code(el)
+            if not el.text:match('[._]') then return nil end
+
+            local result = pandoc.List()
+            local start = 1
+            for i = 1, #el.text do
+              local char = el.text:sub(i, i)
+              if char == '.' or char == '_' then
+                result:insert(pandoc.Code(el.text:sub(start, i), el.attr))
+                result:insert(pandoc.RawInline('latex', '\\allowbreak{}'))
+                start = i + 1
+              end
+            end
+            if start <= #el.text then
+              result:insert(pandoc.Code(el.text:sub(start), el.attr))
+            end
+            return result
+          end
+
+          function Table(table)
+            if not FORMAT:match('latex') then return nil end
+            return table:walk({ Code = break_long_code })
+          end
+          TABLELUAEOF
 
           cat > /tmp/callouts.lua << 'CALLUAEOF'
           local envs = {Note="calloutNote", Info="calloutInfo",
@@ -266,6 +296,7 @@ jobs:
             --lua-filter /tmp/codeblock.lua \
             --lua-filter /tmp/callouts.lua \
             --lua-filter /tmp/fix_math.lua \
+            --lua-filter /tmp/table_breaks.lua \
             --include-in-header=/tmp/header.tex \
             --include-before-body=/tmp/cover.tex \
             --pdf-engine=xelatex \
