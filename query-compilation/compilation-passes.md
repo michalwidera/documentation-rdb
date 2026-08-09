@@ -108,7 +108,7 @@ An optimization: if two queries use the same intermediate operation (e.g. `core0
 
 #### resolveFieldReferences
 
-Turns references to fields from source schemas into indices in the output schema. Handles aliasing — turning `core0[0]` into `str1[0]`, etc. — see [Aliasing](aliasing.md).
+Turns references to fields from source schemas into indices in the output schema. It handles aliases after sum — turning `core0[0]` into `str1[0]`, for example — and records the source to which a bare field name was resolved. Named references written by the user are tracked separately so a later pass does not confuse them with tokens synthesized by the compiler. See [Aliasing](aliasing.md).
 
 #### expandIndexWildcards
 
@@ -120,7 +120,9 @@ Detects explicit `SELECT` queries with equivalent field programs and `FROM` tree
 
 #### localizeFieldOffsets
 
-Converts field references (`b[x]`, `c[y]`) into indices in the flattened output schema (`merged[z]`). For ADD, the index follows from the sum of the field counts of the preceding streams; for HASH, every field gets index 0 (a single-argument schema). This stage accounts not only for direct sources, but also for transitive sources hidden behind automatic substrates.
+Converts field references (`b[x]`, `c[y]`) into positions in the flattened output schema (`merged[z]`). For sum `+`, the offset follows from the number of fields in the preceding components. For interleave `#`, both arguments share the same positions in one schema; component identity is no longer available through its name.
+
+At this stage the compiler rejects user-written `A[0]`, `A.field`, `A[_]`, `A.*`, and bare field names if they refer to a component reached through `#`. The check also covers `RULE` conditions and sources hidden behind automatic substrates. References through the output stream name, an unqualified `*`, and explicit component recovery with `&` or `%` remain legal.
 
 #### computeLogicalOrigin
 

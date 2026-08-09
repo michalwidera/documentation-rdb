@@ -52,6 +52,8 @@ The stream algebraic expression in the `FROM` clause can include:
 | AGSE window   | `A @ (k, w)`                             | Sliding data window — see [AGSE Sliding Data Window](../../query-execution/agse-sliding-window/) |
 | Aggregate     | `A.min` / `A.max` / `A.avg` / `A.sumc`   | Reduces a multi-field record to a single value — see [Aggregate Operators](aggregate-operators.md)     |
 
+> **⚠️ Warning** After an interleave `A#B`, do not refer to its components as `A[0]`, `A.field`, `A[_]`, or `A.*`. An interleave has one shared schema; use the output stream name or recover a component with `&`/`%`. See [Aliasing](../../query-compilation/aliasing.md) for details.
+
 > **_NOTE:_** The shift operator `A > N` is covered by the test: `issue56_timeshift`, described in the appendix [Integration Tests](../../appendices/integration-tests.md).
 
 > **_NOTE:_** Null-value propagation through SELECT expressions is covered by the test: `issue121_null_propagation`, described in the appendix [Integration Tests](../../appendices/integration-tests.md).

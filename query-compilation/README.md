@@ -43,11 +43,10 @@ The chapter is structured following the order of the compiler's stages — from 
 
 [**Loop Detection**](loop-detection.md) describes the mechanism built into the `resolveStreamIntervals` stage. If the number of unresolved streams stops decreasing, no stream can obtain a delta — a sign that the dependency graph contains a cycle. Compilation ends with the error `"Circular dependency in stream definitions"`. The chapter includes an example of a cyclic query and how to fix it.
 
-[**Aliasing**](aliasing.md) describes the `resolveFieldReferences` stage. An output field can be referenced either by its index in the combined schema (`str1[1]`), or by the name of the source stream with a local index (`core1[0]`). The compiler translates both forms into the same position in the output buffer.
+[**Aliasing**](aliasing.md) describes the `resolveFieldReferences` and `localizeFieldOffsets` stages. After a sum `+`, an output field can be referenced either by its index in the combined schema (`str1[1]`) or by the source stream name with a local index (`core1[0]`). After an interleave `#`, the components share one schema, so named references to components are rejected; use the output stream name or de-interleave with `&`/`%`.
 
 [**Underscore Symbol Processing**](underscore-symbol-processing.md) describes the `expandIndexWildcards` stage — syntactic sugar for parallel operations on pairs of fields. The `_` symbol in an index causes the formula to be repeated for every pair of fields from both arguments' schemas — `core0[_] * core1[_]` with two-field schemas generates two multiplying fields for the corresponding pairs. Use case: building signal-filter queries.
 
 [**Type Promotion**](type-promotion.md) defines the type-promotion rules that apply throughout the compilation chain. The result of `BYTE * INTEGER` has type `INTEGER` — the compiler determines the output field's type statically, before any data is processed. The complete type hierarchy supported by RetractorDB is also described.
 
 [**Compilation Debugging**](compilation-debugging.md) gathers diagnostic tools in one place: the `-c` flag for plan inspection, the `-c -d -f -s` pipeline for graph visualization via `graphviz`, a table of plan-instruction meanings (PUSH\_ID, PUSH\_STREAM, STREAM\_ADD, ...), and a catalog of common compilation errors with their causes and fixes.
-

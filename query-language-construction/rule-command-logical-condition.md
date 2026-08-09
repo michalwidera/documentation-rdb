@@ -59,3 +59,17 @@ DO DUMP -5 TO 0
 ## Field access
 
 The condition refers to the fields of the stream specified in `ON`. The field index corresponds to its position in that stream's schema — the same as in the `SELECT` clause. Aliasing works exactly as described in the chapter [Aliasing](../query-compilation/aliasing.md).
+
+If the stream in `ON` was produced by an interleave `A#B`, the condition must use the output stream name:
+
+```
+RULE valid ON result WHEN result[0] > 0 DO DUMP -1 TO 0
+```
+
+A reference to a named interleave component is ambiguous and causes compilation to fail:
+
+```
+RULE invalid ON result WHEN A[0] > 0 DO DUMP -1 TO 0
+```
+
+The same rule applies when `#` is hidden in a substrate generated for a compound `FROM` expression.

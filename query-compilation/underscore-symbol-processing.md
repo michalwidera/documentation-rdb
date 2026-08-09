@@ -39,6 +39,25 @@ core1(1/5)      sensor_b.txt
 
 The `_` symbol expanded into two fields: `scaled[0] * scaled[2]` (i.e. `a * c`) and `scaled[1] * scaled[3]` (i.e. `b * d`). References to `core0` and `core1` were translated, via aliasing, into absolute positions in the combined schema. The resulting types are INTEGER (`BYTE * INTEGER`) and FLOAT (`INTEGER * FLOAT`) — the result of type promotion, described in a separate subchapter.
 
+## The `_` symbol and interleave
+
+Component aliases such as `A[_]` are valid for sum `+`, because sum preserves separate schema segments for both arguments. Do not use this form for a component reached through interleave `#`:
+
+```
+SELECT A[_] - B[_] STREAM difference FROM A#B
+```
+
+After interleaving, positions `A[k]` and `B[k]` are the same position in the shared schema, so this expression does not identify two different values. The compiler rejects the plan instead of silently calculating `result[k]-result[k]`.
+
+To process an interleaved record with `_`, name the interleave first and then refer to that result:
+
+```
+SELECT * STREAM interleaved FROM A#B
+SELECT interleaved[_] * 2 STREAM scaled FROM interleaved
+```
+
+Recovering a particular component requires the de-interleave operator `&` or `%`.
+
 Once the `_` operator appears in a formula's array index, the compiler repeats the formula for every field of the arguments. The schemas of both arguments must have equal cardinality — that is, core0 and core1 must have schemas of the same size, and the types will be promoted to the highest one. I'll cover type promotion shortly.
 
 This functionality is mainly used when building queries that implement signal-filter algorithms. There, a series of mathematical operations comes into play. The functionality behind underscore-symbol processing is not required to achieve RetractorDB's full functionality. However, it significantly simplifies building specific queries where operations on two schemas need to be combined. An example use case will be presented when signal-processing algorithms are introduced.
