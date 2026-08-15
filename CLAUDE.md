@@ -86,6 +86,7 @@ Further rules:
 - `U+00A0` (no-break space) is reported as informational. Inside `\\[...\\]` math and Mermaid blocks, confirm it is not deliberate before replacing it.
 - After cleaning, `git diff` must show no visible change — only invisible codepoints and, where confirmed, `U+00A0`. Math escaping and Mermaid blocks must come out byte-identical apart from those characters; if a diff touches anything else, revert and clean again.
 - The check runs on Markdown sources, never on generated `book/` output.
+- The diagram sources under `assets/` (`*.drawio` and the exported `*.svg`) contain `U+00A0` inside labels — draw.io uses it to control line breaking. They are graphics, outside this rule; never run the cleaner on them.
 
 ## Collaboration Rules
 
