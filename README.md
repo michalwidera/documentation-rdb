@@ -1,5 +1,13 @@
 # RetractorDB
 
+RetractorDB is an Edge Signal Processing Engine (ESPE) designed to continuously process regular time series close to the data source. Its declarative RQL language describes transformations, aggregations, and rules; their results can be published live or materialized as artifacts that remain available for later inspection and correction. The system complements central time-series databases and stream-processing systems by reducing the volume of data sent to them, but it does not replace those systems.
+
+The name combines two ideas. **Retractor** denotes a tool that extracts, separates, joins, and processes data contained in time series, while **DB** points to mechanisms familiar from databases: a declarative query language, schema descriptions, access methods, and persistent result storage. The origin of the name is explained in [Why Was This Name Chosen for the System?](appendices/system-origin/why-this-name.md).
+
+This documentation leads from the [mathematical foundations](mathematical-foundations/README.md) and the [construction of RQL](query-language-construction/README.md), through the [system architecture](data-processing-system-architecture/README.md), query compilation and execution, to application examples and reference appendices. First-time readers should follow the chapter order in the table of contents because later sections build on concepts introduced earlier. Readers looking for a specific solution can go directly to the relevant chapter, then use the examples and appendices as practical and reference material.
+
+## RetractorDB among neighboring fields
+
 This chapter is a map, not a catalog. Instead of listing everything ever written about streams and signals, I show five strands of peer-reviewed literature at whose intersection RetractorDB sits, and for each of them I answer three questions: what has this strand already solved, how does RetractorDB differ from it, and what does this strand **not** touch. Only by overlaying these five layers does the gap this project fills become visible.
 
 <div class="no-print">
