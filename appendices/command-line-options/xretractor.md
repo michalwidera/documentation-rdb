@@ -46,7 +46,7 @@ Available options:
 | Option | Meaning |
 | ----- | --------- |
 | `help` | Displays the help text. The list differs depending on the mode (with or without `-c`). |
-| `build-info` | Prints the optimizer configuration the binary was built with (the `RDB_OPT_*` flags and `RDB_BENCH_PROBE`) and exits without starting the engine. It is handled before the configuration file is loaded and validated, so it also works on a host with an invalid `storage.dir`. The output is stable and meant for automated processing — both `scripts/buildrdb.sh` and the `it_optimizer_ablation-build-info` test rely on it. See the appendix on production builds and research variants for details. |
+| `build-info` | Prints the optimizer configuration the binary was built with (the `RDB_OPT_*` flags and `RDB_BENCH_PROBE`) and exits without starting the engine. It is handled before the configuration file is loaded and validated, so it also works on a host with an invalid `storage.dir`. The output is stable and meant for automated processing — both `scripts/buildrdb.sh` and the `it_optimizer_ablation-build-info` test rely on it. See the appendix on production builds and diagnostic variants for details. |
 | `onlycompile` | Switches the tool into "compile only" mode. The query-execution loop is not started. |
 | `queryfile` | The name of the query file to compile and run. |
 | `quiet` | Skips displaying results on screen. Processing runs normally, but the result presenter isn't started. |

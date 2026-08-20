@@ -1,13 +1,13 @@
-# Production Builds and Research Variants
+# Production Builds and Diagnostic Variants
 
 The `scripts/buildrdb.sh` script separates production builds from compilations
-used for optimizer studies and performance measurements. The separation covers
+with disabled optimizations or enabled instrumentation. The separation covers
 the CMake configuration, output directories, Conan generators, and verification
 of the resulting binary.
 
 > **⚠️ Warning**
 >
-> Binaries produced by `release-ablation` and `probe` are research artifacts.
+> Binaries produced by `release-ablation` and `probe` are diagnostic variants.
 > They must not be installed or packaged as production releases.
 
 ## Build modes
@@ -16,9 +16,9 @@ of the resulting binary.
 | --- | --- | --- |
 | `scripts/buildrdb.sh release` | verified production release | `build/Release` |
 | `scripts/buildrdb.sh release-ablation` | selected optimizer and probe configuration | `build/Release-Ablation/<configuration>` |
-| `scripts/buildrdb.sh probe` | measurements with the probe enabled | `build/Release-Probe` |
+| `scripts/buildrdb.sh probe` | diagnostics with the probe enabled | `build/Release-Probe` |
 
-The research modes also use separate Conan generator directories:
+The diagnostic modes also use separate Conan generator directories:
 
 - `build/Conan-Release-Ablation/<configuration>`,
 - `build/Conan-Release-Probe`.
@@ -60,6 +60,7 @@ RDB_OPT_SHARE_EQUIVALENT_SELECTS=ON
 RDB_OPT_COMMUTATIVE_ADD=ON
 RDB_OPT_FACTOR_MATCHED_HASH_TIMEMOVES=ON
 RDB_BENCH_PROBE=OFF
+RDB_OPT_SIMPLIFY_EXPRESSIONS=ON
 ```
 
 After compilation, the script runs:
@@ -77,7 +78,7 @@ value causes `release` to fail.
 > uncommitted changes. It does not prove that the contents of a committed
 > revision are correct. Review, tests, and CI are responsible for that part.
 
-## Ablation variants
+## Variants with disabled optimizations
 
 The command:
 
@@ -93,16 +94,17 @@ RDB_OPT_SHARE_EQUIVALENT_SELECTS
 RDB_OPT_COMMUTATIVE_ADD
 RDB_OPT_FACTOR_MATCHED_HASH_TIMEMOVES
 RDB_BENCH_PROBE
+RDB_OPT_SIMPLIFY_EXPRESSIONS
 ```
 
 Each variant receives a directory that describes its complete configuration,
 for example:
 
 ```text
-build/Release-Ablation/dedup-OFF_share-ON_comm-ON_factor-ON_probe-OFF
+build/Release-Ablation/dedup-OFF_share-ON_comm-ON_factor-ON_probe-OFF_simplify-ON
 ```
 
-All five values are passed explicitly. This prevents values stored by an
+All six values are passed explicitly. This prevents values stored by an
 earlier configuration in `CMakeCache.txt` from being inherited.
 
 The configuration:
@@ -116,12 +118,11 @@ is invalid. Commutative-add canonicalization is part of equivalent `SELECT`
 computation sharing, so both the submenu and CMake reject this combination.
 
 After building a variant, the script compares `--build-info` with
-the values selected in the submenu. A mismatch is a configuration error, not
-an ablation-study result.
+the values selected in the submenu. A mismatch is a configuration error.
 
-## Measurement probe
+## Diagnostic probe
 
-`RDB_BENCH_PROBE` is measurement instrumentation rather than a plan
+`RDB_BENCH_PROBE` is optional instrumentation rather than a plan
 optimization. The command:
 
 ```bash
@@ -134,16 +135,14 @@ builds a variant with all optimizations enabled and:
 RDB_BENCH_PROBE=ON
 ```
 
-The binary is written to `build/Release-Probe`. The probe is intended for
-measurements on optimized `Release` code, but the resulting binary is not a
-production build.
+The binary is written to `build/Release-Probe`. It is built from optimized
+`Release` code, but the resulting binary is not a production build.
 
 In `release-ablation`, the probe can be enabled or disabled independently of a
-valid optimizer configuration. This makes it possible to compare the same
-variants both without and with instrumentation.
+valid optimizer configuration.
 
-Code analysis confirms that the probe does not change the selection, order, or
-result of optimizer passes. It is not zero-cost instrumentation, however:
+The probe does not participate in the selection or order of optimizer passes.
+It is not zero-cost instrumentation, however:
 `RDB_BENCH_PLAN` additionally traverses the plan and writes statistics, while
 `RDB_BENCH_CSV` performs clock measurements and file operations. The probe is
 therefore semantically non-invasive, but its overhead can affect measured
@@ -153,15 +152,17 @@ When the binary has `RDB_BENCH_PROBE=ON` and `RDB_BENCH_PLAN` is set during
 compilation, the compiler writes the following stable line to standard error:
 
 ```text
-REWRITE_APPLIED r1=<count> r2=<count>
+REWRITE_APPLIED r1=<count> r2=<count> r3=<count>
 ```
 
 The counters are reset before every compiler invocation. `r1` is the number of
 successful `(A > i) # (B > k) -> (A # B) > (i + k)` rewrites. `r2` is the
 number of unique `STREAM_ADD` nodes for which the canonical plan fingerprint
-actually swapped the children. `r2` is neither the number of removed nodes nor
-a speedup metric. With `RDB_BENCH_PROBE=OFF`, the counter code is absent from
-the binary and no `REWRITE_APPLIED` line is emitted.
+actually swapped the children. `r3` is the number of simplifications in field
+programs and `RULE` conditions: constant folds, combined constant tails, and
+removed neutral elements. The counters describe applied rewrites, not speedup.
+With `RDB_BENCH_PROBE=OFF`, the counter code is absent from the binary and no
+`REWRITE_APPLIED` line is emitted.
 
 ## Inspecting a variant manually
 
@@ -183,17 +184,19 @@ RDB_OPT_SHARE_EQUIVALENT_SELECTS=ON
 RDB_OPT_COMMUTATIVE_ADD=ON
 RDB_OPT_FACTOR_MATCHED_HASH_TIMEMOVES=ON
 RDB_BENCH_PROBE=OFF
+RDB_OPT_SIMPLIFY_EXPRESSIONS=ON
 ```
 
-The directory name helps organize experiments, but the information read from
-the binary is the final confirmation of the compiler definitions used.
+The directory name is only a convenience; the information read from the binary
+is the final confirmation of the compiler definitions used.
 
-## Tests in the ablation process
+## Variant tests
 
 Disabling an optimization can intentionally change plan structure and the
-availability of tests that require a particular shape. It must not change
-the observable result: interval, startup tail, public descriptor, records
-with null maps, or materialization policy.
+availability of tests that require a particular shape. It must not change the
+value part of the result: interval, logical origin, public descriptor, records
+with null maps, or materialization policy. The startup tail has the weaker
+guarantee described below.
 
 CTest assigns `requires_*` labels to tests that need a specific optimization
 and can disable them for an incompatible configuration. The
@@ -214,38 +217,11 @@ reported by the binary matches the CMake configuration. The other
 `it_optimizer_ablation-*` tests check plan structures and semantic comparisons
 between variants.
 
-### Named research profiles
-
-The K4 methodology defines five profiles that should be recorded with results:
-
-| Profile | Deduplication | `SELECT` sharing | `+` commutativity | R1 factorization |
-| --- | :---: | :---: | :---: | :---: |
-| `OFF` | OFF | OFF | OFF | OFF |
-| `STRUCT` | ON | ON | OFF | OFF |
-| `STRUCT+R1` | ON | ON | OFF | ON |
-| `STRUCT+R2` | ON | ON | ON | OFF |
-| `ALGSTRUCT` | ON | ON | ON | ON |
-
-`ALGSTRUCT` matches the default optimizer configuration. A binary's
-`--build-info` remains the source of truth for its exact settings. Each
-intermediate profile changes only one rule relative to `STRUCT`: `STRUCT+R1`
-enables R1 factorization, while `STRUCT+R2` enables commutative `STREAM_ADD`
-canonicalization.
-
-After introducing causal startup tails, one `tau` convention, and final
-topological sorting, there are no expected semantic differences between
-profiles. The probe confirms for `OFF`, `STRUCT`, and the default
-configuration that R1 values, null maps, absence of prefixes, and tails
-agree. Two former `WILL_FAIL` cases — a different R1 result without
-factorization and an extra zero-valued prefix record — were removed together
-with their causes and are no longer permissible ablation outcomes.
-
-Ablation variants exist purely for correctness control: they let you check that
-disabling a single rule does not change the observable result, and that the
-optimizer is not hiding a defect that would surface without it. Measurements of
-the cost and performance benefit of individual rules do not belong to this
-documentation — they are carried out in a separate experimental repository and
-reported in a separate publication.
+A variant with an optimization disabled may change plan structure, but it must
+not change values, `NULL` maps, the public descriptor, logical origin, or
+materialization policy. A correct plan rewrite may shorten the tail, but it
+must not cause emission before the data is available. Any other divergence is
+a regression, not an admissible property of a variant.
 
 ## Packaging
 

@@ -30,9 +30,9 @@ availability. Producer tails are converted to result slots beforehand.
 | shift `>N` | record \\(n-N\\) | \\(O_S+N\\) | \\(-N\\), see below | `ut_compiler`, `ut_h10aGate` |
 | sum `+` | current co-indexed tuples | mapping threshold | 0 | `ut_compiler` |
 | interleave `#` | record \\(j(i)\\) of the component selected in slot \\(i\\) | mapping threshold | formula below | `deinterleave_roundtrip`, `ut_h10aGate` |
-| left de-interleave `&` (`DIV`) | \\(n+\lceil(n+1)\Delta_a/\Delta_b\rceil\\) | mapping threshold | 1 | `deinterleave_roundtrip` |
-| right de-interleave `%` (`MOD`) | \\(n+\lfloor n\Delta_b/\Delta_a\rfloor\\) | mapping threshold | 0 | `deinterleave_roundtrip` |
-| difference `C-Delta` | \\(\lceil n\Delta/\Delta_C\rceil\\) | mapping threshold | phase-dependent, at most 1 when \\(\Delta\ge\Delta_C\\) | `it_k19_boundaries` |
+| left de-interleave `&` (`DIV`) | \\(n+\lceil(n+1)\Delta_a/\Delta_b\rceil\\) | mapping threshold | phase formula below | `deinterleave_roundtrip`, `ut_h10aGate` |
+| right de-interleave `%` (`MOD`) | \\(n+\lfloor n\Delta_b/\Delta_a\rfloor\\) | mapping threshold | phase formula below | `deinterleave_roundtrip`, `ut_h10aGate` |
+| difference `C-Delta` | \\(\lceil n\Delta/\Delta_C\rceil\\) | mapping threshold | phase formula below | `it_k19_boundaries`, `ut_h10aGate` |
 | AGSE `@(k,L)` | fields from \\(nk-(\lvert L\rvert-1)\\) to \\(nk\\) | formula below | formula below | `agse1`, `agse2`, `agse3`, `it_k19_boundaries`, `ut_h10aGate` |
 | `sumc`, `avgc`, `minc`, `maxc` | current full tuple | \\(O_S\\) | 0 | `ut_dataModel`, `it_k19_boundaries` |
 
@@ -48,9 +48,26 @@ unique.
 The difference operator takes a target interval \\(\Delta\\) that may not be
 smaller than the source interval \\(\Delta_C\\). For the ratio
 \\(r=\Delta/\Delta_C=p/q\\) the maximum phase lead of the index
-\\(\lceil nr\rceil\\) is \\((q-1)/q\\). A declared producer requires one slot
-even in integral phase, because it publishes the next record after consumers
-read within the same tick.
+\\(\lceil nr\rceil\\) is \\((q-1)/q\\).
+
+## Tails of phase operators
+
+Difference and both de-interleaves use one availability rule. Let
+\\(r=\Delta_{out}/\Delta_{src}\\), let \\(W_S\\) be the source tail, and let
+\\(e_{max}\\) be the largest phase lead reached by the index mapping. Then:
+
+\\[
+W_{out}=\max\left(0,
+\left\lceil\frac{e_{max}+W_S+1}{r}\right\rceil-1
+\right)
+\\]
+
+For difference, \\(e_{max}=(q-1)/q\\), where \\(q\\) is the denominator of the
+reduced ratio \\(r\\). For left de-interleave, with
+\\(\Delta_{out}/\Delta_{other}=a/b\\), the value is
+\\(e_{max}=(a+b-1)/b\\). For right de-interleave, \\(e_{max}=0\\). In particular,
+left de-interleave does not unconditionally add one slot: for an integral
+ratio, its own tail can be zero.
 
 ## The interleave tail
 
@@ -72,11 +89,9 @@ W_{\\#}
 The component selection and the phase repeat with period \\(p+q\\), so the
 maximum over one period is the maximum over all records; the logical origin
 shifts both indices equally and does not change the result. The formula is
-exact. The former closed form \\(\lceil(p+q-1)/p\rceil\\) protected the worst
-read phase of the second argument, but did not check whether that phase falls on
-the record that waits longest — so it overshot the tail by one slot. It remains
-in the implementation as the fallback for very long periods, where scanning
-would be too costly.
+exact. For periods exceeding `kHashPhaseScanLimit`, a safe closed form protects
+the worst read phase. It may delay emission, but it cannot allow a record to be
+emitted before its dependencies are available.
 
 ## The shift \\(\tau_N\\)
 
@@ -188,7 +203,7 @@ The split is not a formality. The \\(R_1\\) factoring
 (\\(\varphi(\tau_i(A),\tau_k(B))\to\tau_{i+k}(\varphi(A,B))\\)) preserves the
 whole value part but **shortens** the tail: the factored form reads content
 directly from the interleave, whereas the unfactored form reads components only
-after their own shift. Proof and measurement: [Formal foundations and
+after their own shift. Rationale: [Formal foundations and
 proofs](formal-foundations-and-proofs.md), theorem on commuting a shift with an
 interleave. Regressions: `it_r1_identity_nulls`,
 `it_optimizer_ablation-factor-name-collision-semantic`.
@@ -205,5 +220,5 @@ distinguishes this case from a genuine `NULL` located inside a full window.
 
 The operator formulas in this chapter are enforced on every commit: boundaries
 and observability by `it_k19_boundaries`, history depths by `it_k24_capacity`,
-and agreement of logical origin and tail for the `@` and `>` classes by the
-`ut_h10aGate` unit test.
+and agreement of logical origin and tail for all canonical operator classes and
+their compositions by the `ut_h10aGate` unit test.

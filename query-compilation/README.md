@@ -16,9 +16,9 @@ Compiler input — text in the RetractorQL language containing `DECLARE` and `SE
 
 The parser builds an internal representation, `qTree`: a topologically sorted `std::vector<query>`. Each element describes one stream — its field schema, its stack-instruction sequence, its dependencies on other streams, and its time interval (delta).
 
-### The 10 compilation stages
+### The 15 compilation stages
 
-`qTree` passes through a chain of transformations: from breaking down FROM expressions into two-argument operations, through determining deltas and byte offsets, all the way to semantic verification and buffer-size computation. Each stage assumes the previous one succeeded.
+`qTree` passes through an ordered chain of transformations: from breaking down FROM expressions into two-argument operations, through determining deltas, simplifying expressions, and locating fields, all the way to semantic verification, buffer-size computation, and the final topological sort. Each stage assumes the previous one succeeded.
 
 ### Execution plan → `dataModel`
 
@@ -31,7 +31,7 @@ The `-c` flag stops `xretractor` after this step and prints the plan to standard
 
 The chapter is structured following the order of the compiler's stages — from a description of the data structure and the chain of stages, through the individual transformations, to error handling.
 
-[**Compilation Passes**](compilation-passes.md) describes the entire chain of stages in the `compiler::compile()` function. Compilation is not a single step — it's a sequence of ten successive transformations of the internal `qTree` representation, from reducing FROM expressions to two-argument form, through determining field intervals and offsets, all the way to semantic verification and buffer allocation. Each stage assumes the previous one succeeded, and returns an error message when its conditions aren't met.
+[**Compilation Passes**](compilation-passes.md) describes the entire chain of stages in the `compiler::compile()` function. Compilation is not a single step — it is an ordered sequence of fifteen stages over the internal `qTree` representation, from reducing FROM expressions to two-argument form, through determining intervals, simplifying expressions, and locating fields, all the way to semantic verification, buffer allocation, and the final topological sort. Each stage assumes the previous one succeeded, and returns an error message when its conditions aren't met.
 
 [**Dependency Tree Construction**](dependency-tree-construction.md) describes the DAG structure produced during compilation — the foundation on which every stage rests. The roots are ephemeris declarations (external sources); inside the graph lie intermediate substrates; and the leaves are artifacts. The `-d` flag generates output in DOT format, which `graphviz` turns into a visual dependency graph. The order of queries in the `.rql` file matters — a reference to a stream not yet defined results in an error.
 

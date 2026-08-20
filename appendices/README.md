@@ -2,15 +2,15 @@
 
 The appendices contain documents not directly related to the system's construction, but which describe the motivation behind design decisions, tool documentation, and supporting material for people deploying or extending the system.
 
-**Production Builds and Research Variants**
+**Production Builds and Diagnostic Variants**
 
 A description of the production `release` safety contract and the isolated
 `release-ablation` and `probe` modes. The chapter covers source-tree
 cleanliness checks, explicit optimizer-switch values, separate CMake and Conan
-directories, verification of the resulting binary configuration, and rules
-for interpreting expected ablation-test failures.
+directories, verification of the resulting binary configuration, and the
+value-equivalence invariant across variants.
 
-Full description: [Production Builds and Research Variants](production-builds-and-research-variants.md)
+Full description: [Production Builds and Diagnostic Variants](production-builds-and-research-variants.md)
 
 **System Origin**
 

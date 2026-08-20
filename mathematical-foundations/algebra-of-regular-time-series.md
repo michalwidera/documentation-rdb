@@ -97,32 +97,31 @@ c_{\left\lceil \frac{n\Delta_{a}}{\Delta_{b}}\right\rceil } & \Delta_{b}<\Delta_
 We denote these operations with the symbols + and -.
 
 Causal execution augments the mathematical stream S = (s<sub>n</sub>, ∆)
-with a **startup tail** W<sub>S</sub> ∈ ℕ. This is the number of initial
-slots of interval ∆ for which the result is not yet defined. Tail slots are
-not records: the first emitted record remains s<sub>0</sub>; the engine
-inserts neither zeros nor all-null placeholders.
+with a **logical origin** O<sub>S</sub> ∈ ℕ and a **startup tail**
+W<sub>S</sub> ∈ ℕ. The logical origin is the index of the first record that
+exists at all; the tail is the number of subsequent slots for which an existing
+record is not yet ready. Neither kind of slot is a record: the engine inserts
+neither zeros nor all-null placeholders.
 
 \\[
-\widehat{S} := \left((s_n,\Delta),W_S\right)
+\widehat{S} := \left((s_n,\Delta),O_S,W_S\right)
 \\]
 
-We define the shift as a **delay** of the causal realization:
+We define the shift as a read of an older index: output record \(n\) carries
+the contents of producer record \(n-m\). In the causal realization:
 
 \\[
-\tau_{m}\left(\widehat{S}\right) :=
-\left((s_n,\Delta),W_S+m\right), \qquad m\in\mathbb{N}
+O_{\tau_m(S)}=O_S+m,
+\qquad
+W_{\tau_m(S)}=\max(0,W_S-m),
+\qquad m\in\mathbb{N}
 \\]
 
-A shift by m samples postpones the first and every subsequent emission by
-m·∆, but it neither discards s<sub>0</sub>, …, s<sub>m−1</sub> nor creates
-a prefix. For data arriving once per second, a shift by 3 therefore delays
-the entire result by 3 seconds.
-
-This definition matches the engine's `STREAM_TIMEMOVE(N)` operator. The
-compiler reports the shift in the **logical origin** as `origin=N` (increased by
-the origins of preceding operators), while the operator's own tail is
-`max(0, W_src − N)` and can be smaller than the producer's tail. The runtime
-emits no records in any silent slot, of which there are `origin + tail`. Details:
+A shift neither discards source elements nor creates a prefix. It moves delay
+into the logical origin, while reading an older record can absorb part of the
+producer's tail. The compiler reports both quantities as `origin=` and `tail=`.
+The runtime emits no records in any silent slot, of which there are
+`origin + tail`. Details:
 [Tails, logical origins and operator
 observability](operator-tails-and-observability.md).
 

@@ -114,6 +114,18 @@ Turns references to fields from source schemas into indices in the output schema
 
 Expands the `_` symbol in field indices. Repeats the formula for every matching pair of fields from the arguments' schemas — see [Underscore Symbol Processing](underscore-symbol-processing.md).
 
+#### simplifyFieldExpressions
+
+Simplifies `SELECT` field programs and `RULE` conditions after references have
+been resolved but before equivalent computations are shared. The pass folds
+constant expressions, combines constant tails in integer and rational
+arithmetic, and removes type-compatible neutral elements (`E+0`, `E-0`,
+`E*1`, `E/1`).
+
+The pass preserves `NULL` semantics and type promotion. It therefore does not
+simplify `E*0`, reassociate `FLOAT` or `DOUBLE` operations, or alter programs
+whose type or operation cannot be established safely.
+
 #### shareEquivalentSelectComputations
 
 Detects explicit `SELECT` queries with equivalent field programs and `FROM` trees containing `STREAM_ADD`. It orders only the two children of an individual `STREAM_ADD` node without changing the grouping of the complete tree. For each equivalence class it creates one `STREAM_SELECT_*` substrate and retains the public queries as lightweight projections with their own names, descriptors, rules, and storage. The pass runs before field-offset localization — see [Substrates](substrates.md).
@@ -144,10 +156,12 @@ Computes `query::startupLatency`, the number of initial slots of the stream's
 own interval in which an existing result is not yet ready. Sources have tail 0;
 `>N` gives `max(0, W_src − N)`, because it reads a record older than the current
 one; interleave includes both input tails and its own look-ahead on the second
-argument; sum takes the maximum of converted tails; left de-interleave `Theta`
-adds one slot; `SUBTRACT` and AGSE use phase bounds. Reductions add no own tail.
-The plan listing shows `tail=` and the runtime emits no record during the tail.
-The number of silent slots is `origin + tail`.
+argument; sum takes the maximum of both inputs' availability bounds. Difference
+and both de-interleaves use exact phase bounds — left de-interleave does not
+unconditionally add one slot. AGSE uses the bound from the newest field in its
+window, and reductions add no own tail. The plan listing shows `tail=` and the
+runtime emits no record during the tail. The number of silent slots is
+`origin + tail`.
 
 This pass runs after `computeLogicalOrigin` and before capacity computation: the
 tail depends on which slots are records, and retained history depends on the
@@ -155,10 +169,12 @@ consumer's first emission time.
 
 #### computeRequiredCapacities
 
-Computes required buffer capacities from schemas and time-window
-requirements. After its tail ends, a `>N` shift reads history slot `N`, so
-it requires `N+1` records (slot 0 is the current record). History capacity
-is an execution requirement, not a result prefix.
+Computes required buffer capacities from the distance between the producer's
+head and the index read by a consumer. For a `>N` shift, the backward distance
+is `W_out-W_src+N`, so the base capacity is `W_out-W_src+N+1`. If the source is
+a declaration, two look-ahead records are added: the record armed when storage
+is opened and the zero prefetch. The result is clamped to at least one record.
+History capacity is an execution requirement, not a result prefix.
 
 #### validateConstraints
 
