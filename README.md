@@ -66,7 +66,7 @@ This is the proper reference point for my algebra and my [expression rewrite rul
 
 In deployment terms, the relationship is complementary rather than competitive: RetractorDB acts as an edge-level pre-processing and buffering stage, whose exact, deterministic results can feed a windowed DSMS.
 
-**What this strand does not touch:** DSMS aim at approximate, scalable processing of unbounded streams, tolerant of out-of-order timestamps. They don't aim for exact, deterministic DSP operations under strict time discipline, and they don't reach for number theory for resampling semantics.
+**What this strand does not touch:** DSMS encompass both deterministic semantics and mechanisms for scaling, windows, out-of-order handling, and state management. The cited systems do not, however, define this particular lossless partition of regular sample positions using Beatty sequences or use number theory as the semantics of resampling.
 
 ## Time-series systems (TSMS) and in-database DSP (5)
 
@@ -78,18 +78,20 @@ All of them, however, treat DSP as approximation or after-the-fact analytics. No
 
 ## The blank spot: where the contribution lies
 
-Once the five layers are overlaid, the picture becomes clear. Each field touches one or two walls of the problem, but **none occupies their intersection**:
+The table below is a qualitative capability map, not evidence of priority or a claim that the review is complete. Within the broader stream-systems strand, it separates SDF/CSDF and synchronous languages because they are the closest systems models. “Partial” denotes a related capability, not semantic equivalence.
 
-| Field               | Beatty/Fraenkel | Exact DSP | Stream algebra / query language | Deterministic time discipline |
-| ----------------------- | :------------------: | :----------------: | :---------------------: | :------------------: |
-| Number theory            |        ✔        |       –      |                 –                 |            –            |
-| Scheduling (pinwheel) |        ✔        |       –      |                 –                 |        partial        |
-| Multirate DSP        |        –        |       ✔      |                 –                 |            –            |
-| DSMS (CQL, PIPES)       |        –        |       –      |                 ✔                 |            –            |
-| TSMS / in-database DSP      |        –        |   partial  |             partial             |            –            |
-| **RetractorDB**         |      **✔**      |     **✔**    |               **✔**               |          **✔**          |
+| Field | Beatty/Fraenkel | Lossless sample partition | Declarative dataflow | Artifacts / replay |
+| --- | :---: | :---: | :---: | :---: |
+| Number theory | ✔ | – | – | – |
+| Scheduling (pinwheel) | ✔ | – | – | partial |
+| SDF / CSDF | – | partial | ✔ | – |
+| Synchronous languages / clock calculi | – | – | ✔ | – |
+| Multirate DSP | – | partial | partial | – |
+| DSMS (CQL, PIPES) | – | – | ✔ | partial |
+| TSMS / in-database DSP | – | partial | partial | partial |
+| **RetractorDB** | **✔** | **✔** | **✔** | **✔** |
 
-RetractorDB's contribution lies not in any single component — it lies in their **synthesis**: in using covering systems (rational Beatty sequences and Fraenkel's theorem) as the semantic foundation for a declarative stream algebra that implements exact signal-processing operators inside a database system, under deterministic time discipline. A clarification matters here: the system guarantees deterministic execution **semantics** (identical inputs give identical results in identical order) and a predictable, sequential execution model — I deliberately do not claim hard real-time guarantees, since those require worst-case execution-time analysis on a real-time operating system, and remain future work. Number theory has Beatty, and even scheduling, but doesn't connect them to a database or to DSP. DSP has multirate processing and rational filter banks, but doesn't reach for Fraenkel and doesn't frame it as a query language. DSMS has stream algebras and optimization rules, but on the windowed (s, τ) model, not the differential (sₙ, Δ) one. This intersection is empty.
+The strongest neighbors are SDF/CSDF and synchronous languages and clock calculi: they already provide multirate declarative dataflow, deterministic semantics, static schedules, or buffer inference. RetractorDB's integration scope is narrower: the system combines a Beatty-defined, exactly invertible partition of sample positions with a query compiler, a sequential slot runtime, and persistent artifacts that can be inspected and replayed. This describes the system's architecture and semantics; it does not claim that the individual ingredients are new. RetractorDB does not claim hard real-time guarantees.
 
 > **⚠️ Warning**
 >
