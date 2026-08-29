@@ -17,7 +17,7 @@
     * [Interleaving Operation Sequencing](query-language-construction/select-command/interleaving-sequencing.md)
     * [VOLATILE Clause](query-language-construction/select-command/volatile-clause.md)
     * [STORAGE Types](query-language-construction/select-command/storage-types.md)
-    * [Aggregate Operators and to_string](query-language-construction/select-command/aggregate-operators.md)
+    * [Aggregate Operators and Expression Functions](query-language-construction/select-command/aggregate-operators.md)
   * [RULE Command](query-language-construction/rule-command.md)
     * [Mechanism Construction](query-language-construction/rule-command/alerting.md)
     * [Logical Condition](query-language-construction/rule-command-logical-condition.md)

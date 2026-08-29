@@ -77,13 +77,17 @@ The subchapters on substrates and the `_` symbol use extended variants of the sa
 
 The chain of stages is defined by the `compiler::compile()` function:
 
+#### expandStreamGenerators
+
+Expands every `SELECT ... STREAM name[N] ...` template into `N` ordinary queries named `name$0`...`name$(N-1)` and substitutes the instance ordinal for `$` in fields, values, and `FROM` references. It is the first pass: everything after it receives a plan indistinguishable from hand-written queries. See [SELECT Command](../query-language-construction/select-command/README.md#stream-generators) for syntax and constraints.
+
 #### extractIntermediateStreams
 
 Reduces every FROM expression to at most a two-argument form. Complex expressions like `(core0#core1)+core2`, and chained notations without parentheses (`core0+core1+core2`, `core0#core1#core2`), require intermediate streams. Every query is reduced to a fixed point, so the stage also handles adjacent unary subexpressions such as `(core0>2)#(core1>1)`. This stage automatically creates substrates — see [Substrates](substrates.md).
 
 #### expandSchemaWildcards
 
-Expands the `*` symbol in a SELECT clause. Replaces it with the field list derived from the source stream's schema — see [Asterisk Expansion](asterisk-expansion.md).
+Expands both `*` in the SELECT clause and the `[_]` index. It replaces an asterisk with fields derived from the source schema and replicates an `[_]` formula over all compatible elements. Both operations happen while schemas are built so later stream operators immediately see the complete record layout — see [Asterisk Expansion](asterisk-expansion.md) and [Underscore Symbol Processing](underscore-symbol-processing.md).
 
 #### resolveStreamIntervals (← loops are detected here)
 
@@ -106,13 +110,13 @@ proofs](../mathematical-foundations/formal-foundations-and-proofs.md).
 
 An optimization: if two queries use the same intermediate operation (e.g. `core0#core1`), this stage points the second query at the substrate created by the first. It avoids duplicate computation — see the example in [Substrates](substrates.md).
 
+#### validateSubstratNameUniqueness
+
+Checks that two substrates with the same name denote the same program. Names longer than 200 bytes are shortened deterministically by `composeStreamName()`, so this check turns an extremely unlikely 64-bit digest collision into a loud error instead of an ambiguous plan. It runs independently of optimizer switches and after deduplication, because identical duplicate names are a normal transient state before that point.
+
 #### resolveFieldReferences
 
 Turns references to fields from source schemas into indices in the output schema. It handles aliases after sum — turning `core0[0]` into `str1[0]`, for example — and records the source to which a bare field name was resolved. Named references written by the user are tracked separately so a later pass does not confuse them with tokens synthesized by the compiler. See [Aliasing](aliasing.md).
-
-#### expandIndexWildcards
-
-Expands the `_` symbol in field indices. Repeats the formula for every matching pair of fields from the arguments' schemas — see [Underscore Symbol Processing](underscore-symbol-processing.md).
 
 #### simplifyFieldExpressions
 
@@ -120,11 +124,15 @@ Simplifies `SELECT` field programs and `RULE` conditions after references have
 been resolved but before equivalent computations are shared. The pass folds
 constant expressions, combines constant tails in integer and rational
 arithmetic, and removes type-compatible neutral elements (`E+0`, `E-0`,
-`E*1`, `E/1`).
+`E*1`, `E/1`). It also writes a repeated exact factor as a power, for example
+`E*E*E` as `E^3`.
 
 The pass preserves `NULL` semantics and type promotion. It therefore does not
 simplify `E*0`, reassociate `FLOAT` or `DOUBLE` operations, or alter programs
-whose type or operation cannot be established safely.
+whose type or operation cannot be established safely. Repeated-factor folding
+is limited to types with exact multiplication (`BYTE`, `INTEGER`, `UINT`, and
+`RATIONAL`); it does not replace one `FLOAT` or `DOUBLE` multiplication with a
+call to `pow`.
 
 #### shareEquivalentSelectComputations
 

@@ -39,7 +39,7 @@ SELECT str[0], str[0] / 2 STREAM str1 FROM core0
 
 _Fig. 62. RQL syntax highlighting in the Visual Studio Code editor_
 
-As shown in Fig. 62, keywords (`STORAGE`, `DECLARE`, `SELECT`, `FROM`) are highlighted as commands, data types (`INTEGER`) as types, and comments starting with `#` or `//` as comments.
+As shown in Fig. 62, keywords (`STORAGE`, `DECLARE`, `SELECT`, `FROM`) are highlighted as commands, and data types (`INTEGER`) as types. In current RQL, `#` starts a comment only as the first non-whitespace character of a whole line; inside a `FROM` clause it is always the interleaving operator. A line-ending comment starts with `//`, and a block comment has the form `/* ... */`. The highlighting definition should preserve this distinction.
 
 ***
 

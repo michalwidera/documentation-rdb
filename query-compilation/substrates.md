@@ -226,7 +226,11 @@ When several queries use the same stream operation — e.g. `core0 + core1` — 
 
 A substrate is generated for every query whose program contains more than one stream operator. This applies to the operators: `STREAM_ADD`, `STREAM_SUBTRACT`, `STREAM_HASH`, `STREAM_DEHASH_DIV`, `STREAM_DEHASH_MOD`, `STREAM_TIMEMOVE`, `STREAM_AGSE`. The condition is checked by the `query::isReductionRequired()` function.
 
-The newly created substrate is given a name built from the operation symbol and the operand names, e.g. `STREAM_ADD_core1_core0` (the `composeStreamName` function in `compiler.cpp`). In the parent query's program, the operator token is replaced with a `PUSH_STREAM` token pointing at this substrate.
+The newly created substrate is given a name built from the operation symbol, its parameter, and the operand names, for example `STREAM_ADD_core1_core0`, `STREAM_TIMEMOVE_2_core0`, or `STREAM_AGSE_1_10_core0` (the `composeStreamName` function in `compiler.cpp`). A parameter is part of node identity: two different windows over one source must not receive the same name. Characters unavailable in identifiers are encoded; a negative number uses `N`, for example, and a fraction slash becomes `_`.
+
+A readable name grows with the complexity of the `FROM` clause and is also the substrate's file name. Above 200 bytes the compiler keeps the operation name and replaces the remainder with a stable 16-digit FNV-1a digest, for example `STREAM_ADD_x92741c15f69ba93f`. This lets a wide expression stay below the system `NAME_MAX`; the same plan structure always receives the same name, while a different operand order receives a different digest. `validateSubstratNameUniqueness()` stops compilation if one digest were ever to denote two different programs.
+
+In the parent query's program, the operator token is replaced with a `PUSH_STREAM` token pointing at this substrate.
 
 ### Matched interleave-shift factorization
 
@@ -275,9 +279,9 @@ proofs](../mathematical-foundations/formal-foundations-and-proofs.md).
 Before optimization the plan contains two substrates:
 
 ```
-STREAM_TIMEMOVE_A = A > i
-STREAM_TIMEMOVE_B = B > k
-result = STREAM_TIMEMOVE_A # STREAM_TIMEMOVE_B
+STREAM_TIMEMOVE_i_A = A > i
+STREAM_TIMEMOVE_k_B = B > k
+result = STREAM_TIMEMOVE_i_A # STREAM_TIMEMOVE_k_B
 ```
 
 After optimization only one remains:
@@ -329,26 +333,29 @@ If all conditions hold, substrate `it` is considered a duplicate of substrate `i
 
 ### Position in the compilation pipeline
 
-Deduplication is the fifth step of the pipeline (the `compiler::compile()` function):
+Deduplication is the sixth step of the pipeline (the `compiler::compile()` function):
 
 ```
-1. extractIntermediateStreams   – substrate extraction
-2. expandSchemaWildcards        – expansion of wildcard symbols in schemas
-3. resolveStreamIntervals       – time-interval computation
-4. factorMatchedHashTimeMoves   – matched interleave-shift factorization
-5. deduplicateSubstrats         – duplicate elimination  ← this step
-6. resolveFieldReferences       – field-reference resolution
-7. expandIndexWildcards         – expansion of wildcard indices
-8. shareEquivalentSelectComputations – sharing equivalent SELECT computations
-9. localizeFieldOffsets         – field-offset computation
-10. computeStartupLatency       – startup-tail computation
-11. computeRequiredCapacities   – required-history computation
-12. validateConstraints         – operator-constraint validation
-13. applyCapacitiesToStreams    – capacity application
-14. topologicalSort             – final producer–consumer order
+1. expandStreamGenerators       – stream-family expansion
+2. extractIntermediateStreams   – substrate extraction
+3. expandSchemaWildcards        – expansion of `*` and `[_]`
+4. resolveStreamIntervals       – time-interval computation
+5. factorMatchedHashTimeMoves   – matched interleave-shift factorization
+6. deduplicateSubstrats         – duplicate elimination  ← this step
+7. validateSubstratNameUniqueness – substrate-name validation
+8. resolveFieldReferences       – field-reference resolution
+9. simplifyFieldExpressions     – field and rule simplification
+10. shareEquivalentSelectComputations – sharing equivalent SELECT computations
+11. localizeFieldOffsets        – field-offset computation
+12. computeLogicalOrigin        – logical-origin computation
+13. computeStartupLatency       – startup-tail computation
+14. computeRequiredCapacities   – required-history computation
+15. validateConstraints         – operator-constraint validation
+16. applyCapacitiesToStreams    – capacity application
+17. topologicalSort             – final producer–consumer order
 ```
 
-Matched interleave-shift factorization and deduplication must happen after step 3 because both operations compare intervals. Deduplication follows the algebraic rewrite so that it can merge interleave substrates exposed by that rewrite.
+Matched interleave-shift factorization and deduplication must happen after interval resolution because both operations compare intervals. Deduplication follows the algebraic rewrite so that it can merge interleave substrates exposed by that rewrite.
 
 SELECT computation sharing runs only after field references and `[_]` have been expanded because it compares completed field programs. It must still precede field-offset localization so equivalent sources do not look different merely because of their order in the local input buffer.
 

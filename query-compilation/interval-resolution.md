@@ -72,11 +72,11 @@ Source history requires `n+1` records for the read range itself, plus two more
 for a declared source's head lead (the record armed when the storage is opened
 and the zero prefetch), which logical-index addressing does not shorten.
 
-### Window aggregates (`.max`, `.min`, `.avg`, `.sum`)
+### Stream reducers (`MAX`, `MIN`, `AVG`, `SUMC`)
 
 \\[\Delta_c = \Delta_a\\]
 
-Aggregates reduce values within a window, but the output stream's interval stays the same as the source's.
+Reducers operate on a complete stream expression, e.g. `AVG(a@(1,10))`. They reduce values within a record or a window, but the output stream's interval stays the same as the source's. The postfix forms `.max`, `.min`, `.avg`, and `.sumc` remain backward compatible but are deprecated.
 
 ### The AGSE algorithm (`@(step, window)`, STREAM\_AGSE)
 

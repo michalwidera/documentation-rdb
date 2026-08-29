@@ -112,7 +112,7 @@ FROM signalRow+filter
 
 SELECT accRow[0] \
 STREAM output \
-FROM accRow.sumc
+FROM SUMC(accRow)
 
 SELECT (output[0]/25)/1000,source[0] \
 STREAM outputAll \

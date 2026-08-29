@@ -159,8 +159,11 @@ The counters are reset before every compiler invocation. `r1` is the number of
 successful `(A > i) # (B > k) -> (A # B) > (i + k)` rewrites. `r2` is the
 number of unique `STREAM_ADD` nodes for which the canonical plan fingerprint
 actually swapped the children. `r3` is the number of simplifications in field
-programs and `RULE` conditions: constant folds, combined constant tails, and
-removed neutral elements. The counters describe applied rewrites, not speedup.
+programs and `RULE` conditions: constant folds, combined constant tails,
+removed neutral elements, and replacements of a repeated exact factor by a power
+(`E*E*E -> E^3`). That last rule covers only the `BYTE`, `INTEGER`, `UINT`, and
+`RATIONAL` types; it does not rewrite `FLOAT` or `DOUBLE` multiplication. The
+counters describe applied rewrites, not speedup.
 With `RDB_BENCH_PROBE=OFF`, the counter code is absent from the binary and no
 `REWRITE_APPLIED` line is emitted.
 

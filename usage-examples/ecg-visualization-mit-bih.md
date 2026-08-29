@@ -217,23 +217,23 @@ SELECT ecg.V1   STREAM v1   FROM ecg VOLATILE
 # 1. Band-pass filter (5-15 Hz) — 25-tap FIR convolution
 SELECT *                        STREAM mlii_win FROM mlii@(1,25)  VOLATILE
 SELECT mlii_win[_]*bpf[_]       STREAM bp_acc   FROM mlii_win+bpf VOLATILE
-SELECT bp_acc[0]/1000           STREAM bp_out   FROM bp_acc.sumc  VOLATILE
+SELECT bp_acc[0]/1000           STREAM bp_out   FROM SUMC(bp_acc) VOLATILE
 
 # 2. Differentiation — 5-tap FIR convolution
 SELECT *                        STREAM bp_win   FROM bp_out@(1,5) VOLATILE
 SELECT bp_win[_]*df[_]          STREAM d_acc    FROM bp_win+df    VOLATILE
-SELECT d_acc[0]                 STREAM d_out    FROM d_acc.sumc   VOLATILE
+SELECT d_acc[0]                 STREAM d_out    FROM SUMC(d_acc)  VOLATILE
 
 # 3. Squaring (/1000 prevents int32 overflow)
-SELECT d_out[0]*d_out[0]/1000   STREAM sq_out   FROM d_out        VOLATILE
+SELECT d_out[0]^2/1000          STREAM sq_out   FROM d_out        VOLATILE
 
 # 4. Moving-window integration over 30 samples (~83 ms)
 SELECT *                        STREAM mwi_win  FROM sq_out@(1,30) VOLATILE
-SELECT mwi_win[0]               STREAM mwi      FROM mwi_win.avg   VOLATILE
+SELECT *                        STREAM mwi      FROM AVG(mwi_win)  VOLATILE
 
 # 5. Adaptive threshold — 2x moving average over 180 samples (0.5 s)
 SELECT *                        STREAM mwi_long FROM mwi@(1,180)  VOLATILE
-SELECT mwi_long[0]              STREAM mwi_thr  FROM mwi_long.avg VOLATILE
+SELECT *                        STREAM mwi_thr  FROM AVG(mwi_long) VOLATILE
 
 # Output: MLII centered, V1 centered, detection signal ×5
 SELECT mlii[0]-900, v1[0]-900, (mwi[0]-mwi_thr[0]*2)*5 \
@@ -317,4 +317,4 @@ The right branch of the diagram — **Arrhythmia identification** — represents
 | VT detection      | Sequence of ≥ 3 PVCs with HR > 100 bpm       | RULE on the HR+PVC stream           |
 | APC detection     | An early, narrow QRS preceding a pause | MLII vs V1 morphology              |
 
-RetractorDB provides `RULE` operators and windowed aggregates (`.avg`, `.sumc`), which make it possible to implement the methods above in the same RQL query language, without leaving the system's environment. QRS detection is the first and necessary step in this hierarchy.
+RetractorDB provides `RULE` operators and windowed reducers (`AVG`, `SUMC`), which make it possible to implement the methods above in the same RQL query language, without leaving the system's environment. QRS detection is the first and necessary step in this hierarchy.

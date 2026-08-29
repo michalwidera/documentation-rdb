@@ -16,7 +16,7 @@ STREAM core1, 0.2 \
 FILE 'sensor_b.txt'
 
 SELECT merged[0]*10, merged[2]+10 STREAM merged FROM core0 + core1
-SELECT agg[0] STREAM agg FROM merged.max
+SELECT * STREAM agg FROM MAX(merged)
 SELECT * STREAM broken FROM merged + broken
 ```
 
