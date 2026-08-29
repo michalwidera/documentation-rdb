@@ -99,16 +99,12 @@ STREAM source, 0.02 \
 FILE '/dev/urandom'
 ```
 
-In the next part we'll find the commands that build the signal-processing pipeline.
+The next part contains the commands that build the signal-processing pipeline.
 
-```
-SELECT * \
-STREAM signalRow \
-FROM source@(1,25)
-
-SELECT signalRow[_] * filter[_] \
+```rql
+SELECT source[_] * filter[_] \
 STREAM accRow \
-FROM signalRow+filter
+FROM source@(1,25)+filter
 
 SELECT accRow[0] \
 STREAM output \
@@ -119,7 +115,9 @@ STREAM outputAll \
 FROM output+source
 ```
 
-Here we see 4 queries. Reviewing the chapter on [underscore symbol expansion](../query-compilation/underscore-symbol-processing.md), it shouldn't surprise us that trying to preview the compilation result of this file will scroll through several screens. We can get a quick-to-analyze preview of the process taking place by issuing the command:
+The first of these three queries places the window directly in the `FROM` clause. The `source[_]` index takes the width of the 25 slots contributed by `source@(1,25)`, so the compiler creates 25 products with the corresponding `filter[_]` coefficients. A separate named window stream is unnecessary; the compiler extracts it as a plan substrate. `SUMC(accRow)` then sums the products, and the final query joins the filtered result with the current source sample.
+
+After `[_]` is expanded, the plan contains many fields, so the full compilation result spans several screens. A compact view of the process can be generated with:
 
 ```
 $ xretractor -c query.rql -p -d > out.dot && dot -Tsvg out.dot -o out.svg

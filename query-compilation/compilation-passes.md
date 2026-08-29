@@ -87,7 +87,7 @@ Reduces every FROM expression to at most a two-argument form. Complex expression
 
 #### expandSchemaWildcards
 
-Expands both `*` in the SELECT clause and the `[_]` index. It replaces an asterisk with fields derived from the source schema and replicates an `[_]` formula over all compatible elements. Both operations happen while schemas are built so later stream operators immediately see the complete record layout — see [Asterisk Expansion](asterisk-expansion.md) and [Underscore Symbol Processing](underscore-symbol-processing.md).
+Expands both `*` in the SELECT clause and the `[_]` index. It replaces an asterisk with fields derived from the source schema. A formula containing `x[_]` is replicated according to the number of slots that `x` contributes to the record produced by the complete `FROM` clause, rather than the width of stream `x` itself. A one-field `x` under the window `x@(1,5)` therefore yields five elements. If the named contribution does not form a contiguous block of fields in `FROM`, compilation fails instead of assuming an arbitrary width. Both operations happen while schemas are built so later stream operators immediately see the complete record layout — see [Asterisk Expansion](asterisk-expansion.md) and [Underscore Symbol Processing](underscore-symbol-processing.md).
 
 #### resolveStreamIntervals (← loops are detected here)
 

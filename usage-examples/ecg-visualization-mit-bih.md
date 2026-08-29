@@ -206,6 +206,9 @@ python3 gen_d_coef.py
 The file `rec205-detect.rql` implements the complete five-stage pipeline for both ECG channels (MLII and V1):
 
 ```rql
+# Keep windows extracted automatically from FROM in memory
+SUBSTRAT 'memory'
+
 DECLARE MLII INTEGER, V1 INTEGER STREAM ecg, 1/360 FILE 'rec205'
 DECLARE bp_coef INTEGER[25] STREAM bpf, 1 FILE 'bp_coef.txt'
 DECLARE d_coef INTEGER[5]   STREAM df,  1 FILE 'd_coef.txt'
@@ -215,25 +218,21 @@ SELECT ecg.MLII STREAM mlii FROM ecg VOLATILE
 SELECT ecg.V1   STREAM v1   FROM ecg VOLATILE
 
 # 1. Band-pass filter (5-15 Hz) — 25-tap FIR convolution
-SELECT *                        STREAM mlii_win FROM mlii@(1,25)  VOLATILE
-SELECT mlii_win[_]*bpf[_]       STREAM bp_acc   FROM mlii_win+bpf VOLATILE
-SELECT bp_acc[0]/1000           STREAM bp_out   FROM SUMC(bp_acc) VOLATILE
+SELECT mlii[_]*bpf[_] STREAM bp_acc FROM mlii@(1,25)+bpf VOLATILE
+SELECT bp_acc[0]/1000 STREAM bp_out FROM SUMC(bp_acc) VOLATILE
 
 # 2. Differentiation — 5-tap FIR convolution
-SELECT *                        STREAM bp_win   FROM bp_out@(1,5) VOLATILE
-SELECT bp_win[_]*df[_]          STREAM d_acc    FROM bp_win+df    VOLATILE
-SELECT d_acc[0]                 STREAM d_out    FROM SUMC(d_acc)  VOLATILE
+SELECT bp_out[_]*df[_] STREAM d_acc FROM bp_out@(1,5)+df VOLATILE
+SELECT d_acc[0] STREAM d_out FROM SUMC(d_acc) VOLATILE
 
 # 3. Squaring (/1000 prevents int32 overflow)
-SELECT d_out[0]^2/1000          STREAM sq_out   FROM d_out        VOLATILE
+SELECT d_out[0]^2/1000 STREAM sq_out FROM d_out VOLATILE
 
 # 4. Moving-window integration over 30 samples (~83 ms)
-SELECT *                        STREAM mwi_win  FROM sq_out@(1,30) VOLATILE
-SELECT *                        STREAM mwi      FROM AVG(mwi_win)  VOLATILE
+SELECT sq_out[0] STREAM mwi FROM AVG(sq_out@(1,30)) VOLATILE
 
 # 5. Adaptive threshold — 2x moving average over 180 samples (0.5 s)
-SELECT *                        STREAM mwi_long FROM mwi@(1,180)  VOLATILE
-SELECT *                        STREAM mwi_thr  FROM AVG(mwi_long) VOLATILE
+SELECT mwi[0] STREAM mwi_thr FROM AVG(mwi@(1,180)) VOLATILE
 
 # Output: MLII centered, V1 centered, detection signal ×5
 SELECT mlii[0]-900, v1[0]-900, (mwi[0]-mwi_thr[0]*2)*5 \
@@ -242,9 +241,11 @@ STREAM detect_out FROM mlii+v1+mwi+mwi_thr VOLATILE
 
 #### Rationale for the parameters
 
-The `@(1,25)` operator creates a sliding window of 25 samples, while `[_]` and `sumc` implement discrete convolution — see the chapter [Underscore Symbol Processing](../query-compilation/underscore-symbol-processing.md).
+The `@(1,25)` operator creates a 25-sample sliding window directly in `FROM`. The `mlii[_]` index expands according to the 25 slots contributed by this window to the input record, and `SUMC` adds the products with `bpf[_]`. The discrete convolution therefore does not require a separate `mlii_win` query. The same notation creates the five-element differentiating convolution — see [Underscore Symbol Processing](../query-compilation/underscore-symbol-processing.md).
 
-The `/1000` division in step 3 compensates for the integer scale of the coefficients — without it, the product `d_out × d_out` would exceed the `int32` range (2,147,483,647) for typical ECG amplitudes.
+The compiler extracts windows and reducers from a compound `FROM` clause into compiler-generated substrates. `VOLATILE` applies to the stream named by a given `SELECT`, not to these automatic nodes. The `SUBSTRAT 'memory'` directive keeps the complete intermediate pipeline in memory; without it, the generated windows would use the default on-disk storage.
+
+The `bp_acc[0]/1000` division in step 1 compensates for the integer scale of the band-pass filter coefficients. The second `/1000`, after exponentiation in step 3, limits value growth; without it, `d_out[0]^2` could exceed the `int32` range (2,147,483,647) for typical ECG amplitudes.
 
 The output expression `(mwi[0]-mwi_thr[0]*2)*5` implements the adaptive threshold: the value is positive only when the MWI envelope exceeds twice the current moving average — indicating a detected QRS. The `×5` multiplier scales the detection signal to a range visually comparable to the raw ECG on the chart.
 

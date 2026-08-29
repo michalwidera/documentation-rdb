@@ -50,12 +50,12 @@ The `ma5` stream contains, at every moment, the average of the five most recent 
 
 An excerpt from the signal-filter implementation example:
 
-```
-SELECT signalRow[_] * filter[_] STREAM accRow FROM signalRow+filter
+```rql
+SELECT source[_] * filter[_] STREAM accRow FROM source@(1,25)+filter
 SELECT accRow[0] STREAM output FROM SUMC(accRow)
 ```
 
-`SUMC(accRow)` sums all fields of the `accRow` record (products of signal samples and filter coefficients), producing the output of an FIR filter.
+The window appears directly in `FROM`, so it does not require a separate query. `source[_]` expands according to the 25 slots contributed to the input record by `source@(1,25)`. `SUMC(accRow)` sums all fields of the `accRow` record — the products of signal samples and filter coefficients — producing the output of an FIR filter.
 
 ### Example: MIN and MAX
 
