@@ -35,6 +35,19 @@ Aggregates do not change the stream's rate — the output interval is the same a
 
 \\[\Delta_{result} = \Delta_{stream}\\]
 
+### Result type
+
+All four reducers produce a field of type `RATIONAL`, regardless of the type of the input
+fields. This holds for `MIN` and `MAX`, which return a value already present in the record,
+and also when the result happens to be a whole number — the mean of three sevens is a
+`RATIONAL` field holding `7/1`, not an `INTEGER` field.
+
+The choice of type is not cosmetic: the reduction is computed over rational numbers, so `AVG`
+does not lose the remainder and the result stays exact. The price is that an artifact holding
+an aggregate requires the reader to know the numerator-denominator layout
+(→ [The RATIONAL field layout](../../data-processing-system-architecture/data-storage-format/files.md#the-rational-field-layout))
+or to pass the value through `to_string`, `to_double` or `to_integer`.
+
 ### Example: moving average
 
 ```
@@ -112,3 +125,70 @@ Output field size: 8 (from `to_string`) + 3 (literal `_ok`) = 11 bytes.
 `to_string` is useful when exporting to systems that accept text data (Graphite, InfluxDB via `xqry`), or when creating event labels combined with `DO DUMP` output.
 
 > **_NOTE:_** The functionality described here is covered by the tests: `issue121_isnull`, `issue128_numeric_to_string`, `issue128_string_to_numeric`, described in the appendix [Integration Tests](../../appendices/integration-tests.md).
+
+---
+
+## The to_integer function
+
+The `to_integer` function converts a numeric expression into a field of type `INTEGER`. It is
+the primary way of reading an artifact that holds an aggregate: it turns a `RATIONAL` field
+into a whole number the reader can consume without knowing the numerator-denominator layout.
+
+### Syntax
+
+```
+to_integer(expression)
+```
+
+### Rounding
+
+> **⚠️ Warning**
+>
+> `to_integer` **truncates toward zero**; it does not floor. For negative values the result
+> differs from the floor by one.
+
+The rule is the same for a rational and for a floating-point argument — in both cases the
+fractional part is dropped and the sign is kept:
+
+| Input value | `to_integer` | floor (for comparison) |
+| ----------- | ------------ | ---------------------- |
+| `8/3`       | `2`          | `2`                    |
+| `-8/3`      | `-2`         | `-3`                   |
+| `-4/3`      | `-1`         | `-2`                   |
+| `-2.6666…`  | `-2`         | `-3`                   |
+
+A `NULL` passes through unchanged — `to_integer(NULL)` yields `NULL`, not zero.
+
+### A pitfall when porting to Python
+
+Python's `//` operator **floors**, so a naive transcription of the query diverges from the
+engine on every negative value:
+
+```python
+>>> -8 // 3        # Python: floor
+-3
+>>> int(-8 / 3)    # what to_integer does
+-2
+```
+
+A model reproducing the engine's behavior has to compute the truncated mean explicitly:
+
+```python
+def truncated_mean(values):
+    """Truncate toward zero, matching the cast applied to the rational window mean."""
+    total = sum(values)
+    quotient = abs(total) // len(values)
+    return quotient if total >= 0 else -quotient
+```
+
+The same problem arises in any language whose integer division floors.
+
+### Use cases
+
+`to_integer` fits wherever the consumer of the artifact expects a whole number and the
+fractional part is not needed. Where the value must stay exact, the right choice is
+`to_string`, which writes the fraction as the text `numerator/denominator`, or reading the
+pair directly
+(→ [The RATIONAL field layout](../../data-processing-system-architecture/data-storage-format/files.md#the-rational-field-layout)).
+
+> **_NOTE:_** The functionality described here is covered by the test `issue128_string_to_numeric`, described in the appendix [Integration Tests](../../appendices/integration-tests.md), and by the unit tests `ut_payload` and `ut_convertTypes`, which pin the `RATIONAL` field layout and the rounding rule.

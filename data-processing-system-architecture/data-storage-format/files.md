@@ -24,7 +24,7 @@ INTEGER  name [N]          # 32-bit signed integers
 UINT     name [N]          # 32-bit unsigned
 FLOAT    name [N]          # 32-bit floating point (IEEE 754)
 DOUBLE   name [N]          # 64-bit floating point
-RATIONAL name [N]          # pair of int64: numerator and denominator
+RATIONAL name [N]          # pair of int32: numerator and denominator
 STRING   name [size]       # fixed-length string
 REF      "path/file"       # reference to an external descriptor file
 TYPE     identifier        # storage type (DEFAULT, MEMORY, POSIXSHD, …)
@@ -86,12 +86,83 @@ RETMEMORY capacity         # cyclic in-memory retention
 | `UINT`     | 4 B                          |
 | `FLOAT`    | 4 B                          |
 | `DOUBLE`   | 8 B                          |
-| `RATIONAL` | 16 B (two int64)             |
+| `RATIONAL` | 8 B (two int32)              |
 | `STRING`   | N B (declared size)          |
 
 For array fields `name[N]`, the total size = type_size × N. The `TYPE`, `REF`, `RETENTION`, and `RETMEMORY` fields take no space in the record — they are descriptor metadata.
 
 Record size `R` = the sum of the sizes of all data fields.
+
+### The RATIONAL field layout
+
+A `RATIONAL` field stores a rational number as a pair of signed integers, written into the
+record directly, with no header and no type tag:
+
+```
+offset +0   int32   numerator
+offset +4   int32   denominator
+```
+
+The byte order is the machine's native one — little-endian on x86-64 and ARM64, the same as
+for `INTEGER` and `UINT` fields. The field occupies 8 bytes; in an array field
+`RATIONAL name[N]` the pairs follow one another, `8 × N` bytes in total.
+
+The value is always stored in **lowest terms**, and the denominator is always **positive** —
+the sign is carried by the numerator alone. This follows from `boost::rational` arithmetic,
+which normalizes the result on every assignment; it is not a writing convention. In particular:
+
+* zero is stored as `0/1`, never as `0/0` or `0/5`;
+* a whole number is stored as `n/1` — a `RATIONAL` field with denominator 1 is exactly an
+  integer, with no rounding involved (the slot-divisibility test in the
+  [query tree traversal algorithm](../../query-execution/query-tree-traversal-algorithm.md)
+  relies on the same invariant);
+* the denominator is never zero, so a reader need not handle that case.
+
+`RATIONAL` fields are produced by the `MIN`, `MAX`, `AVG` and `SUMC` reducers, both in the
+function form and in the deprecated postfix notation `.min`, `.max`, `.avg`, `.sumc`
+(→ [Aggregate Operators](../../query-language-construction/select-command/aggregate-operators.md)).
+In practice the reducer is the only source of this type in an artifact.
+
+#### A measured example
+
+A plan computing the mean over a window of three samples:
+
+```rql
+DECLARE v INTEGER STREAM src, 1 FILE 'data.txt'
+
+SELECT * STREAM ravg FROM AVG(src@(1,3))
+```
+
+fed with `-3, -3, -2, 7, 7, 7, …` yields the descriptor `{ RATIONAL avg }` and a data file
+whose first record is eight bytes long:
+
+```
+f8 ff ff ff   03 00 00 00
+└ numerator ┘ └ denominator ┘
+   -8              3            →  -8/3
+```
+
+The fourth record is `07 00 00 00 01 00 00 00`, that is `7/1` — the mean of three sevens,
+stored as a rational number with denominator 1 rather than as an `INTEGER`.
+
+#### Reading the value without decoding bytes
+
+The pair layout only matters when reading the binary file directly. That a field is of type
+`RATIONAL` and occupies 8 bytes is reported by `xtrdb -s name` from the descriptor
+(→ [Inspection Tool](inspection-tool.md)) — the tool shows structure, not values. The value
+itself is obtained by passing the field through a conversion in the query; three functions
+offer three different trade-offs:
+
+| Written in SELECT | Result for `-8/3` | Note |
+| ----------------- | ----------------- | ---- |
+| `to_string(field : N)` | the text `-8/3` in a `STRING[N]` field | exact form; a whole number comes out as `7/1`, not `7` |
+| `to_double(field)` | a `DOUBLE` field holding `-2.6666…` | an approximation, but sign and magnitude are preserved |
+| `to_integer(field)` | an `INTEGER` field holding `-2` | **truncation toward zero**, not floor — → [Aggregate Operators](../../query-language-construction/select-command/aggregate-operators.md) |
+
+For export to text-based systems `to_string` is the right choice, because it preserves the
+value exactly; `to_integer` is convenient but drops the fractional part, and does so
+differently from Python's flooring `//` — the rounding rule is documented alongside the
+expression functions.
 
 ### The TYPE field and storage strategy
 
