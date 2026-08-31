@@ -77,6 +77,11 @@ The stream algebraic expression in the `FROM` clause can include:
 | AGSE window | `A @ (k, w)` | Builds a sliding data window — see [AGSE Sliding Data Window](../../query-execution/agse-sliding-window/) |
 | Reduction | `MIN(A)` / `MAX(A)` / `AVG(A)` / `SUMC(A)` | Reduces a multi-field record to one value — see [Aggregate Operators](aggregate-operators.md) |
 
+`MIN`/`MAX`/`AVG`/`SUMC(expression : W)` aggregates occur in the `SELECT` list rather than
+the `FROM` stream expression. They reduce W historical records and may be operands in a
+larger field expression, for example `2*MIN(a : 5)+1`. See
+[Aggregate Operators](aggregate-operators.md) for both aggregation axes.
+
 ### Precedence and associativity
 
 From strongest to weakest binding:
@@ -92,7 +97,14 @@ The binary operators `#` and `+` are left-associative. Postfix operators also co
 
 Whitespace around `#` does not affect its meaning: `A # B` and `A#B` are the same interleave.
 
-## Exponentiation in field expressions
+## Field expressions
+
+The `SELECT` list and `RULE` conditions use scalar expressions containing field references,
+arithmetic operators, NULL values, and functions. The complete syntax, precedence, function
+list, and conversion rules are documented in
+[Field Expressions and Scalar Functions](field-expressions-and-scalar-functions.md).
+
+### Exponentiation
 
 The `^` operator exponentiates numeric values in the `SELECT` list and in `RULE` conditions. It binds more tightly than `*` and `/`, which in turn bind more tightly than `+` and `-`. Exponentiation is right-associative:
 

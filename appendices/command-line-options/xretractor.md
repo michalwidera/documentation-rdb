@@ -37,6 +37,10 @@ Available options:
                               file
   -t [ --realtime ]           enable real-time scheduling (SCHED_FIFO,
                               mlockall, absolute wakeup)
+  -f [ --no-clock ]           offline mode: compute slots without waiting for
+                              the wall clock
+  -u [ --until-eof ]          stop when a declared source runs out of input
+                              (forces one-shot sources)
   -g [ --config ] arg         config file (TOML); overrides search
   -m [ --llimitqry ] arg (=0) loop iteration limit, 0 - no limit
 ```
@@ -56,8 +60,35 @@ Available options:
 | `noanykey` | No keypress interrupts the processing loop. Without this option, pressing any key stops the system. |
 | `service` | Service mode: the log goes to `stderr` (captured by journald), with no log file in the temporary directory, no timestamp of its own, and no ANSI codes. The mode can also be enabled through the `XRETRACTOR_SERVICE` environment variable set to any value other than empty or `0` — convenient in a systemd unit via `Environment=`. |
 | `realtime` | Enables real-time scheduling: `SCHED_FIFO`, `mlockall`, and absolute sleep for the processing thread. Requires `CAP_SYS_NICE` and `CAP_IPC_LOCK` capabilities (or root). Recommended in production environments requiring deterministic response time. |
+| `no-clock` | Offline mode: retains the rational timeline, logical indices, origins, and plan tails, but skips wall-clock waiting. It cannot be combined with `--realtime`. |
+| `until-eof` | Makes declared file sources non-wrapping and stops when the first one runs out of data. A `DEVICE` source has no end of file. |
 | `config` | Path to a configuration file in TOML format. It overrides the standard search order (`/etc/retractor/retractor.toml`, then `$XDG_CONFIG_HOME/retractor/retractor.toml` or `~/.config/retractor/retractor.toml`). A missing configuration file is a valid state — the program starts with built-in defaults. |
 | `llimitqry` | Limits the number of iterations in the query-execution loop. A value of `0` means no limit. |
+
+### Clock-free batch processing
+
+The simplest run over a complete input file without manually selecting an iteration count is:
+
+```bash
+xretractor query.rql --no-clock --until-eof --noanykey --quiet
+```
+
+`--no-clock` removes sleeps only. It does not change slot order or artifact content, making
+it suitable for fast verification after completion. It can outrun an `xqry` client, however,
+so it is not intended for live observation.
+
+`--until-eof` prevents a sequential source from returning to the start of its file. EOF is
+checked after a slot has been processed, exactly before the first record that would otherwise
+have to use synthetic NULL beyond the input. With several sources, the first exhausted one
+stops the run so the plan does not continue with a missing input. It may be combined with
+`-m N`; whichever condition occurs first wins.
+
+> **⚠️ Warning** Short options depend on the mode. During execution, `-f` means
+> `--no-clock` and `-u` means `--until-eof`. With `-c`, the same letters mean `--fields`
+> and `--rules`, respectively, and do not start processing.
+
+> **_NOTE:_** `noclock_offline` verifies equivalence between paced and offline execution;
+> `untileof_stop` verifies first-EOF termination and the non-wrapping control.
 
 ---
 

@@ -77,9 +77,22 @@ The subchapters on substrates and the `_` symbol use extended variants of the sa
 
 The chain of stages is defined by the `compiler::compile()` function:
 
+#### checkFunctionCalls
+
+Validates scalar-function names and arity against the single `rqlFunctions.hpp` table.
+Matching is case-insensitive and the canonical spelling is stored in the token. An unknown
+function or invalid width stops compilation through `Check result:` before generator
+expansion, so one template error is not multiplied N times.
+
 #### expandStreamGenerators
 
 Expands every `SELECT ... STREAM name[N] ...` template into `N` ordinary queries named `name$0`...`name$(N-1)` and substitutes the instance ordinal for `$` in fields, values, and `FROM` references. It is the first pass: everything after it receives a plan indistinguishable from hand-written queries. See [SELECT Command](../query-language-construction/select-command/README.md#stream-generators) for syntax and constraints.
+
+#### snapshotNamedSourceRefs
+
+Snapshots source references written by the user before substrates are created. Later field
+localization uses the snapshot to distinguish legal synthetic tokens from references to a
+component of `#`, whose identity is no longer preserved by the result.
 
 #### extractIntermediateStreams
 
@@ -87,11 +100,17 @@ Reduces every FROM expression to at most a two-argument form. Complex expression
 
 #### expandSchemaWildcards
 
-Expands both `*` in the SELECT clause and the `[_]` index. It replaces an asterisk with fields derived from the source schema. A formula containing `x[_]` is replicated according to the number of slots that `x` contributes to the record produced by the complete `FROM` clause, rather than the width of stream `x` itself. A one-field `x` under the window `x@(1,5)` therefore yields five elements. If the named contribution does not form a contiguous block of fields in `FROM`, compilation fails instead of assuming an arbitrary width. Both operations happen while schemas are built so later stream operators immediately see the complete record layout — see [Asterisk Expansion](asterisk-expansion.md) and [Underscore Symbol Processing](underscore-symbol-processing.md).
+Expands both `*` in the SELECT clause and the `[_]` index. It replaces an asterisk with fields derived from the source schema. A formula containing `x[_]` is replicated according to the number of slots that `x` contributes to the record produced by the complete `FROM` clause, rather than the width of stream `x` itself. A one-field `x` under the window `x@(1,5)` therefore yields five elements. If the named contribution does not form a contiguous block of fields in `FROM`, compilation fails instead of assuming an arbitrary width.
+
+At this stage, derived schemas expand a numeric `T[N]` entry into N scalar fields. A
+declaration descriptor still retains one array entry, while byte layout and flat-slot order
+remain unchanged. `STRING[N]` remains one text field. Stream operators, reducers, AGSE, and
+payloads therefore use the same indexing unit. See [Asterisk Expansion](asterisk-expansion.md)
+and [Underscore Symbol Processing](underscore-symbol-processing.md).
 
 #### resolveStreamIntervals (← loops are detected here)
 
-Determines the time interval (delta) of every stream based on the algebraic operators and the intervals of the input streams. An iterative algorithm — each round resolves as many streams as possible. It detects cyclic dependencies by stopping when the number of unresolved streams stops decreasing — see [Interval Resolution](interval-resolution.md) and [Loop Detection](loop-detection.md).
+Determines the time interval (delta) of every stream based on the algebraic operators and the intervals of the input streams. An iterative algorithm resolves as many streams as possible in each round. A record-history aggregate in the `SELECT` list does not change the interval and requires one plain stream reference in `FROM`; a compound clause is rejected here. The pass detects cyclic dependencies by stopping when the number of unresolved streams stops decreasing — see [Interval Resolution](interval-resolution.md) and [Loop Detection](loop-detection.md).
 
 #### factorMatchedHashTimeMoves
 
@@ -116,11 +135,33 @@ Checks that two substrates with the same name denote the same program. Names lon
 
 #### resolveFieldReferences
 
-Turns references to fields from source schemas into indices in the output schema. It handles aliases after sum — turning `core0[0]` into `str1[0]`, for example — and records the source to which a bare field name was resolved. Named references written by the user are tracked separately so a later pass does not confuse them with tokens synthesized by the compiler. See [Aliasing](aliasing.md).
+Turns references to fields from source schemas into flat indices in the output schema. It handles aliases after sum — turning `core0[0]` into `str1[0]`, for example — and records the source to which a bare field name was resolved. Named references written by the user are tracked separately so a later pass does not confuse them with tokens synthesized by the compiler. A bare numeric-array name is rejected: `a` does not mean `a[0]`; an element must be selected. See [Aliasing](aliasing.md).
+
+#### resolveWindowAggregates
+
+Extracts the argument program of each `MIN`/`MAX`/`AVG`/`SUMC(expression : W)` in the
+`SELECT` list into `query::windowGroups`. It validates positive width, numeric type, one
+history source, at least one field read, and the bans on nesting and `RULE` use. Identical
+source–expression–width triples share a group and one history scan. The aggregate token
+becomes a zero-argument operand that points to the computed group result.
+
+#### propagateCopiedFieldShapes
+
+Carries an established history-aggregate result type through nodes that only copy a schema:
+`SELECT *`, shift, difference, interleave, de-interleave, and stream sum. The pass runs to a
+fixed point because a copy may read another copy while the tree is still interval-sorted.
+Without it, a derived copy of `RATIONAL` would retain the parser's `INTEGER` type and silently
+truncate a fractional result.
+
+#### inferStringFieldTypes
+
+After references are resolved, determines the result `STRING` type and width from actual
+source fields, literals, and `to_string`. It runs before simplification so folding a constant
+expression cannot shrink the declared width. This pass is not general numeric type inference.
 
 #### simplifyFieldExpressions
 
-Simplifies `SELECT` field programs and `RULE` conditions after references have
+Simplifies `SELECT` field programs, record-history aggregate arguments, and `RULE` conditions after references have
 been resolved but before equivalent computations are shared. The pass folds
 constant expressions, combines constant tails in integer and rational
 arithmetic, and removes type-compatible neutral elements (`E+0`, `E-0`,
@@ -150,7 +191,7 @@ Computes `query::logicalOrigin`, the index of the first record that **exists at
 all**. The difference from the tail is qualitative: the tail says "not yet",
 the origin says "this record has no definition". The origin originates from the
 `@(k,L)` window stamped by the interval end — its early records would reach
-before the start of the source — and from the shift `>N`, whose record `n`
+before the start of the source — from a history aggregate, which adds `W-1`, and from the shift `>N`, whose record `n`
 carries record `n-N`. Every other operator merely propagates the origin, through
 the same index mapping it reads with.
 
@@ -167,7 +208,7 @@ one; interleave includes both input tails and its own look-ahead on the second
 argument; sum takes the maximum of both inputs' availability bounds. Difference
 and both de-interleaves use exact phase bounds — left de-interleave does not
 unconditionally add one slot. AGSE uses the bound from the newest field in its
-window, and reductions add no own tail. The plan listing shows `tail=` and the
+window, and reductions and record-history aggregates add no own tail. The plan listing shows `tail=` and the
 runtime emits no record during the tail. The number of silent slots is
 `origin + tail`.
 
@@ -184,9 +225,15 @@ a declaration, two look-ahead records are added: the record armed when storage
 is opened and the zero prefetch. The result is clamped to at least one record.
 History capacity is an execution requirement, not a result prefix.
 
+A record-history aggregate requires at least W consecutive records of its named source.
+Capacity also accounts for logical origin, tail, and interval differences like every other
+history read; it is not selected as a local `W` alone.
+
 #### validateConstraints
 
-Verifies the semantic correctness of the compiled plan: type compatibility, window sizes, availability of data sources.
+Verifies semantic correctness of the compiled plan: type and flat-width compatibility,
+window sizes, source availability, and operator constraints. Interleave `#` requires equal
+flat schemas whether an input was written as `T[N]` or as N scalar fields.
 
 #### applyCapacitiesToStreams
 

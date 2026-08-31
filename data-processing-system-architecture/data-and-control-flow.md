@@ -60,6 +60,22 @@ Every running xqry process has its own individual message queue named `brcdbr<PI
 
 Finally, xretractor removes all shared IPC resources: the `RetractorShmemMap` shared-memory segment, the `RetractorQueryQueue` command queue, the `RetractorMapMutex` mutex, and every client's individual queue.
 
+### Fatal errors and emergency cleanup
+
+A fatal error during startup or in the communication thread follows the same final resource
+ownership policy but does not attempt to continue the processing cycle. The spdlog registry
+is flushed rather than destroyed before `atexit` handlers run. If the error originated in
+the communication thread itself, cleanup detaches that thread instead of attempting to join
+it from itself. It then removes IPC queues and shared memory and releases the service lock
+last.
+
+The process exits with status 1. A later start therefore finds neither orphaned IPC nor a
+stale service lock, and the primary failure is not masked by a secondary `SIGSEGV` or
+`SIGABRT` during shutdown.
+
+> **_NOTE:_** `fatal_exit_path` covers both startup failure and failure reported by the
+> communication thread.
+
 #### What happens with multiple xqry processes
 
 RetractorDB is designed to work with multiple parallel clients. If, say, three xqry processes are running simultaneously, subscribed to different streams, and one of them calls `xqry --kill`:
@@ -70,4 +86,3 @@ RetractorDB is designed to work with multiple parallel clients. If, say, three x
 - clients that hadn't subscribed to any stream (e.g. xqry invoked only with `--dir` or `--hello`) are not entered in the map and don't need to be notified — these commands exit immediately after providing their response.
 
 It's worth noting that xqry also detects server inactivity: if no data arrives for 10 seconds, the client shuts itself down with a warning in the log. This is a safeguard in case xretractor crashes suddenly without being able to send the OOB message.
-

@@ -11,7 +11,7 @@ flowchart TD
     B["processZeroStep()<br/>DECLARE only: revRead(0) → fire()"] --> C
     C["TimeLine::getNextTimeSlot()<br/>Determine the next time slot"] --> D
     D["getAwaitedStreamsSet()<br/>Filter: rInterval divides the current slot"] --> E
-    E["dataModel::processRows(inSet)<br/>Pass 1: non-declarations → input → output → write<br/>Pass 2: declarations → unblock"] --> F
+    E["dataModel::processRows(inSet)<br/>Pass 1: non-declarations → input → SELECT windows → output → write<br/>Pass 2: declarations → unblock"] --> F
     F["broadcast(inSet)<br/>Boost IPC queues → xqry clients"] --> C
 ```
 
@@ -123,7 +123,8 @@ flowchart LR
 
     subgraph P1["Pass 1 — non-declarations (topological order)"]
         direction TB
-        X1["constructInputPayload()<br/>builds input data from FROM"] --> X2
+        X1["constructInputPayload()<br/>builds input data from FROM"] --> XW
+        XW["computeWindowAggregates()<br/>reduces history for SELECT windows"] --> X2
         X2["constructOutputPayload()<br/>evaluates SELECT expressions"] --> X3
         X3["write()<br/>write to disk / memory"] --> X4
         X4["constructRulesAndUpdate()<br/>evaluates RULE clauses"]
@@ -146,6 +147,20 @@ flowchart LR
 _Fig. 44. The processRows algorithm – two processing passes_
 
 Declarations are only unblocked once every dependent query has consumed their `outputPayload` in pass 1.
+
+### Record-history windows in the SELECT list
+
+If a query contains `MIN`/`MAX`/`AVG`/`SUMC(expression : W)`,
+`computeWindowAggregates()` runs after the `FROM` payload has been built but before output
+fields are evaluated. For logical index `n`, it reads records `n-(W-1)` through `n` from the
+named source. A bare field takes the direct flat-slot path; a general expression is evaluated
+separately against each historical payload.
+
+NULL values are skipped, and a window with no present value stores NULL for all four
+statistics. Groups with the same source, expression program, and width share one history
+scan. Their results go to `streamInstance::windowValues` and become ordinary operands of
+`constructOutputPayload()`, so expressions such as `2*MIN(a : 5)+1` and
+`null2zero(AVG(a+b : 5))` are valid.
 
 ***
 
@@ -189,13 +204,13 @@ sequenceDiagram
 
     TL-->>ES: nextSlot = 1/3
     ES->>DM: processRows({B})
-    DM->>DM: Pass 1: B → input(A) → output → write()
+    DM->>DM: Pass 1: B → input(A) → windows → output → write()
     DM->>DM: Pass 2: A → flux → revRead(0) → fire()
     ES->>IPC: broadcast({B})
 
     TL-->>ES: nextSlot = 1/2
     ES->>DM: processRows({C})
-    DM->>DM: Pass 1: C → input(B) → output → write()
+    DM->>DM: Pass 1: C → input(B) → windows → output → write()
     DM->>DM: Pass 2: A → flux → revRead(0) → fire()
     ES->>IPC: broadcast({C})
 
