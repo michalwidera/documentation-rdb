@@ -97,7 +97,7 @@ au BufRead,BufNewFile *.rql set filetype=rql
 | `Operator` | `AND`, `OR`, `NOT`                                                        |
 | `Constant` | `MEMORY`, `POSIX`, `DIRECT`, `GENERIC`, `TEXTSOURCE`                      |
 | `Type`     | `INTEGER`, `FLOAT`, `BYTE`, `CHAR`, `UINT`, `STRING`, `DOUBLE`            |
-| `Function` | `MIN`, `MAX`, `AVG`, `Count`, `Sqrt`, `Abs`, `ToNumber`                   |
+| `Function` | `MIN`, `MAX`, `AVG`, `SUMC`, `Sqrt`, `Abs`, `Length`, `null2zero`         |
 | `Comment`  | `# comment`, `// comment`, `/* block */`                               |
 | `String`   | `'path/to/file.dat'`                                                  |
 | `Number`   | `42`, `3.14`, `1/2`, `1e5`                                                |

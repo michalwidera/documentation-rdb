@@ -118,10 +118,13 @@ which normalizes the result on every assignment; it is not a writing convention.
   relies on the same invariant);
 * the denominator is never zero, so a reader need not handle that case.
 
-`RATIONAL` fields are produced by the `MIN`, `MAX`, `AVG` and `SUMC` reducers, both in the
-function form and in the deprecated postfix notation `.min`, `.max`, `.avg`, `.sumc`
+`RATIONAL` fields are produced by the `MIN`, `MAX`, `AVG`, and `SUMC` reducers when the input
+value has type `BYTE`, `INTEGER`, `UINT`, or `RATIONAL`. This covers current-record reducers
+in `FROM`, the deprecated `.min`/`.max`/`.avg`/`.sumc` notation, and record-history
+`AGG(expression : W)` in the `SELECT` list. `FLOAT` and `DOUBLE` inputs preserve their types
 (→ [Aggregate Operators](../../query-language-construction/select-command/aggregate-operators.md)).
-In practice the reducer is the only source of this type in an artifact.
+A reducer over integer or rational input is, in practice, the main source of `RATIONAL` in
+an artifact.
 
 #### A measured example
 
@@ -157,7 +160,7 @@ offer three different trade-offs:
 | ----------------- | ----------------- | ---- |
 | `to_string(field : N)` | the text `-8/3` in a `STRING[N]` field | exact form; a whole number comes out as `7/1`, not `7` |
 | `to_double(field)` | a `DOUBLE` field holding `-2.6666…` | an approximation, but sign and magnitude are preserved |
-| `to_integer(field)` | an `INTEGER` field holding `-2` | **truncation toward zero**, not floor — → [Aggregate Operators](../../query-language-construction/select-command/aggregate-operators.md) |
+| `to_integer(field)` | an `INTEGER` field holding `-2` | **truncation toward zero**, not floor — → [Field Expressions and Scalar Functions](../../query-language-construction/select-command/field-expressions-and-scalar-functions.md) |
 
 For export to text-based systems `to_string` is the right choice, because it preserves the
 value exactly; `to_integer` is convenient but drops the fractional part, and does so
