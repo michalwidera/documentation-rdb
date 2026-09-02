@@ -214,7 +214,7 @@ The `.meta` file is an index of null values and transmission gaps. It stores inf
 
 | Position    | Content                                    | Size     |
 | ---------- | ------------------------------------------ | -------- |
-| Header     | `creationTimeNs` (int64)                   | 8 bytes  |
+| Header     | reserved field (int64, always 0)           | 8 bytes  |
 | RLE entry 0 | `gapFlag \| count \| bitsetSize \| bitset` | variable |
 | RLE entry 1 | `gapFlag \| count \| bitsetSize \| bitset` | variable |
 | ...        | ...                                        | ...      |
@@ -310,7 +310,7 @@ _Fig. 15. Lifecycle of a metaData object_
 **Constructor** (`metaData(descriptor, path)`):
 - Initializes an empty `currentEntry_` based on the number of fields in the descriptor.
 - Calls `loadIndex()` — if the file exists, it loads all committed segments, determines `committedRecordCount_`, and moves the last non-gap segment back into `currentEntry_` (allowing the RLE run to continue after a restart).
-- If the file does not exist, it creates it and writes the header (the stream's creation timestamp).
+- If the file does not exist, it creates it and writes the header (8 reserved bytes, zeros).
 
 **The destructor** automatically calls `flushCurrentEntry()`, guaranteeing that the current buffer reaches disk even when the program exits normally.
 
@@ -427,7 +427,7 @@ Thanks to this, the `.meta` file grows only when the **null pattern changes** �
 
 After the process restarts, a new `metaData` object loads the file via `loadIndex()` (sequence shown in Fig. 18):
 
-1. It reads the header — the timestamp (`creationTimeNs`), stored as `int64` nanoseconds since the epoch.
+1. It skips the header — 8 reserved bytes; nothing in them is interpreted.
 2. It loads all committed entries from the file.
 3. If the last entry **is not a gap**, it moves it back into `currentEntry_` and removes it from the file (allowing the RLE run to continue after a restart without duplication).
 4. It computes `committedRecordCount_` as the sum of `recordCount` over all non-gap entries remaining in the file.

@@ -296,7 +296,7 @@ The `factorMatchedHashTimeMoves()` pass does not remove explicit user streams or
 The `issue202_hash_shift_e2e` test executes both sides of the identity over
 independent copies of file-backed input streams. It compares the `matched`
 and `CC` artifacts byte for byte, compares their metadata after excluding
-the creation timestamp, checks the complete sequence against a reference
+the reserved header, checks the complete sequence against a reference
 derived from the `B,A,A` interleave period, and verifies equal tails
 (`origin=3` with a zero tail — \\(\tau_3\\) over an interleave of tail 2
 absorbs it entirely). Both sides are factored to the same shape here, so the
