@@ -107,8 +107,8 @@ neither zeros nor all-null placeholders.
 \widehat{S} := \left((s_n,\Delta),O_S,W_S\right)
 \\]
 
-We define the shift as a read of an older index: output record \(n\) carries
-the contents of producer record \(n-m\). In the causal realization:
+We define the shift as a read of an older index: output record \\(n\\) carries
+the contents of producer record \\(n-m\\). In the causal realization:
 
 \\[
 O_{\tau_m(S)}=O_S+m,

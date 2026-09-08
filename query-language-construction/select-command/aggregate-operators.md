@@ -200,7 +200,7 @@ SELECT * STREAM hopping FROM sliding - 2
 ```
 
 The argument of `-` is the target output interval. For hop H over a source interval
-\(\Delta\), pass \(H\Delta\). Splitting the construction preserves five consecutive
+\\(\Delta\\), pass \\(H\Delta\\). Splitting the construction preserves five consecutive
 records in every window and only then selects every H-th result. Direct
 `SELECT MIN(a : 5) ... FROM src - 2` is not shorthand for this construction and does not
 compile.
