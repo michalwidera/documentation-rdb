@@ -107,9 +107,11 @@ Further rules:
 
 RetractorDB has three executables:
 
-- **xretractor** — singleton main processor; compiles RQL queries, builds execution plans, manages shared memory for IPC
-- **xqry** — multi-instance client; queries the running xretractor, sends data/commands, supports output formats: raw, Graphite, InfluxDB, Gnuplot
+- **xretractor** — named processing instance; multiple instances may share the host through the internal bus, while exactly one per `RDB_NAMESPACE` may act as the service; compiles RQL queries, builds execution plans, manages IPC
+- **xqry** — client that routes commands to an explicit or uniquely inferred xretractor instance, sends data/commands, and supports raw, JSONL, Graphite, InfluxDB, and Gnuplot output
 - **xtrdb** — binary artifact analysis tool with optional interactive mode
+
+The optional monitoring API wraps `xqry --jsonl`; Python and C++ clients are built and tested only through the explicit API targets.
 
 **Data flow:**
 ```

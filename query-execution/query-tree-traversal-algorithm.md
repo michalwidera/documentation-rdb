@@ -80,7 +80,8 @@ The check `isThisDeltaAwaitCurrentTimeSlot(inDelta)` returns `true` when `ctSlot
 
 ## The zero step: `processZeroStep()`
 
-Before entering the `executorsm::run()` loop, `processZeroStep()` is called (`dataModel.cpp`, line \~85). It processes **declarations only** (`DECLARE` input streams):
+Before entering the `executorsm::run()` loop, `dataModel::processZeroStep()` is called. It
+processes **declarations only** (`DECLARE` input streams):
 
 ```cpp
 for (auto &q : coreInstance_) {

@@ -12,7 +12,11 @@ The chapter is built in layers — from the general view down to implementation 
 
 ### [General Perspective](architecture-overview.md)
 
-The system as a trio of cooperating programs: `xretractor` as the singleton executing the query plan, `xqry` as the multi-instance client for current data, `xtrdb` as the binary-file inspection tool. Communication between the `xretractor` and `xqry` processes is carried out through shared memory (Boost IPC). The diagram in Fig. 12 shows the boundary of responsibility for each component.
+The system as a trio of cooperating programs: `xretractor` as the process executing a query plan, `xqry` as the multi-instance client for current data, and `xtrdb` as the binary-file inspection tool. Several named `xretractor` processes can run on one host, each with its own Boost IPC area. The diagram in Fig. 12 shows component boundaries for one such instance.
+
+### [Multiple Instances and the Bus](multiple-instances-and-bus.md)
+
+Instance names, separation of IPC objects, the `xrdbbus` registry, global protection of stream and storage-file names, and automatic routing rules for `xqry` commands. This section also describes the stable `service` identity, complete plan replacement with `xqry --reset`, and the modes shown by `xqry --bus`.
 
 ### [Data and Control Flow](data-and-control-flow.md)
 

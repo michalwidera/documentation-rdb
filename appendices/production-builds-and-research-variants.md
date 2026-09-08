@@ -237,3 +237,27 @@ scripts/buildrdb.sh release package
 The `package` option restores the production switch values and rebuilds the
 selected directory before running CPack. Do not run packaging from
 `Release-Ablation` or `Release-Probe` directories.
+
+## Optional client API
+
+The `api/` directory is developed and tested with the engine, but it is not part of the
+default product. Plain `ninja`, `ninja install`, `ninja test`, and `ninja package` leave
+the API libraries and tests out of their results.
+
+The explicit entry points are separate:
+
+| Command | Meaning |
+| --- | --- |
+| `ninja install-withapi` | Builds and installs the engine and the `api` component. |
+| `ninja test-api` | Builds the C++ test client and runs tests carrying the `api` label. |
+| `cmake -DRDB_WITH_API=ON .` | Adds the `api` component to CPack packages; the ordinary `test` target then stops filtering out the `api` label. |
+
+The packaging switch must be set during configuration because CPack determines its
+component list at that point. Without `RDB_WITH_API=ON`, `.deb` and `.tar.gz` packages
+contain only the engine, systemd unit, and configuration examples. The `it_packaging`
+test protects this default minimal set.
+
+C++ API targets are always known to CMake, but use `EXCLUDE_FROM_ALL`. Their installation
+rules belong to the separate `api` component, so `ninja install` alone does not run them.
+Library usage and the JSONL contract are described in
+[Stream Monitoring API](stream-monitoring-api.md).

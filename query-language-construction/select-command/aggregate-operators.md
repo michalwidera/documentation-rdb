@@ -172,6 +172,23 @@ For `DECLARE a INTEGER[3]`, select one channel, for example `MIN(a[0] : 5)`.
 `MIN(a : 5)` does not mean all array elements from every record and is rejected. Reduce all
 elements of one record separately with `FROM MIN(stream)`.
 
+### Combining reductions across channels and time
+
+The two axes can be composed without serializing the array or manually creating a
+separate stream for every channel:
+
+```rql
+DECLARE value INTEGER[24] STREAM sensors, 1/10 FILE 'sensors.txt'
+
+SELECT * STREAM row_min FROM MIN(sensors)
+SELECT MIN(row_min[0] : 10) STREAM interval_min FROM row_min
+```
+
+The first `MIN` reduces the 24 parallel values in one record. The second reduces results
+from ten consecutive records, so `interval_min` is the minimum of 240 values while
+retaining the source interval and emitting a sliding window after every record. If a
+sparser result is needed, decimate the completed stream as described in the next section.
+
 ### Hopping windows
 
 A `SELECT` aggregate has no step argument. Build a hopping window by decimating the

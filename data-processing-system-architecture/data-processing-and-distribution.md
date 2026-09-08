@@ -58,9 +58,11 @@ I suggest opening a second terminal window and continuing the session there. In 
 
 ```
 $ xqry -d
-| str1|1/10|6912|864|             |0|
-|core0|1/10|  -1| 49|datafile1.txt|1|
-|core1| 1/5|  -1| 25| /dev/urandom|1|
+name  | duration | size | count | location      | cap
+------+----------+------+-------+---------------+----
+str1  | 1/10     | 6912 | 864   |               | 0
+core0 | 1/10     | -1   | 49    | datafile1.txt | 1
+core1 | 1/5      | -1   | 25    | /dev/urandom  | 1
 ```
 
 Something similar should appear. Of course, the counters for str1 should differ. It's logical that with every read we'll get larger values for the accumulated size of the str1 stream.
@@ -116,8 +118,6 @@ If we want to stop the xretractor process using the xqry command, we can run the
 
 ```
 $ xqry -k
-kill sent to server
-ok.
 ```
 
 After issuing this command, the xretractor process will shut down and interrupt the query plans being processed.

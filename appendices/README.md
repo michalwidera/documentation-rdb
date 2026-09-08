@@ -12,6 +12,15 @@ value-equivalence invariant across variants.
 
 Full description: [Production Builds and Diagnostic Variants](production-builds-and-research-variants.md)
 
+**Stream Monitoring API**
+
+A versioned JSON Lines contract and optional Python and C++ libraries for observing
+streams from an explicitly named instance. This chapter describes type mappings,
+subscription lifecycle, timeouts, bounded buffers, error handling, and the separate
+targets used to build, install, and test the API.
+
+Full description: [Stream Monitoring API](stream-monitoring-api.md)
+
 **System Origin**
 
 A description of the historical circumstances that led to RetractorDB's creation. The starting point is the author's experience building a neonatal monitoring system in the early 2000s — running into the limitations of relational databases when recording high-granularity signals, attempts based on the stream-processing systems of the time, and the evolution toward a dedicated time-series processing engine. The chapter also explains where the name "Retractor" comes from — a reference to a group of surgical instruments that separate and join tissue structures, treated here as an analogy for operations on data streams.
@@ -54,10 +63,11 @@ Full description: [Command-Line Options](command-line-options/README.md)
 
 A catalog of all the system's integration tests, with a description of the functionality each one verifies. Integration tests run the actual binaries (`xretractor`, `xqry`, `xtrdb`) and compare their results against patterns — unlike GTest unit tests, which test isolated library classes.
 
-The tests are split into two sets:
-
-- **`IntegrationTest_serial`** — require a running IPC server; run sequentially (one after another) due to a shared lock file and Boost memory segments,
-- **`IntegrationTest_parallel`** — query compilation and file inspection without an IPC server; can run in parallel.
+Scenarios live in the shared **`test/IntegrationTest`** tree. Tests that start a server
+receive one of sixteen `RDB_NAMESPACE` namespaces and a CTest resource lock for their
+directory, so most can run concurrently without stream-name, IPC, or working-file
+collisions. Only scenarios that examine the production global identity remain
+`RUN_SERIAL`.
 
 Running them: `ninja test` or `ctest -R <name> -V` in the `build/Debug/` directory.
 

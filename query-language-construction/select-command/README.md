@@ -57,7 +57,25 @@ A generator-index expression is integral and may contain literals, `$`, parenthe
 
 Expansion is the compiler's first pass. Afterwards the plan is identical to one containing hand-written `cell$0`...`cell$3` streams; runtime has no separate generator mechanism.
 
-> **_NOTE:_** The functionality described here is covered by the tests: `simple`, `Pattern2`, described in the appendix [Integration Tests](../../appendices/integration-tests.md).
+A generator may cover successive stages of the same pipeline. This lets one computation
+be written once and applied independently to every input channel:
+
+```rql
+DECLARE sample INTEGER[8] STREAM samples, 1/1000 FILE 'samples.txt'
+
+SELECT sample[$]^2 STREAM square[8] FROM samples
+SELECT * STREAM energy[8] FROM SUMC(square[$]@(25,100))
+```
+
+This creates eight pairs of `square$N` and `energy$N` streams, one per channel. The `$`
+symbol selects a family-instance ordinal while the template is expanded. Do not confuse
+it with `[_]`, which replicates a field expression within one query according to the
+flattened input schema.
+
+> **_NOTE:_** Generator syntax, including `[$]`, is checked by the `stream_generator`
+> integration test and by `ut_compiler` cases in `test/UnitTest/test_compiler.cpp`.
+> Record-window aggregates are checked by `window_aggregate`. Integration tests are
+> described in [Integration Tests](../../appendices/integration-tests.md).
 
 The VOLATILE clause creates an ephemeral form of the query. A query with this clause holds only a single record in memory — only the descriptor describing the data structure appears on disk.
 

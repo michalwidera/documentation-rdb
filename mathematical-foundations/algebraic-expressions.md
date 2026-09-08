@@ -84,20 +84,21 @@ All of the above forms can be combined into arbitrarily complex expressions — 
 
 ## Coverage of examples in integration tests
 
-Each of the expression forms cited has a counterpart in the RetractorDB repository's integration tests (directories `test/IntegrationTest_serial` and `test/IntegrationTest_parallel`), executed on every project build:
+Each of the expression forms cited has a counterpart in the RetractorDB repository's
+shared `test/IntegrationTest` directory, executed on every project build:
 
 | Expression from this chapter | Form in the test | Integration test |
 |---|---|---|
-| C=A+B (sum) | `s1+s2`, `core0+core1` | `IntegrationTest_serial/issue167_dedup_positive`, `IntegrationTest_serial/Data` (all-operators) |
-| E=B#D (interleaving) | `core0#core1` | `IntegrationTest_serial/operations`, `IntegrationTest_serial/Data` (all-operators) |
-| G=E#D (cascaded interleaving) | `(s1#s2)#s3`, `s1#s2#s3` | `IntegrationTest_serial/issue167_triarg` |
-| H=A+B+D (multi-argument sum) | `s1+s2+s3`, `s1+s2+s3+s4` | `IntegrationTest_serial/issue167_triarg` |
-| I=D+((A+B)>1) | `s3+((s1+s2)>1)` | `IntegrationTest_serial/issue167_dedup_cascaded` |
-| J=(B>1)#D and (B#D)>1 | `(core1>1)#core2`, `(core1#core2)>1` | `IntegrationTest_parallel/subquery` |
-| K=E&1, L=E%½ (de-interleaving) | `core0&1.5`, `core0%4` | `IntegrationTest_serial/Data` (all-operators) |
-| M=C−1 (difference) | `core0-1/2` | `IntegrationTest_serial/Data` (all-operators) |
-| shift of a sum, as in F | `(s1+s2)>1`, `(core0+core1)>5` | `IntegrationTest_serial/issue167_dedup_field_names`, `IntegrationTest_serial/issue56_timeshift` |
-| N=A@(1,4), P=A@(1,−4), R=A@(2,2) | `core1@(1,4)`, `core1@(1,-4)`, `core1@(2,2)` | `IntegrationTest_serial/agse1` (further hop/width variants: `agse2`, `agse3`) |
-| S=(A@(2,2))@(1,1) (cascaded Agse) | `signalText3@(1,1)` | `IntegrationTest_serial/agse1` |
+| C=A+B (sum) | `s1+s2`, `core0+core1` | `IntegrationTest/issue167_dedup_positive`, `IntegrationTest/Data` (all-operators) |
+| E=B#D (interleaving) | `core0#core1` | `IntegrationTest/operations`, `IntegrationTest/Data` (all-operators) |
+| G=E#D (cascaded interleaving) | `(s1#s2)#s3`, `s1#s2#s3` | `IntegrationTest/issue167_triarg` |
+| H=A+B+D (multi-argument sum) | `s1+s2+s3`, `s1+s2+s3+s4` | `IntegrationTest/issue167_triarg` |
+| I=D+((A+B)>1) | `s3+((s1+s2)>1)` | `IntegrationTest/issue167_dedup_cascaded` |
+| J=(B>1)#D and (B#D)>1 | `(core1>1)#core2`, `(core1#core2)>1` | `IntegrationTest/subquery` |
+| K=E&1, L=E%½ (de-interleaving) | `core0&1.5`, `core0%4` | `IntegrationTest/Data` (all-operators) |
+| M=C−1 (difference) | `core0-1/2` | `IntegrationTest/Data` (all-operators) |
+| shift of a sum, as in F | `(s1+s2)>1`, `(core0+core1)>5` | `IntegrationTest/issue167_dedup_field_names`, `IntegrationTest/issue56_timeshift` |
+| N=A@(1,4), P=A@(1,−4), R=A@(2,2) | `core1@(1,4)`, `core1@(1,-4)`, `core1@(2,2)` | `IntegrationTest/agse1` (further hop/width variants: `agse2`, `agse3`) |
+| S=(A@(2,2))@(1,1) (cascaded Agse) | `signalText3@(1,1)` | `IntegrationTest/agse1` |
 
 The tests compare query execution results against pattern files, so the expressions above are verified not only syntactically, but also in terms of the values and rates of the resulting streams.

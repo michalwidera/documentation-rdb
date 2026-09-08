@@ -32,15 +32,13 @@ Available options:
   -s [ --status ]             check service status
   -v [ --verbose ]            verbose mode (show stream params)
   -x [ --xqrywait ]           wait with processing for first query
+  -n [ --name ] arg           instance name; own IPC area and lock
+  -a [ --autoname ]           generate a docker-style instance name
   -k [ --noanykey ]           do not wait for any key to terminate
-  -j [ --service ]            service mode: log to stderr (journald), no log
-                              file
-  -t [ --realtime ]           enable real-time scheduling (SCHED_FIFO,
-                              mlockall, absolute wakeup)
-  -f [ --no-clock ]           offline mode: compute slots without waiting for
-                              the wall clock
-  -u [ --until-eof ]          stop when a declared source runs out of input
-                              (forces one-shot sources)
+  -j [ --service ]            service mode: log to stderr (journald)
+  -t [ --realtime ]           enable real-time scheduling
+  -f [ --no-clock ]           offline mode: compute slots without waiting
+  -u [ --until-eof ]          forces one-shot all sources
   -g [ --config ] arg         config file (TOML); overrides search
   -m [ --llimitqry ] arg (=0) loop iteration limit, 0 - no limit
 ```
@@ -54,9 +52,11 @@ Available options:
 | `onlycompile` | Switches the tool into "compile only" mode. The query-execution loop is not started. |
 | `queryfile` | The name of the query file to compile and run. |
 | `quiet` | Skips displaying results on screen. Processing runs normally, but the result presenter isn't started. |
-| `status` | Checks whether another `xretractor` process is running, or has left behind lock files preventing multiple instances. |
+| `status` | Checks the instance lock selected by `--name`, `RDB_NAMESPACE`, or the historical empty name. `Running` means another process holds the same identity. |
 | `verbose` | An increased-verbosity mode — shows stream parameters. A leftover from the development phase; likely to be kept. |
 | `xqrywait` | Compiles the queries and holds off the processing loop until the first query arrives from an `xqry` process. Required when using `-m N` at the same time in scripts and tests: without this flag, the server may process all N cycles before the client manages to connect, resulting in no data and `xqry` waiting until it times out. The first command received from `xqry` (e.g. `-d` or `-s`) unblocks the processing loop. |
+| `name arg` | Gives the instance a stable name. The name selects a separate lock file and IPC area and lets commands be routed through `xqry --server`. It may contain at most 32 lowercase letters, digits, `_`, and `-`, and its first character must be a letter. |
+| `autoname` | Generates a container-style instance name and prints it at startup. Mutually exclusive with `--name`. |
 | `noanykey` | No keypress interrupts the processing loop. Without this option, pressing any key stops the system. |
 | `service` | Service mode: the log goes to `stderr` (captured by journald), with no log file in the temporary directory, no timestamp of its own, and no ANSI codes. The mode can also be enabled through the `XRETRACTOR_SERVICE` environment variable set to any value other than empty or `0` — convenient in a systemd unit via `Environment=`. |
 | `realtime` | Enables real-time scheduling: `SCHED_FIFO`, `mlockall`, and absolute sleep for the processing thread. Requires `CAP_SYS_NICE` and `CAP_IPC_LOCK` capabilities (or root). Recommended in production environments requiring deterministic response time. |
@@ -64,6 +64,25 @@ Available options:
 | `until-eof` | Makes declared file sources non-wrapping and stops when the first one runs out of data. A `DEVICE` source has no end of file. |
 | `config` | Path to a configuration file in TOML format. It overrides the standard search order (`/etc/retractor/retractor.toml`, then `$XDG_CONFIG_HOME/retractor/retractor.toml` or `~/.config/retractor/retractor.toml`). A missing configuration file is a valid state — the program starts with built-in defaults. |
 | `llimitqry` | Limits the number of iterations in the query-execution loop. A value of `0` means no limit. |
+
+### Multiple instances
+
+Several named instances can run concurrently:
+
+```bash
+xretractor measurements.rql --name measurements --noanykey &
+xretractor diagnostics.rql --name diagnostics --noanykey &
+xqry --bus
+```
+
+Each receives its own lock and IPC objects. The shared bus nevertheless rejects a plan
+that collides with a live instance by stream name, written storage file, or `:ROTATION`
+counter file. The check happens before artifacts are removed. Omitting `--name` preserves
+the historical unnamed instance.
+
+Service mode provides a separate guarantee: exactly one service instance may run in each
+`RDB_NAMESPACE`; in the default namespace it is named `service`. See
+[Multiple Instances and the Bus](../../data-processing-system-architecture/multiple-instances-and-bus.md).
 
 ### Clock-free batch processing
 
@@ -115,6 +134,7 @@ Available options:
   -i [ --hideruleprog ]  hide rule program in rules (-u) output
   -p [ --transparent ]   make dot background transparent
   -w [ --diagram ] arg   create diagram output
+  -z [ --shmbudget ]     show shared memory budget of the compiled plan
 ```
 
 In this mode, options for creating diagrams and diagnostic dumps, described in more detail elsewhere in this work, are available.
@@ -137,6 +157,7 @@ In this mode, options for creating diagrams and diagnostic dumps, described in m
 | `hideruleprog` | Hides the programs describing the alerting conditions (used together with `rules`). |
 | `transparent` | Generates the graph with a transparent background. |
 | `diagram` | Generates marble diagrams. The argument takes the form `type:cycle_count`: `type` (`0` or `1`) determines whether the diagrams show timestamps; `cycle_count` sets the number of cycles shown in the diagram. |
+| `shmbudget` | Reports the fixed IPC reservation, capacity, and free space of the `shm_open` filesystem (usually `/dev/shm`), plus the cost of one client queue for each plan interval. This lets an operator estimate the number of concurrent subscriptions before starting a server. |
 
 ---
 
@@ -159,7 +180,8 @@ The absence of any file is a **valid state** — the program starts with default
 | `timing.server_startup_poll_ms` | `100` | Polling interval while waiting for the server to start. |
 | `timing.query_no_data_timeout_ms` | `10000` | No-data timeout after which the `xqry` client considers the server dead. |
 | `scheduling.rt_priority` | `50` | `SCHED_FIFO` priority in `--realtime` mode; allowed range 1–99. |
-| `paths.lock_dir` | _(system temp directory)_ | Directory for the singleton lock file. For systemd services, `/var/run/retractor` or `$XDG_RUNTIME_DIR` is recommended. The path must be absolute. |
+| `paths.lock_dir` | _(system temp directory)_ | Directory for instance lock files. For systemd services, `/var/run/retractor` or `$XDG_RUNTIME_DIR` is recommended. The path must be absolute. |
+| `server.autoname` | `false` | Generates a name when neither `--name` nor `--autoname` was given. An explicit `--name` wins. `false` preserves the historical unnamed instance. |
 | `service.query_file` | _(value from the build configuration)_ | The query file overwritten when a set is handed to a running service. Used only as a fallback, when the service did not report its own `QUERYFILE` in the lock file. It must match the `ExecStart` argument of the systemd unit — configuration does not change `ExecStart`. |
 
 Out-of-range values do not stop the service: the program logs a warning and uses the default. The exception is `storage.dir`, whose invalidity is a hard error — it would mean results landing somewhere unintended, or nowhere.
@@ -178,9 +200,34 @@ rt_priority = 60
 
 [paths]
 lock_dir = "/var/run/retractor"
+
+[server]
+autoname = false
 ```
 
 > **_NOTE:_** Layer loading and validation are covered by the `ut_appConfig` unit test; hard rejection of an invalid `storage.dir` by the `config_storage_validation` integration test.
+
+---
+
+## Service and plan replacement
+
+Starting without an `.rql` file, or with an empty one, creates an idle instance with
+working IPC. The first or a later complete plan can be loaded without restarting:
+
+```bash
+xqry --server service --reset plan.rql
+```
+
+The server parses and compiles the complete contents, checks resource collisions,
+reserves the new set, and then switches plans at a slot boundary. Rejection leaves the
+old plan unchanged. An empty reset file returns the server to idle. On a service instance,
+accepted contents are also written to the service's startup file.
+
+The alternative `xretractor new-plan.rql` path detects a running systemd unit, validates
+the set, atomically overwrites its startup file, and requests a restart. Explicitly
+selecting another identity with `--name` or `--autoname` starts a separate instance
+instead. After a critical error, the service plan is cleared so systemd restarts the
+process safely in idle state.
 
 ---
 

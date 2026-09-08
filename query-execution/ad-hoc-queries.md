@@ -10,20 +10,53 @@ Fig. 47 shows the control flow described above. A file with queries and directiv
 
 ### What can be attached at run time
 
-The ad hoc channel accepts **`SELECT` only**. Every data source must already
-exist in the plan — adding a new declaration to a running system is not
-supported and yields:
+The ad hoc channel accepts **exactly one `SELECT`, `DECLARE`, or `RULE` statement**.
+Compiler directives and programs containing multiple statements are rejected without
+changing the active plan.
+
+A new source can be declared without stopping a running engine:
 
 ```
 $ xqry -a "DECLARE a BYTE STREAM C, 1 FILE 'data3.txt'"
-rcv: db Fail parse: AdHoc DECLARE not supported
 ```
 
-The reason is executional, not syntactic: a declaration added at run time does
-not receive a runtime logical-index base (the processing loop skips declarations
-when deriving it), so the first read of such a stream by any operator would be a
-read outside the defined range. The restriction will go away once ad hoc
-`DECLARE` gets its own path for deriving that base.
+Exit code `0` with no message means that the declaration was accepted. The declaration
+receives its logical-index base in its first due slot. If a query attached later needs a
+window or a time shift, emission waits until the source has accumulated the complete
+required history. `HOLD` is not required; it remains an optional directive that delays
+the physical read. Repeating `DECLARE` for an existing name is rejected rather than
+treated as a configuration update.
+
+With multiple live instances, `DECLARE` alone cannot identify an owner because
+it has no `FROM` clause. The target must then be selected explicitly:
+
+```
+$ xqry --server measurements -a "DECLARE a BYTE STREAM C, 1 FILE 'data3.txt'"
+```
+
+Attaching the first declaration to a server started with an empty plan is not
+yet supported; the ad hoc channel requires an active data model.
+
+A rule attached at run time may execute only `DO DUMP`. `DO SYSTEM` remains available
+in a complete plan file because exposing it through IPC would let a client run arbitrary
+shell commands as the server account. The `ON` target must be an existing stream created
+by `SELECT`. The rule starts only after its complete required history has accumulated
+since attachment; if the in-memory stream retains too little history, the request is
+rejected.
+
+```bash
+xqry --server measurements -a \
+  "RULE alarm ON temperature WHEN temperature[0] > 80 DO DUMP -10 TO 5"
+```
+
+With multiple instances, the client routes a `SELECT` according to the owners of streams
+in `FROM`, and a `RULE` according to the stream in `ON`. A query combining sources from
+several servers is rejected. New stream names and storage files are claimed on the bus
+before the active plan is changed, so ad hoc commands cannot overwrite another
+instance's resource.
+
+Ad hoc commands extend the current plan. Use `xqry --reset file.rql` to replace it fully
+and atomically, including on an idle instance.
 
 ### Where an ad hoc stream begins
 
@@ -59,16 +92,17 @@ The xretractor process will begin processing data. At this point, open another t
 
 ```
 $ xqry -d
-|str1|1|48|24|         |0|
-|   A|1|-1| 3|data1.txt|1|
-|   B|2|-1| 2|data2.txt|1|
-ok.
+name | duration | size | count | location  | cap
+-----+----------+------+-------+-----------+----
+str1 | 1        | 48   | 24    |           | 0
+A    | 1        | -1   | 3     | data1.txt | 1
+B    | 2        | -1   | 2     | data2.txt | 1
 ```
 
 This will display, in tabular form, what's currently being processed in the system — how many bytes have already arrived, which files the data is being read from, and how much data has already been processed. If a more descriptive format is desired, we can issue the following command:
 
 ```
-$ xqry -y
+$ xqry -d -y
 ---
 apiVersion: xqry/v1
 streams:
@@ -92,27 +126,28 @@ To add another query to the system, we need to issue the command:
 
 ```
 $ xqry -a "SELECT * STREAM str2 FROM A#B"
-snd: adhoc SELECT * STREAM str2 FROM A#B
-rcv: db OK
 ```
 
-A command in this form sends a new query to the xretractor process. Upon receiving it, the system compiles it and merges it into the query plan tree.
+A command in this form sends a new query to the xretractor process. No message and exit
+code `0` mean that it was accepted. The system compiles it and merges it into the query
+plan tree; on rejection, `xqry` returns a non-zero code and writes the diagnostic reason.
 
 If we check the system's state again, we'll see the following picture:
 
 ```
 $ xqry -d
-|str2|2/3| 10| 10|         |0|
-|   A|  1| -1| 23|data1.txt|1|
-|str1|  1|312|156|         |0|
-|   B|  2| -1| 12|data2.txt|1|
-ok.
+name | duration | size | count | location  | cap
+-----+----------+------+-------+-----------+----
+str2 | 2/3      | 10   | 10    |           | 0
+A    | 1        | -1   | 23    | data1.txt | 1
+str1 | 1        | 312  | 156   |           | 0
+B    | 2        | -1   | 12    | data2.txt | 1
 ```
 
 Or like this:
 
 ```
-$ xqry -y
+$ xqry -d -y
 ---
 apiVersion: xqry/v1
 streams:
@@ -137,7 +172,7 @@ streams:
 Taking a closer look at the queries via the xqry command, we'll see the following system response for the str1 query:
 
 ```
-$ xqry -t str1
+$ xqry -t str1 -y
 ---
 apiVersion: xqry/v1
 stream:
@@ -154,7 +189,7 @@ fields:
 and for the str2 query:
 
 ```
-$ xqry -t str2
+$ xqry -t str2 -y
 ---
 apiVersion: xqry/v1
 stream:

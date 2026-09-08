@@ -111,6 +111,11 @@ Meaning of the parameters:
 
 The `--gnuplot-rtl` option is an `xqry` parameter that reverses gnuplot's X axis (`set xrange [720:0]`). The effect is that the freshest samples appear on the right side of the window, and older ones scroll to the left — similar to the classic ECG printout on paper tape.
 
+The script gives the server a name derived from the working directory and passes it to
+every `xqry --server` invocation. Several plotting targets can therefore run concurrently
+without taking over another instance. An optional fifth argument supplies a different
+name; if that name is already in use, the script exits before removing the output directory.
+
 <figure><img src="../assets/ecg_in_retractor.png" alt="View of the gnuplot window with the ECG signal being played back in RetractorDB"><figcaption><p>Fig. 59. View of the gnuplot window with the ECG signal being played back (record 205)</p></figcaption></figure>
 
 The window shown in Fig. 59 displays 720 samples, i.e. exactly 2 seconds of signal at 360 Hz, matching the typical width of a single ECG strip used in diagnostics.
