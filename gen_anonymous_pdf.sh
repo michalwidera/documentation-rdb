@@ -491,6 +491,7 @@ def anonymize(text, path):
     text = re.sub(r"@Muro\b", "@anonymous", text, flags=re.IGNORECASE)
     text = re.sub(r"\bmichal\b", "user", text, flags=re.IGNORECASE)
     text = re.sub(r"xretractor", "xengine", text, flags=re.IGNORECASE)
+    text = re.sub(r"retractorql", "engineql", text, flags=re.IGNORECASE)
     text = re.sub(r"\bretractor\b", "engine", text, flags=re.IGNORECASE)
     text = re.sub(r"(?i)\bRetractorDB\b", replace_project, text)
 
@@ -545,6 +546,7 @@ def stage_asset(source):
         content = re.sub(r"@Muro\b", "@anonymous", content, flags=re.IGNORECASE)
         content = re.sub(r"\bmichal\b", "user", content, flags=re.IGNORECASE)
         content = re.sub(r"xretractor", "xengine", content, flags=re.IGNORECASE)
+        content = re.sub(r"retractorql", "engineql", content, flags=re.IGNORECASE)
         content = re.sub(r"\bretractor\b", "engine", content, flags=re.IGNORECASE)
         content = re.sub(r"(?i)\bRetractorDB\b", replace_project, content)
         destination.write_text(content, encoding="utf-8")
@@ -638,7 +640,7 @@ combined = re.sub(
 (temporary / "combined.md").write_text(combined, encoding="utf-8")
 PYEOF
 
-forbidden='Michal|Widera|@Muro|\bretractor\b|xretractor|github\.com/michalwidera|retractordb\.com|documentation\.retractordb|dokumentacja\.retractordb|commit [0-9a-f]{7,}'
+forbidden='Michal|Widera|@Muro|retractorql|\bretractor\b|xretractor|github\.com/michalwidera|retractordb\.com|documentation\.retractordb|dokumentacja\.retractordb|commit [0-9a-f]{7,}'
 if LC_ALL=C rg -n -i "$forbidden" "$TEMP_DIR/combined.md"; then
   echo "Anonymization failed: identifying text remains in the prepared Markdown." >&2
   exit 1
