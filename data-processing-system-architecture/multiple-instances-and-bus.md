@@ -7,10 +7,14 @@ that cannot be shared safely.
 
 <figure><img src="../assets/multiple-instances-bus.svg" width="100%" alt=""><figcaption><p>Fig. 13. Concurrent instances and the shared xrdbbus bus</p></figcaption></figure>
 
-In Fig. 13 every instance compiles its own plan, owns its IPC objects, and claims its own
-set of stream names in a bus slot. Two resources remain shared: the bus, from which `xqry`
-reads the owner of a stream name, and the storage directory, in which the files of the
-individual instances are disjoint.
+In Fig. 13 every instance compiles its own plan and claims its own set of stream names in
+a bus slot; numbered nodes stand in for the names there, because all that matters is that
+they never repeat across instances. What is disjoint are the object names, not the memory
+area: the bus segment and the IPC objects of every instance live in the same `/dev/shm` and
+differ only by the instance-name suffix — for instance `alpha` these are the command queue
+`RetractorQueryQueue.alpha`, the response segment `RetractorShmemMap.alpha`, the map mutex
+`RetractorMapMutex.alpha`, and the client response queue `brcdbr.alpha.<pid>`. The storage
+directory is shared as well, with the files of the individual instances kept disjoint.
 
 Service mode is the exception: exactly one instance may be marked as the service in the
 host's default namespace. By default it receives the stable name `service`, so scripts
