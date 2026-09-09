@@ -42,6 +42,14 @@ The proofs rely almost exclusively on the floor function (⌊x⌋ — the intege
 \left\lfloor x\right\rfloor + 1 = \left\lceil x\right\rceil \iff x \in \mathbb{R} \setminus \mathbb{Z}
 \\]
 
+The second of these identities carries over directly to Beatty sequences themselves. The ceiling variant of the sequence, B′<sub>α</sub>(n) = ⌈nα⌉, is — for irrational α — merely a shifted version of the floor variant:
+
+\\[
+B_{\alpha}^{\prime}(n) = \left\lceil n\alpha \right\rceil = \left\lfloor n\alpha \right\rfloor + 1
+\\]
+
+In a true Beatty sequence α must be irrational, so nα is never an integer for any n > 0 — the premise of the second identity holds for every term, and the ceiling variant simply raises every term of the floor variant by exactly 1. For us, however, this is the case that does not exist inside a computer. In the rational domain, admitted only by Fraenkel's theorem, nα is sometimes an integer, and then ⌈nα⌉ = ⌊nα⌋, so the shift by 1 disappears. The constant offset between the ceiling and the floor variant therefore ceases to hold globally and has to be settled term by term — which is exactly what the case analysis in part three of the proof of Theorem 2 (de-interleaving satisfies Fraenkel's postulates) does, where gcd(a, b) decides which of the two cases applies.
+
 \\[
 \left\lfloor x + C\right\rfloor = \left\lfloor x\right\rfloor + C
 \\]
