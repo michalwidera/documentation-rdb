@@ -1,10 +1,10 @@
 # Artifact Analysis
 
-Looking more broadly at the potential data paths in Fig. 13, the last undescribed path is the one involving the xtrdb tool.
+Looking more broadly at the potential data paths in Fig. 14, the last undescribed path is the one involving the xtrdb tool.
 
-While building the system, I needed a tool for accessing artifacts in order to run integration tests. To verify correctness, I had to compare processing results at various stages. Fig. 31 shows the complete data flow, including the role of the xtrdb tool.
+While building the system, I needed a tool for accessing artifacts in order to run integration tests. To verify correctness, I had to compare processing results at various stages. Fig. 32 shows the complete data flow, including the role of the xtrdb tool.
 
-<figure><img src="../assets/przeplyw_danych_analiza_artefaktow.svg" width="100%" alt=""><figcaption><p>Fig. 31. Data flow in artifact analysis</p></figcaption></figure>
+<figure><img src="../assets/przeplyw_danych_analiza_artefaktow.svg" width="100%" alt=""><figcaption><p>Fig. 32. Data flow in artifact analysis</p></figcaption></figure>
 
 To present the artifact-analysis process, the entire processing chain needs to be taken into account. We'll use the same query as before. However, we'll run our data-processing process a bit differently this time.
 

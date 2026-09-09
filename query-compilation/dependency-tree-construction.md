@@ -11,7 +11,7 @@ DECLARE a UINT STREAM core0, 0.1 FILE 'datafile1.txt'
 SELECT str1[0] STREAM str1 FROM core0
 ```
 
-We can obtain a graph highlighting the dependencies between the individual objects as follows (Fig. 32):
+We can obtain a graph highlighting the dependencies between the individual objects as follows (Fig. 33):
 
 ```
 $ xretractor -c query5.rql -d > out.dot && dot -Tsvg out.dot -o out.svg
@@ -19,7 +19,7 @@ $ xretractor -c query5.rql -d > out.dot && dot -Tsvg out.dot -o out.svg
 
 For a full description of the `-d -f -s` flags and how to interpret the output — see [Compilation Debugging](compilation-debugging.md).
 
-<figure><img src="../assets/dependencja_efemeryda_artefakt.png" alt=""><figcaption><p>Fig. 32. Ephemeris–artifact dependency</p></figcaption></figure>
+<figure><img src="../assets/dependencja_efemeryda_artefakt.png" alt=""><figcaption><p>Fig. 33. Ephemeris–artifact dependency</p></figcaption></figure>
 
 Let's make this graph a bit more complex by adding two ephemeris declarations and an additional artifact.
 
@@ -30,9 +30,9 @@ SELECT str1[0] STREAM str1 FROM core0
 SELECT str2[0] STREAM str2 FROM core0 + core1
 ```
 
-The dependency graph for the set of queries above looks as follows (Fig. 33):
+The dependency graph for the set of queries above looks as follows (Fig. 34):
 
-<figure><img src="../assets/dependencja_efemerydy_artefakty.png" alt=""><figcaption><p>Fig. 33. Ephemerides–artifacts dependency</p></figcaption></figure>
+<figure><img src="../assets/dependencja_efemerydy_artefakty.png" alt=""><figcaption><p>Fig. 34. Ephemerides–artifacts dependency</p></figcaption></figure>
 
 Let's build an additional node that depends on artifacts. The simplest way is to add the following query at the end:
 
@@ -42,9 +42,9 @@ SELECT str3[0] STREAM str3 FROM str1#str2
 
 The graph changes shape:
 
-<figure><img src="../assets/dependencja_efemerydy_artefakty_artefakty.png" alt=""><figcaption><p>Fig. 34. Ephemerides–artifacts–artifacts dependency</p></figcaption></figure>
+<figure><img src="../assets/dependencja_efemerydy_artefakty_artefakty.png" alt=""><figcaption><p>Fig. 35. Ephemerides–artifacts–artifacts dependency</p></figcaption></figure>
 
-As shown in Fig. 34, the str3 stream is not directly dependent on the data supplied by the core0 and core1 streams. Queries form a dependency graph, and the order in which they are invoked is well-defined. The interval value of streams grows toward the roots. This growth toward the roots follows from the interval-determination equations of the developed algebra.
+As shown in Fig. 35, the str3 stream is not directly dependent on the data supplied by the core0 and core1 streams. Queries form a dependency graph, and the order in which they are invoked is well-defined. The interval value of streams grows toward the roots. This growth toward the roots follows from the interval-determination equations of the developed algebra.
 
 Note that queries in the rql file are processed sequentially. Attempting to reference, in a query, an object that is not yet defined results in a compilation error.
 
@@ -54,9 +54,9 @@ Attaching the following query to the dependency tree produces an additional subs
 SELECT str4[0] STREAM str4 FROM (core1+core0)>2
 ```
 
-A query attached this way will modify the dependency tree as shown in Fig. 35.
+A query attached this way will modify the dependency tree as shown in Fig. 36.
 
-<figure><img src="../assets/dependencja_z_substratem.png" alt=""><figcaption><p>Fig. 35. Dependency with a substrate</p></figcaption></figure>
+<figure><img src="../assets/dependencja_z_substratem.png" alt=""><figcaption><p>Fig. 36. Dependency with a substrate</p></figcaption></figure>
 
 The substrate is marked with a different color and an "Auto" label next to the time interval.
 

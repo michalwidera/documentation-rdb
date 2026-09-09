@@ -2,7 +2,7 @@
 
 Given that the system is designed for continuous operation, and that, theoretically, the results obtained without a data-retention process would fill up any storage medium, we introduce additional definitions related to the nature of the data being processed.
 
-In presenting the description of Fig. 13, artifacts were mentioned. This is one of the terms that needs explaining.
+In presenting the description of Fig. 14, artifacts were mentioned. This is one of the terms that needs explaining.
 
 > **✅ Note**
 >

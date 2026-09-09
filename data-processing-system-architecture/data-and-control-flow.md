@@ -1,6 +1,6 @@
 # Data and Control Flow
 
-Data and control in RetractorDB give rise to several potential ways of using the system's components. Fig. 13 schematically shows the flow of data between RetractorDB's processes, Linux system processes, and the source data and results produced by each process.
+Data and control in RetractorDB give rise to several potential ways of using the system's components. Fig. 14 schematically shows the flow of data between RetractorDB's processes, Linux system processes, and the source data and results produced by each process.
 
 The thickest lines represent the flow that is always present when regular time series are processed. After receiving an `.rql` file, xretractor compiles it, builds the query-plan tree, begins processing incoming data, and creates binary files containing artifacts. Without a file it can start idle and wait for a complete plan delivered by `xqry --reset`.
 
@@ -12,7 +12,7 @@ The remaining arrows represent data flows that depend on the specific process be
 
 Each process on the diagram is additionally labeled with the number of continuous processes of that kind maintained in the system. The historical label "1" next to xretractor describes the one plan instance shown in the figure, not the current host-wide limit. Named instances can run concurrently; exactly one may act as the service in the default host namespace. The `xrdbbus` bus enforces separation of their resources. The xtrdb program does not maintain a continuous process: it reads data, returns a result, and exits, or runs interactively. The xqry process is labeled "N" because several clients can connect to each xretractor instance.
 
-<figure><img src="../assets/przeplyw_danych_i_sterowania.svg" width="100%" alt=""><figcaption><p>Fig. 13. Data and control flow</p></figcaption></figure>
+<figure><img src="../assets/przeplyw_danych_i_sterowania.svg" width="100%" alt=""><figcaption><p>Fig. 14. Data and control flow</p></figcaption></figure>
 
 ## Stopping xretractor
 

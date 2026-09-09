@@ -380,13 +380,13 @@ SELECT str5[0] STREAM str5 FROM (core0+core1)>3
 
 Both queries require the sum `core0+core1` to be computed first.
 
-The `extractIntermediateStreams` phase creates a separate substrate for each query, producing two identical intermediate nodes in the graph (Fig. 36):
+The `extractIntermediateStreams` phase creates a separate substrate for each query, producing two identical intermediate nodes in the graph (Fig. 37):
 
-<figure><img src="../assets/dedup_przed.svg" width="70%" alt=""><figcaption><p>Fig. 36. Graph before deduplication — two identical STREAM_ADD_core0_core1 substrates</p></figcaption></figure>
+<figure><img src="../assets/dedup_przed.svg" width="70%" alt=""><figcaption><p>Fig. 37. Graph before deduplication — two identical STREAM_ADD_core0_core1 substrates</p></figcaption></figure>
 
-Once `deduplicateSubstrats()` runs, one of the duplicates is removed and every `PUSH_STREAM` reference is repointed to the surviving node. A single shared substrate remains in the graph (Fig. 37):
+Once `deduplicateSubstrats()` runs, one of the duplicates is removed and every `PUSH_STREAM` reference is repointed to the surviving node. A single shared substrate remains in the graph (Fig. 38):
 
-<figure><img src="../assets/dedup_po.svg" width="40%" alt=""><figcaption><p>Fig. 37. Graph after deduplication — one shared substrate, generated with: xretractor dedup_after.rql -c -d</p></figcaption></figure>
+<figure><img src="../assets/dedup_po.svg" width="40%" alt=""><figcaption><p>Fig. 38. Graph after deduplication — one shared substrate, generated with: xretractor dedup_after.rql -c -d</p></figcaption></figure>
 
 The graph after deduplication is exactly what `xretractor -c -d` returns — the compiler always presents the result after all optimization phases.
 
@@ -402,9 +402,9 @@ DECLARE a UINT STREAM core1, 0.1 FILE 'datafile2.txt'
 SELECT str4[0] STREAM str4 FROM (core0+core1)>2
 ```
 
-Here, `extractIntermediateStreams` extracts a substrate `STREAM_ADD_core0_core1` for the expression `core0+core1`. Artifact `str4` depends on it (Fig. 38):
+Here, `extractIntermediateStreams` extracts a substrate `STREAM_ADD_core0_core1` for the expression `core0+core1`. Artifact `str4` depends on it (Fig. 39):
 
-<figure><img src="../assets/absorb_bez_mysum.svg" alt=""><figcaption><p>Fig. 38. Graph with the automatic substrate STREAM_ADD_core0_core1</p></figcaption></figure>
+<figure><img src="../assets/absorb_bez_mysum.svg" alt=""><figcaption><p>Fig. 39. Graph with the automatic substrate STREAM_ADD_core0_core1</p></figcaption></figure>
 
 When the user adds an explicit stream declaration that is exactly the same sum:
 
@@ -412,9 +412,9 @@ When the user adds an explicit stream declaration that is exactly the same sum:
 SELECT * STREAM mysum FROM core0+core1
 ```
 
-the substrate `STREAM_ADD_core0_core1` satisfies every equivalence condition relative to `mysum` — identical interval, identical token program, identical field schema. The `deduplicateSubstrats()` phase removes the substrate and repoints every `PUSH_STREAM` reference to `mysum`. The substrate disappears from the graph entirely (Fig. 39):
+the substrate `STREAM_ADD_core0_core1` satisfies every equivalence condition relative to `mysum` — identical interval, identical token program, identical field schema. The `deduplicateSubstrats()` phase removes the substrate and repoints every `PUSH_STREAM` reference to `mysum`. The substrate disappears from the graph entirely (Fig. 40):
 
-<figure><img src="../assets/absorb_z_mysum.svg" alt=""><figcaption><p>Fig. 39. Graph after adding SELECT * STREAM mysum FROM core0+core1 — the substrate replaced by an explicit stream</p></figcaption></figure>
+<figure><img src="../assets/absorb_z_mysum.svg" alt=""><figcaption><p>Fig. 40. Graph after adding SELECT * STREAM mysum FROM core0+core1 — the substrate replaced by an explicit stream</p></figcaption></figure>
 
 A side effect: `mysum` becomes a shared node — it serves both its own consumers and those that previously used the automatic substrate. In exchange, the user gains an explicit name for the intermediate results and can query them via `xqry`.
 

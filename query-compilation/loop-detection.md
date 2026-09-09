@@ -20,7 +20,7 @@ SELECT * STREAM agg FROM MAX(merged)
 SELECT * STREAM broken FROM merged + broken
 ```
 
-The last query defines `broken` as the result of the operation `merged + broken` — the stream depends on itself. The dependency graph contains a cycle (Fig. 40):
+The last query defines `broken` as the result of the operation `merged + broken` — the stream depends on itself. The dependency graph contains a cycle (Fig. 41):
 
 ```mermaid
 %% pdf-width: 85%
@@ -33,7 +33,7 @@ graph LR
     style broken fill:#f66,color:#fff
 ```
 
-_Fig. 40. A cycle in the query dependency graph_
+_Fig. 41. A cycle in the query dependency graph_
 
 ## Compilation result
 

@@ -6,7 +6,7 @@ The alerting mechanism (the `RULE` directive) is an integral part of the main pr
 
 ## Where RULE sits in the processing cycle
 
-Recall the `processRows()` function outlined in the chapter [Query Tree Traversal Algorithm](query-tree-traversal-algorithm.md). For every non-declaration query, four steps are carried out in sequence (Fig. 48):
+Recall the `processRows()` function outlined in the chapter [Query Tree Traversal Algorithm](query-tree-traversal-algorithm.md). For every non-declaration query, four steps are carried out in sequence (Fig. 49):
 
 ```mermaid
 %%{init: {"markdownAutoWrap": false}}%%
@@ -16,7 +16,7 @@ flowchart LR
     C --> D["constructRulesAndUpdate()"]
 ```
 
-_Fig. 48. The order of processing steps for a single query_
+_Fig. 49. The order of processing steps for a single query_
 
 The fourth step — `constructRulesAndUpdate()` — is exactly where all rules attached to the current query are executed. It is called after the `SELECT` results have been written to disk, which means a rule always evaluates against a **complete, just-computed sample** of the stream.
 
@@ -30,7 +30,7 @@ Every rule contains a list of tokens describing a logical expression (the `condi
 2. Passes the condition to the `expressionEvaluator::eval()` engine — **the same engine** that computes `SELECT` expressions.
 3. Casts the result to a boolean (`boolCast`): any non-zero numeric value is `true`, zero is `false`.
 
-If the condition is satisfied, the action associated with the rule is executed (`DO SYSTEM` or `DO DUMP`). If not, the rule is skipped with no side effects at all. The full flow is shown in Fig. 49.
+If the condition is satisfied, the action associated with the rule is executed (`DO SYSTEM` or `DO DUMP`). If not, the rule is skipped with no side effects at all. The full flow is shown in Fig. 50.
 
 ```mermaid
 %%{init: {"markdownAutoWrap": false}}%%
@@ -45,7 +45,7 @@ flowchart TD
     G --> H
 ```
 
-_Fig. 49. Rule evaluation flow_
+_Fig. 50. Rule evaluation flow_
 
 ***
 
@@ -96,7 +96,7 @@ After registration, the task goes into the `bookOfTasks[streamName]` queue. On e
    - Otherwise — write the current sample to the file and decrement `dumpedRecordsToGo`.
 2. Once `dumpedRecordsToGo` reaches 0 — close the file descriptor and remove the task from the queue.
 
-The full sequence for `DUMP -3 TO 2` is shown in Fig. 50.
+The full sequence for `DUMP -3 TO 2` is shown in Fig. 51.
 
 ```mermaid
 %%{init: {"markdownAutoWrap": false}}%%
@@ -118,7 +118,7 @@ sequenceDiagram
     DM->>DM: Close the file — task complete
 ```
 
-_Fig. 50. Data-collection sequence for DO DUMP –3 TO 2_
+_Fig. 51. Data-collection sequence for DO DUMP –3 TO 2_
 
 ### The delayed-start case (step\_back ≥ 0)
 
@@ -165,7 +165,7 @@ $ xtrdb
 
 ## Multiple rules — evaluation order
 
-Multiple rules can be attached to a single stream. All of them are evaluated in a single `constructRulesAndUpdate()` iteration, in the order they were declared in the `.rql` file. Every rule is independent — one being satisfied does not affect the evaluation of the others (Fig. 51).
+Multiple rules can be attached to a single stream. All of them are evaluated in a single `constructRulesAndUpdate()` iteration, in the order they were declared in the `.rql` file. Every rule is independent — one being satisfied does not affect the evaluation of the others (Fig. 52).
 
 ```mermaid
 %%{init: {"markdownAutoWrap": false}}%%
@@ -182,7 +182,7 @@ flowchart TD
     R3 -->|false| X3([skip])
 ```
 
-_Fig. 51. Independent evaluation of multiple rules on the same stream_
+_Fig. 52. Independent evaluation of multiple rules on the same stream_
 
 ***
 

@@ -37,9 +37,9 @@ SELECT str[0], str[0] / 2 STREAM str1 FROM core0
 
 ![Highlighting - screenshot](../../assets/vscode-podswietlenie-rql.png)
 
-_Fig. 62. RQL syntax highlighting in the Visual Studio Code editor_
+_Fig. 63. RQL syntax highlighting in the Visual Studio Code editor_
 
-As shown in Fig. 62, keywords (`STORAGE`, `DECLARE`, `SELECT`, `FROM`) are highlighted as commands, and data types (`INTEGER`) as types. In current RQL, `#` starts a comment only as the first non-whitespace character of a whole line; inside a `FROM` clause it is always the interleaving operator. A line-ending comment starts with `//`, and a block comment has the form `/* ... */`. The highlighting definition should preserve this distinction.
+As shown in Fig. 63, keywords (`STORAGE`, `DECLARE`, `SELECT`, `FROM`) are highlighted as commands, and data types (`INTEGER`) as types. In current RQL, `#` starts a comment only as the first non-whitespace character of a whole line; inside a `FROM` clause it is always the interleaving operator. A line-ending comment starts with `//`, and a block comment has the form `/* ... */`. The highlighting definition should preserve this distinction.
 
 ***
 
@@ -116,11 +116,11 @@ WHEN str4[0] = 20 OR str4[0] = 23 \
 DO SYSTEM 'echo "test"'
 ```
 
-The text view in the vim editor is shown in Fig. 63.
+The text view in the vim editor is shown in Fig. 64.
 
 ![view in the vim editor](../../assets/vim-podswietlenie-rql.png)
 
-_Fig. 63. RQL syntax highlighting in the vim editor_
+_Fig. 64. RQL syntax highlighting in the vim editor_
 
 ***
 
@@ -209,6 +209,6 @@ WHEN str1[0] = 13 OR str1[0] = 11 \
 DO SYSTEM 'echo "systemcall"'
 ```
 
-Running `bat query.rql` displays the file's content with line numbers and syntax highlighting in the terminal, where keywords, types, comments, and string literals get distinct colors according to `bat`'s active theme (Fig. 64).
+Running `bat query.rql` displays the file's content with line numbers and syntax highlighting in the terminal, where keywords, types, comments, and string literals get distinct colors according to `bat`'s active theme (Fig. 65).
 
-<figure><img src="../../assets/batcat-polecenie-rql.png" alt="View of the batcat test.rql command"><figcaption><p>Fig. 64. RQL syntax highlighting in the terminal — the batcat command</p></figcaption></figure>
+<figure><img src="../../assets/batcat-polecenie-rql.png" alt="View of the batcat test.rql command"><figcaption><p>Fig. 65. RQL syntax highlighting in the terminal — the batcat command</p></figcaption></figure>

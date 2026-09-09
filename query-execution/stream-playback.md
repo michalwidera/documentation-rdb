@@ -59,6 +59,6 @@ $ xqry -s core
 …
 ```
 
-A recorded example below (Fig. 54):
+A recorded example below (Fig. 55):
 
-<figure><img src="../assets/adhoc-example.svg" alt=""><figcaption><p>Fig. 54. Recorded example of stream playback</p></figcaption></figure>
+<figure><img src="../assets/adhoc-example.svg" alt=""><figcaption><p>Fig. 55. Recorded example of stream playback</p></figcaption></figure>

@@ -1,8 +1,8 @@
 # Data Processing and Distribution
 
-Starting the data-processing process and analyzing the diagram shown in Fig. 13, we can identify the following flow — Fig. 27:
+Starting the data-processing process and analyzing the diagram shown in Fig. 14, we can identify the following flow — Fig. 28:
 
-<figure><img src="../assets/schemat_przeplywu_przetwarzanie.svg" width="100%" alt=""><figcaption><p>Fig. 27. Control-flow diagram of the processing workflow</p></figcaption></figure>
+<figure><img src="../assets/schemat_przeplywu_przetwarzanie.svg" width="100%" alt=""><figcaption><p>Fig. 28. Control-flow diagram of the processing workflow</p></figcaption></figure>
 
 To carry out the processing, we'll need to prepare data and build a data-processing chain. As input to this chain we'll use a prepared query-plan file, and we'll prepare a binary file with data. We'll build a process that processes the data and displays the results.
 
@@ -42,9 +42,9 @@ $ seq 20 28 > datafile1.txt
 
 The file will contain consecutive numbers from 20 to 28.
 
-A look at the query execution plan gives us the picture in Fig. 28:
+A look at the query execution plan gives us the picture in Fig. 29:
 
-<figure><img src="../assets/graf_plan_zapytania_2.png" width="100%" alt=""><figcaption><p>Fig. 28. Graphical representation of query plan 2</p></figcaption></figure>
+<figure><img src="../assets/graf_plan_zapytania_2.png" width="100%" alt=""><figcaption><p>Fig. 29. Graphical representation of query plan 2</p></figcaption></figure>
 
 Once we've prepared the data file, we can start the compilation and data-processing process. We do this by running the following command:
 
@@ -91,9 +91,9 @@ $ xqry -s str1 -p 50,50 | gnuplot
 
 The following window will appear on screen, with data streaming in live:
 
-<figure><img src="../assets/gnuplot_dane_realtime.png" alt=""><figcaption><p>Fig. 29. Snapshot of the gnuplot window showing incoming data</p></figcaption></figure>
+<figure><img src="../assets/gnuplot_dane_realtime.png" alt=""><figcaption><p>Fig. 30. Snapshot of the gnuplot window showing incoming data</p></figcaption></figure>
 
-In Fig. 29 we see what the data represented numerically looks like. The sawtooth shape is the first column; the irregular shape wrapping around the sawtooth is the second column. The figure shows a static snapshot — but in the actual window, this data streams in and the picture updates continuously.
+In Fig. 30 we see what the data represented numerically looks like. The sawtooth shape is the first column; the irregular shape wrapping around the sawtooth is the second column. The figure shows a static snapshot — but in the actual window, this data streams in and the picture updates continuously.
 
 A typical way to send data outside the machine on which xretractor and xqry are running is to use the command:
 
@@ -122,6 +122,6 @@ $ xqry -k
 
 After issuing this command, the xretractor process will shut down and interrupt the query plans being processed.
 
-A recording of the process shown on screen (Fig. 30) looks as follows:
+A recording of the process shown on screen (Fig. 31) looks as follows:
 
-<figure><img src="../assets/simple-record.gif" width="100%" alt=""><figcaption><p>Fig. 30. Recording of real-time data processing</p></figcaption></figure>
+<figure><img src="../assets/simple-record.gif" width="100%" alt=""><figcaption><p>Fig. 31. Recording of real-time data processing</p></figcaption></figure>

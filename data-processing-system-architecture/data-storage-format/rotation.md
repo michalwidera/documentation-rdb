@@ -22,7 +22,7 @@ The `PersistentCounter` object reads the value `N` from the file at startup (`ge
 
 ## Control flow during rotation
 
-Here we want to show the full lifecycle of the files during one session and the transition to the next. The diagram (Fig. 24) is meant to explain the order of events: detecting rotation at startup, creating a new `.meta` index, normal data writes during operation, and archiving files at process shutdown. The key takeaway is that rotation is not a single operation, but a process spread out over time, spanning the start and stop of a session.
+Here we want to show the full lifecycle of the files during one session and the transition to the next. The diagram (Fig. 25) is meant to explain the order of events: detecting rotation at startup, creating a new `.meta` index, normal data writes during operation, and archiving files at process shutdown. The key takeaway is that rotation is not a single operation, but a process spread out over time, spanning the start and stop of a session.
 
 
 ```mermaid
@@ -48,7 +48,7 @@ sequenceDiagram
     Note over RQL: PersistentCounter writes N+1 to the file
 ```
 
-_Fig. 24. File rotation sequence — session start and stop_
+_Fig. 25. File rotation sequence — session start and stop_
 
 Rotation of the `.meta` file happens **at the start** of session N — `detectStartupState()` detects the inconsistency (data file empty, index non-empty from an old session) and calls `metaData::rotate(N)`. The binary data file is only renamed **at session shutdown**, by the `posixBinaryFile` destructor.
 

@@ -291,7 +291,7 @@ The class holds two states:
 
 ### Object lifecycle
 
-The state diagram (Fig. 15) shows the transitions between phases of a `metaData` object:
+The state diagram (Fig. 16) shows the transitions between phases of a `metaData` object:
 
 ```mermaid
 %% pdf-width: 30%
@@ -305,7 +305,7 @@ stateDiagram-v2
     Active --> [*] : destructor (auto flush)
 ```
 
-_Fig. 15. Lifecycle of a metaData object_
+_Fig. 16. Lifecycle of a metaData object_
 
 **Constructor** (`metaData(descriptor, path)`):
 - Initializes an empty `currentEntry_` based on the number of fields in the descriptor.
@@ -360,7 +360,7 @@ index object is a storageShadow?
 
 #### `onTransmissionGap(duration)`
 
-Records a transmission gap of the given length (in units of the stream's interval). It first commits the current segment (`flushCurrentEntry()`), then appends an entry with `isGap=true` to the file (Fig. 16).
+Records a transmission gap of the given length (in units of the stream's interval). It first commits the current segment (`flushCurrentEntry()`), then appends an entry with `isGap=true` to the file (Fig. 17).
 
 ```mermaid
 sequenceDiagram
@@ -374,7 +374,7 @@ sequenceDiagram
     Note over F: the file now contains a gap marker
 ```
 
-_Fig. 16. Gap-recording sequence — onTransmissionGap_
+_Fig. 17. Gap-recording sequence — onTransmissionGap_
 
 ### Safety mechanism: `flushCurrentEntry()` and overwriting (tail_.dirty)
 
@@ -392,7 +392,7 @@ flushCurrentEntry() → seek to the last entry, overwrite [pattern, count=3]
     (file size unchanged)
 ```
 
-The sequence diagram for `storage`'s typical pattern (append + flush after every record) is shown in Fig. 17:
+The sequence diagram for `storage`'s typical pattern (append + flush after every record) is shown in Fig. 18:
 
 ```mermaid
 sequenceDiagram
@@ -419,13 +419,13 @@ sequenceDiagram
     M->>F: appendEntry([T,F], count=1)
 ```
 
-_Fig. 17. The lazy-overwrite mechanism — overwriting the last .meta entry_
+_Fig. 18. The lazy-overwrite mechanism — overwriting the last .meta entry_
 
 Thanks to this, the `.meta` file grows only when the **null pattern changes** — not on every record. With continuous, uniform data arrival, the file has a constant size regardless of the number of records.
 
 ### Persistence and state recovery
 
-After the process restarts, a new `metaData` object loads the file via `loadIndex()` (sequence shown in Fig. 18):
+After the process restarts, a new `metaData` object loads the file via `loadIndex()` (sequence shown in Fig. 19):
 
 1. It skips the header — 8 reserved bytes; nothing in them is interpreted.
 2. It loads all committed entries from the file.
@@ -449,7 +449,7 @@ sequenceDiagram
     Proc2->>Proc2: totalRecords() = 700
 ```
 
-_Fig. 18. Persistence and state recovery after a restart_
+_Fig. 19. Persistence and state recovery after a restart_
 
 ### Query interface
 
@@ -523,9 +523,9 @@ flowchart LR
     MAIN --> RET2["Return the original data"]
 ```
 
-_Fig. 19. Record read priority relative to the shadow file_
+_Fig. 20. Record read priority relative to the shadow file_
 
-Fig. 19 shows the record-read logic: the system first checks for an entry in `.shadow`, and only reads the record from the main file if there is none.
+Fig. 20 shows the record-read logic: the system first checks for an entry in `.shadow`, and only reads the record from the main file if there is none.
 
 ### Merging (merge)
 
@@ -545,9 +545,9 @@ sequenceDiagram
     App->>Shadow: ftruncate(0) — clear the shadow file
 ```
 
-_Fig. 20. Merging the shadow file into the main file_
+_Fig. 21. Merging the shadow file into the main file_
 
-Fig. 20 shows the flow of `merge()`: successive `(position, data)` entries from `.shadow` are written to the main file, and once finished, the shadow file is cleared.
+Fig. 21 shows the flow of `merge()`: successive `(position, data)` entries from `.shadow` are written to the main file, and once finished, the shadow file is cleared.
 
 ### Example: modifying a record
 
@@ -600,7 +600,7 @@ Every call to `onRecordModified()` in shadow mode appends one entry to the end o
 
 ### Read priority
 
-`storageShadow::getNullBitset(i)` scans the list of overrides from the end. If it finds an entry for index `i`, it returns that entry's null pattern without consulting the main index (Fig. 21):
+`storageShadow::getNullBitset(i)` scans the list of overrides from the end. If it finds an entry for index `i`, it returns that entry's null pattern without consulting the main index (Fig. 22):
 
 ```mermaid
 flowchart TD
@@ -613,7 +613,7 @@ flowchart TD
     MAIN --> RET2["Return the pattern from .meta"]
 ```
 
-_Fig. 21. Null-pattern read priority — main index vs. index shadow_
+_Fig. 22. Null-pattern read priority — main index vs. index shadow_
 
 ### Lifecycle
 
@@ -630,7 +630,7 @@ The `.meta.shadow` file is managed in parallel with the data shadow file:
 
 ### Persistence across restarts
 
-After the process restarts, a new `storageShadow` object restores the shadow state already in its constructor, via `metaShadow::load()` (Fig. 22):
+After the process restarts, a new `storageShadow` object restores the shadow state already in its constructor, via `metaShadow::load()` (Fig. 23):
 
 1. It reads all entries from `.meta.shadow` (no header — a direct format).
 2. It loads them into the override list in write order.
@@ -658,7 +658,7 @@ sequenceDiagram
     Proc2->>MS: delete the .meta.shadow file
 ```
 
-_Fig. 22. Index shadow — restoring null patterns after a restart_
+_Fig. 23. Index shadow — restoring null patterns after a restart_
 
 ### Usage example — correcting a record while preserving consistency
 
@@ -694,7 +694,7 @@ storageShadow.mergeShadow() → .meta rebuilt, .meta.shadow deleted
 
 ## The relationship between the files
 
-In this section, the relationships between the files are shown at two levels. The structural level describes how the data file carries the records, the `.desc` descriptor defines their format, the `.meta` file stores information about null values and transmission gaps, `.shadow` collects data modifications without destroying the original, and `.meta.shadow` similarly collects overrides of null patterns. The operational level (Fig. 23) shows the read and write flow: reads check `.shadow` and `.meta.shadow` first, `merge()` moves corrections into the main file and the main index, and the `append`, `update`, and `read` operations keep the data and metadata consistent throughout the artifact's lifecycle.
+In this section, the relationships between the files are shown at two levels. The structural level describes how the data file carries the records, the `.desc` descriptor defines their format, the `.meta` file stores information about null values and transmission gaps, `.shadow` collects data modifications without destroying the original, and `.meta.shadow` similarly collects overrides of null patterns. The operational level (Fig. 24) shows the read and write flow: reads check `.shadow` and `.meta.shadow` first, `merge()` moves corrections into the main file and the main index, and the `append`, `update`, and `read` operations keep the data and metadata consistent throughout the artifact's lifecycle.
 
 ```mermaid
 %% pdf-width: 100%
@@ -732,9 +732,9 @@ graph LR
     end
 ```
 
-_Fig. 23. The relationship between an artifact's write, modify, and read operations_
+_Fig. 24. The relationship between an artifact's write, modify, and read operations_
 
-Fig. 23 shows the flow of `append`, `update`, and `read` operations through the `storage` layer, and their direct effect on the data file, `.meta`, `.shadow`, and `.meta.shadow`.
+Fig. 24 shows the flow of `append`, `update`, and `read` operations through the `storage` layer, and their direct effect on the data file, `.meta`, `.shadow`, and `.meta.shadow`.
 
 ## Starting point — a binary file without metadata
 

@@ -55,9 +55,9 @@ graph TD
     style M fill:#cdf,color:#000
 ```
 
-_Fig. 14. The artifact file set and their relationships_
+_Fig. 15. The artifact file set and their relationships_
 
-The diagram in Fig. 14 shows the static relationship between artifact files: `.desc` defines the record structure, `.meta` indexes nulls and gaps, `.shadow` stores optional record overrides, and `.meta.shadow` the null-pattern overrides that correspond to them. The two shadow files always go together.
+The diagram in Fig. 15 shows the static relationship between artifact files: `.desc` defines the record structure, `.meta` indexes nulls and gaps, `.shadow` stores optional record overrides, and `.meta.shadow` the null-pattern overrides that correspond to them. The two shadow files always go together.
 
 The shadow files and the metadata file are optional. With continuous, gap-free, unmodified data arrival, the binary data file and the descriptor alone are enough.
 

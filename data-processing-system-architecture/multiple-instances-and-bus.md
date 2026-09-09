@@ -5,6 +5,13 @@ own name, lock, IPC area, plan, and clients. The shared `xrdbbus` bus registers 
 instances, lets `xqry` discover them, and ensures that two plans do not claim resources
 that cannot be shared safely.
 
+<figure><img src="../assets/multiple-instances-bus.svg" width="100%" alt=""><figcaption><p>Fig. 13. Concurrent instances and the shared xrdbbus bus</p></figcaption></figure>
+
+In Fig. 13 every instance compiles its own plan, owns its IPC objects, and claims its own
+set of stream names in a bus slot. Two resources remain shared: the bus, from which `xqry`
+reads the owner of a stream name, and the storage directory, in which the files of the
+individual instances are disjoint.
+
 Service mode is the exception: exactly one instance may be marked as the service in the
 host's default namespace. By default it receives the stable name `service`, so scripts
 can address `--server service` without first inspecting the bus.

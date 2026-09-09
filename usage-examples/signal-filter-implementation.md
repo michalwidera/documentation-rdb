@@ -49,9 +49,9 @@ ylabel('gain (dB)')
 grid on
 ```
 
-Running the code above in Octave produces the following graphical response (Fig. 55):
+Running the code above in Octave produces the following graphical response (Fig. 56):
 
-<figure><img src="../assets/czestotliwosci.svg" alt=""><figcaption><p>Fig. 55. Graphical representation, in the frequency domain, of the computed digital filter</p></figcaption></figure>
+<figure><img src="../assets/czestotliwosci.svg" alt=""><figcaption><p>Fig. 56. Graphical representation, in the frequency domain, of the computed digital filter</p></figcaption></figure>
 
 On the y-axis, Octave shows the normalized frequency. The frequency range shown on the y-axis, from 0 to 1, corresponds to a frequency range of 0Hz to 25Hz. On the x-axis, the first plot shows the linear gain, the second the same quantity but on a logarithmic scale.
 
@@ -123,9 +123,9 @@ After `[_]` is expanded, the plan contains many fields, so the full compilation 
 $ xretractor -c query.rql -p -d > out.dot && dot -Tsvg out.dot -o out.svg
 ```
 
-We'll see the following picture (Fig. 56):
+We'll see the following picture (Fig. 57):
 
-<figure><img src="../assets/zaleznosc_strumieni_filtr_sygnalowy.png" width="50%" alt=""><figcaption><p>Fig. 56. Dependency between the processed data streams while carrying out the signal filter</p></figcaption></figure>
+<figure><img src="../assets/zaleznosc_strumieni_filtr_sygnalowy.png" width="50%" alt=""><figcaption><p>Fig. 57. Dependency between the processed data streams while carrying out the signal filter</p></figcaption></figure>
 
 ### Running it
 
@@ -145,16 +145,16 @@ $ xretractor query.rql
 $ xqry -s outputAll -p 50:256 | gnuplot
 ```
 
-On screen we should see the following chart, running from left to right, continuously filled with data (Fig. 57):
+On screen we should see the following chart, running from left to right, continuously filled with data (Fig. 58):
 
-<figure><img src="../assets/gnuplot_filtracja_sygnalu.png" alt=""><figcaption><p>Fig. 57. Signal filtering carried out inside RetractorDB</p></figcaption></figure>
+<figure><img src="../assets/gnuplot_filtracja_sygnalu.png" alt=""><figcaption><p>Fig. 58. Signal filtering carried out inside RetractorDB</p></figcaption></figure>
 
-In Fig. 57 we see two charts overlaid on each other. The more erratic one — shown on screen as a blue line with a lot of variability — is the visualization of the input signal. Data taken from the pseudo-random number generator at a rate of 50 samples per second. And the second chart, wrapping around the input data — shown on screen in red, smoother, flowing around it — is exactly the data filtered by the signal filter we built. A signal whose passband has been restricted to 0–2Hz (low frequencies) and stopped in the region of 5–25Hz (high frequencies). Figuratively speaking, we've isolated the bass line.
+In Fig. 58 we see two charts overlaid on each other. The more erratic one — shown on screen as a blue line with a lot of variability — is the visualization of the input signal. Data taken from the pseudo-random number generator at a rate of 50 samples per second. And the second chart, wrapping around the input data — shown on screen in red, smoother, flowing around it — is exactly the data filtered by the signal filter we built. A signal whose passband has been restricted to 0–2Hz (low frequencies) and stopped in the region of 5–25Hz (high frequencies). Figuratively speaking, we've isolated the bass line.
 
 Keep in mind that, on screen, this chart scrolls to the right very quickly, showcasing the current data-processing capabilities carried out in RetractorDB.
 
-A screen recording during the processing run is shown in Fig. 58:
+A screen recording during the processing run is shown in Fig. 59:
 
-<figure><img src="../assets/dsp-record (1).gif" width="75%" alt=""><figcaption><p>Fig. 58. Animation of the real-time signal-filtering process</p></figcaption></figure>
+<figure><img src="../assets/dsp-record (1).gif" width="75%" alt=""><figcaption><p>Fig. 59. Animation of the real-time signal-filtering process</p></figcaption></figure>
 
 > **_NOTE:_** The functionality described here is covered by the test: `dsp`, described in the appendix [Integration Tests](../appendices/integration-tests.md).

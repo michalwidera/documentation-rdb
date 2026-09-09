@@ -1,4 +1,4 @@
-<mxfile host="Electron" pages="11">
+<mxfile host="Electron" pages="12">
   <diagram name="Data and control flow" id="C0W2QoMvG6d1opmmmL35">
     <mxGraphModel dx="1116" dy="806" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -1175,6 +1175,116 @@
         </mxCell>
         <mxCell id="qrs-legend-dashed-label" parent="qrs-1" style="text;html=0;convertToSvg=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;" value="auxiliary data / extension" vertex="1">
           <mxGeometry height="24" width="145" x="860" y="603" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="Simple bus - icons" id="ipcbus-simple-en-v1">
+    <mxGraphModel dx="1116" dy="806" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="mprost-0" />
+        <mxCell id="mprost-1" parent="mprost-0" />
+        <mxCell id="mprost-bus" value="&lt;b&gt;xrdbbus&lt;/b&gt; — instance bus (segment in /dev/shm)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;startSize=28;" parent="mprost-1" vertex="1">
+          <mxGeometry x="150" y="60" width="630" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-slot-a" value="slot: &lt;b&gt;alpha&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="mprost-bus" vertex="1">
+          <mxGeometry x="50" y="36" width="120" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-slot-b" value="slot: &lt;b&gt;beta&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="mprost-bus" vertex="1">
+          <mxGeometry x="255" y="36" width="120" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-slot-c" value="slot: &lt;b&gt;gamma&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="mprost-bus" vertex="1">
+          <mxGeometry x="460" y="36" width="120" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-slot-free" value="…" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#d6b656;dashed=1;fontSize=11;fontColor=#7F5000;" parent="mprost-bus" vertex="1">
+          <mxGeometry x="585" y="36" width="40" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ia" value="instance: &lt;b&gt;alpha&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;startSize=26;" parent="mprost-1" vertex="1">
+          <mxGeometry x="170" y="190" width="180" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ia-xr" value="xretractor" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#505050;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;align=center;shape=mxgraph.office.concepts.application_generic;fontSize=10;" parent="mprost-ia" vertex="1">
+          <mxGeometry x="16" y="34" width="54" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ia-plan" value="plan: alpha.rql" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=center;verticalAlign=middle;fontSize=10;" parent="mprost-ia" vertex="1">
+          <mxGeometry x="2" y="98" width="82" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ia-ipc" value="own IPC" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#434445;aspect=fixed;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;shape=mxgraph.vvd.memory;fontSize=10;" parent="mprost-ia" vertex="1">
+          <mxGeometry x="10" y="124" width="66" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ia-str" value="&lt;b&gt;streams&lt;/b&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;ecg&lt;/div&gt;&lt;div&gt;pulse&lt;/div&gt;&lt;div&gt;qrs&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;verticalAlign=top;spacingTop=2;" parent="mprost-ia" vertex="1">
+          <mxGeometry x="92" y="34" width="76" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ib" value="instance: &lt;b&gt;beta&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;startSize=26;" parent="mprost-1" vertex="1">
+          <mxGeometry x="375" y="190" width="180" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ib-xr" value="xretractor" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#505050;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;align=center;shape=mxgraph.office.concepts.application_generic;fontSize=10;" parent="mprost-ib" vertex="1">
+          <mxGeometry x="16" y="34" width="54" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ib-plan" value="plan: beta.rql" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=center;verticalAlign=middle;fontSize=10;" parent="mprost-ib" vertex="1">
+          <mxGeometry x="2" y="98" width="82" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ib-ipc" value="own IPC" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#434445;aspect=fixed;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;shape=mxgraph.vvd.memory;fontSize=10;" parent="mprost-ib" vertex="1">
+          <mxGeometry x="10" y="124" width="66" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ib-str" value="&lt;b&gt;streams&lt;/b&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;temp&lt;/div&gt;&lt;div&gt;humidity&lt;/div&gt;&lt;div&gt;trend&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;verticalAlign=top;spacingTop=2;" parent="mprost-ib" vertex="1">
+          <mxGeometry x="92" y="34" width="76" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ic" value="instance: &lt;b&gt;gamma&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;startSize=26;" parent="mprost-1" vertex="1">
+          <mxGeometry x="580" y="190" width="180" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ic-xr" value="xretractor" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#505050;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;align=center;shape=mxgraph.office.concepts.application_generic;fontSize=10;" parent="mprost-ic" vertex="1">
+          <mxGeometry x="16" y="34" width="54" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ic-plan" value="plan: gamma.rql" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=center;verticalAlign=middle;fontSize=10;" parent="mprost-ic" vertex="1">
+          <mxGeometry x="2" y="98" width="82" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ic-ipc" value="own IPC" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#434445;aspect=fixed;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;shape=mxgraph.vvd.memory;fontSize=10;" parent="mprost-ic" vertex="1">
+          <mxGeometry x="10" y="124" width="66" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-ic-str" value="&lt;b&gt;streams&lt;/b&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;power&lt;/div&gt;&lt;div&gt;fft&lt;/div&gt;&lt;div&gt;report&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;verticalAlign=top;spacingTop=2;" parent="mprost-ic" vertex="1">
+          <mxGeometry x="92" y="34" width="76" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-claim-a" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="mprost-1" source="mprost-ia" target="mprost-slot-a" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-claim-b" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="mprost-1" source="mprost-ib" target="mprost-slot-b" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-claim-c" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="mprost-1" source="mprost-ic" target="mprost-slot-c" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-claim-lbl" value="at startup an instance claims its stream names and storage files on the bus; a collision ends the start with a refusal" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=left;verticalAlign=middle;fontSize=11;fontStyle=2;" parent="mprost-1" vertex="1">
+          <mxGeometry x="150" y="12" width="380" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-free-lbl" value="further slots — up to 32 instances on one bus" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=right;verticalAlign=middle;fontSize=11;fontStyle=2;fontColor=#7F5000;" parent="mprost-1" vertex="1">
+          <mxGeometry x="545" y="12" width="235" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-store" value="&lt;b&gt;shared storage directory&lt;/b&gt;&lt;div&gt;instance files are disjoint&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" parent="mprost-1" vertex="1">
+          <mxGeometry x="380" y="440" width="190" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-store-ico" value="" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#505050;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;align=center;shape=mxgraph.office.devices.hard_disk;" parent="mprost-1" vertex="1">
+          <mxGeometry x="310" y="465" width="41" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-io-a" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;startArrow=classic;startFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="mprost-1" source="mprost-ia" target="mprost-store" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-io-b" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;startArrow=classic;startFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="mprost-1" source="mprost-ib" target="mprost-store" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-io-c" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;startArrow=classic;startFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.8;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="mprost-1" source="mprost-ic" target="mprost-store" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-io-lbl" value="artifact reads and writes — one disk, disjoint instance files" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=left;verticalAlign=middle;fontSize=11;fontStyle=2;" parent="mprost-1" vertex="1">
+          <mxGeometry x="600" y="455" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-xqry" value="xqry" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=#6c8ebf;fillColor=#dae8fc;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;align=center;shape=mxgraph.office.concepts.application_generic;fontSize=10;" parent="mprost-1" vertex="1">
+          <mxGeometry x="20" y="470" width="56" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-route" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;startArrow=classic;startFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="mprost-1" source="mprost-xqry" target="mprost-bus" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mprost-route-lbl" value="routing by stream name — no server has to be given" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=left;verticalAlign=middle;fontSize=10;fontStyle=2;" parent="mprost-1" vertex="1">
+          <mxGeometry x="66" y="235" width="94" height="90" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

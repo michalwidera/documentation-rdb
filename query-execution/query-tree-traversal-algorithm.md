@@ -2,7 +2,7 @@
 
 ## General overview
 
-The query-tree traversal algorithm is carried out by two cooperating components: `dataModel` (processing logic) and `executorsm` (the time loop and IPC). Before entering the main loop, the system performs a **zero step**, after which it iterates cyclically over the minimal set of time intervals (Fig. 41).
+The query-tree traversal algorithm is carried out by two cooperating components: `dataModel` (processing logic) and `executorsm` (the time loop and IPC). Before entering the main loop, the system performs a **zero step**, after which it iterates cyclically over the minimal set of time intervals (Fig. 42).
 
 ```mermaid
 %%{init: {"markdownAutoWrap": false}}%%
@@ -15,13 +15,13 @@ flowchart TD
     F["broadcast(inSet)<br/>Boost IPC queues → xqry clients"] --> C
 ```
 
-_Fig. 41. The query tree traversal algorithm – general overview_
+_Fig. 42. The query tree traversal algorithm – general overview_
 
 ***
 
 ## Data structure: qTree
 
-`qTree` (`src/retractor/lib/qTree.cpp`) extends `std::vector<query>` and is a **vector of topologically sorted queries**. Sorting is done via DFS over the dependency graph built from `query.getDepStream()` (Fig. 42).
+`qTree` (`src/retractor/lib/qTree.cpp`) extends `std::vector<query>` and is a **vector of topologically sorted queries**. Sorting is done via DFS over the dependency graph built from `query.getDepStream()` (Fig. 43).
 
 ```mermaid
 %%{init: {"markdownAutoWrap": false}}%%
@@ -32,7 +32,7 @@ graph TD
     B --> D
 ```
 
-_Fig. 42. Example dependency graph for qTree_
+_Fig. 43. Example dependency graph for qTree_
 
 After the topological sort, the order in the vector is: `[A, B, C, D]`. Query C, which depends on B, always ends up after B in iteration — this guarantees correctness of the computations.
 
@@ -52,7 +52,7 @@ Input: {1/2, 1/3}  →  Output: {1/2, 1/3}
 (neither is a multiple of the other)
 ```
 
-`getNextTimeSlot()` determines the next slot as `min(delta × counter[delta])` over all deltas. The diagram below illustrates the slots for deltas `{1/2, 1/3}` and the active queries in each of them (Fig. 43):
+`getNextTimeSlot()` determines the next slot as `min(delta × counter[delta])` over all deltas. The diagram below illustrates the slots for deltas `{1/2, 1/3}` and the active queries in each of them (Fig. 44):
 
 ```mermaid
 %% pdf-width: 100%
@@ -72,7 +72,7 @@ timeline
         C (rInterval=1/2)
 ```
 
-_Fig. 43. The minimal time grid for deltas {1/2, 1/3}_
+_Fig. 44. The minimal time grid for deltas {1/2, 1/3}_
 
 The check `isThisDeltaAwaitCurrentTimeSlot(inDelta)` returns `true` when `ctSlot_ / inDelta` has a denominator equal to 1 (the slot is an integer multiple of the query's delta).
 
@@ -115,7 +115,7 @@ The result `inSet` is the set of query identifiers active in this slot — a sub
 
 ### Processing: `processRows(inSet)`
 
-The function performs **two passes** over `inSet` (`dataModel.cpp`, line \~98), shown in Fig. 44:
+The function performs **two passes** over `inSet` (`dataModel.cpp`, line \~98), shown in Fig. 45:
 
 ```mermaid
 %%{init: {"markdownAutoWrap": false}}%%
@@ -145,7 +145,7 @@ flowchart LR
     P2 --> E([end])
 ```
 
-_Fig. 44. The processRows algorithm – two processing passes_
+_Fig. 45. The processRows algorithm – two processing passes_
 
 Declarations are only unblocked once every dependent query has consumed their `outputPayload` in pass 1.
 
@@ -167,7 +167,7 @@ scan. Their results go to `streamInstance::windowValues` and become ordinary ope
 
 ## Broadcasting results: `broadcast()`
 
-After every `processRows()`, `broadcast(inSet)` is called (`executorsm.cpp`, line \~449) — the algorithm is shown in Fig. 45:
+After every `processRows()`, `broadcast(inSet)` is called (`executorsm.cpp`, line \~449) — the algorithm is shown in Fig. 46:
 
 ```mermaid
 %% pdf-width: 50%
@@ -182,7 +182,7 @@ flowchart TB
     C -->|none| H([skip])
 ```
 
-_Fig. 45. The broadcast algorithm – distributing results via Boost IPC_
+_Fig. 46. The broadcast algorithm – distributing results via Boost IPC_
 
 `printRowValue()` builds a structure with the stream name, field count, values, and a null bitmap, serializes it in Boost info format, and sends it via a `boost::interprocess::message_queue`.
 
@@ -190,7 +190,7 @@ _Fig. 45. The broadcast algorithm – distributing results via Boost IPC_
 
 ## Full example: queries A, B, C, D for deltas {1/2, 1/3}
 
-Fig. 46 shows the complete call sequence for four queries A, B, C, D laid out on a time grid with deltas {1/2, 1/3}.
+Fig. 47 shows the complete call sequence for four queries A, B, C, D laid out on a time grid with deltas {1/2, 1/3}.
 
 ```mermaid
 sequenceDiagram
@@ -228,7 +228,7 @@ sequenceDiagram
     ES->>IPC: broadcast({B, C, D})
 ```
 
-_Fig. 46. Full execution example for queries A, B, C, D with deltas {1/2, 1/3}_
+_Fig. 47. Full execution example for queries A, B, C, D with deltas {1/2, 1/3}_
 
 The dependency tree determines the order of pass 1. Time intervals from the Beatty algebra determine which nodes of the tree are active in a given slot.
 

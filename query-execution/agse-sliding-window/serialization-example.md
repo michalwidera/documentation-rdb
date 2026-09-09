@@ -45,9 +45,9 @@ What we're seeing is an example of serialization. An interesting aspect of the A
 $ xretractor -c qplan3.rql -f -p -d > out.dot && dot -Tsvg out.dot -o out.svg
 ```
 
-In the out.svg file we'll see the following query execution plan (Fig. 52):
+In the out.svg file we'll see the following query execution plan (Fig. 53):
 
-<figure><img src="../../assets/plan_zapytania_agse.png" alt=""><figcaption><p>Fig. 52. Query execution plan after AGSE compilation</p></figcaption></figure>
+<figure><img src="../../assets/plan_zapytania_agse.png" alt=""><figcaption><p>Fig. 53. Query execution plan after AGSE compilation</p></figcaption></figure>
 
 From a source stream, where data containing two bytes arrives every second, a data stream is created in which one byte appears every half second.
 
@@ -91,9 +91,9 @@ $ xqry -s str4
 
 That minus sign in the window-width specification is the mirror flip. The window size is two, but the field sequence is built in reverse order.
 
-Generating an image of the query plan that carries out serialization first and then deserialization, we'll see the following relationship (Fig. 53):
+Generating an image of the query plan that carries out serialization first and then deserialization, we'll see the following relationship (Fig. 54):
 
-<figure><img src="../../assets/plan_serializacja_deserializacja.png" alt=""><figcaption><p>Fig. 53. SErialization and DEserialization</p></figcaption></figure>
+<figure><img src="../../assets/plan_serializacja_deserializacja.png" alt=""><figcaption><p>Fig. 54. SErialization and DEserialization</p></figcaption></figure>
 
 What's shown here is the most basic example of using the sliding-data-window operator. If we start experimenting with the hop and window size, we'll notice that we're able to create an arbitrary sliding window over the data stream, or skip some elements by building a hop larger than the window width.
 
