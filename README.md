@@ -8,7 +8,7 @@ This documentation leads from the [mathematical foundations](mathematical-founda
 
 ## RetractorDB among neighboring fields
 
-This chapter is a map, not a catalog. Instead of listing everything ever written about streams and signals, I show five strands of peer-reviewed literature at whose intersection RetractorDB sits, and for each of them I answer three questions: what has this strand already solved, how does RetractorDB differ from it, and what does this strand **not** touch. Only by overlaying these five layers does the gap this project fills become visible.
+This chapter is a map, not a catalog. Instead of listing everything ever written about streams and signals, I show eight strands of research literature at whose intersection RetractorDB sits, and for each of them I answer three questions: what has this strand already solved, how does RetractorDB differ from it, and what does this strand **not** touch. Comparing them reveals the gap this project fills.
 
 <div class="no-print">
 
@@ -30,15 +30,18 @@ This chapter is a map, not a catalog. Instead of listing everything ever written
 > Why did I place this chapter so early? Because an honest answer to the question "is this needed?" first requires showing what already exists. Most ideas in computer science have already been thought of once — reinventing the wheel wastes someone else's effort. This chapter is my attempt to prove that this particular wheel has not, in fact, been invented yet.
 
 
-## Five neighboring fields
+## Eight neighboring fields
 
-The problem RetractorDB solves does not belong entirely to any single discipline. It sits in the gap between five:
+The problem RetractorDB solves does not belong entirely to any single discipline. It lies at the intersection of eight strands:
 
 1. **Number theory** – Beatty sequences, Fraenkel's theorem, covering systems. This provides the formal foundation.
 2. **Task scheduling via Beatty sequences** – the same mathematics, a different application. The closest application-level neighbor.
-3. **Digital signal processing (DSP)** – nonuniform sampling and filter banks with rational coefficients. This is the DSP counterpart of the interleaving operation.
-4. **Data stream management systems (DSMS)** – stream algebras and continuous-query semantics. This is the database reference point.
-5. **Time-series systems (TSMS) and in-database DSP** – the narrowest, most sparsely populated niche, closest to the system's actual goal.
+3. **Synchronous and cyclo-static dataflow (SDF/CSDF)** – multirate actor graphs, static schedules, and buffer bounds.
+4. **Synchronous languages and clock calculi** – declarative relations between periodic streams and compile-time delay inference.
+5. **Digital signal processing (DSP)** – nonuniform sampling and filter banks with rational coefficients. This is the DSP counterpart of the interleaving operation.
+6. **Data stream management systems (DSMS)** – stream algebras and continuous-query semantics. This is the database reference point.
+7. **Multi-query sharing and shared state** – reuse of computation, indexes, and materializations across plans.
+8. **Time-series systems (TSMS) and in-database DSP** – the narrowest niche, closest to the system's actual goal.
 
 I discuss them in turn, from the foundation toward the application.
 
@@ -58,15 +61,31 @@ The conclusion, for me, is twofold. On one hand — this is independent confirma
 
 **What this strand does not touch:** scheduling treats sequences as a tool for allocating time slots to processors. It doesn't build a data algebra on top of them, doesn't use them to express operations on signals, and doesn't create a query language.
 
-## Digital signal processing: nonuniform sampling and filter banks (3)
+## Synchronous and cyclo-static dataflow (SDF/CSDF) (3)
 
-The interleaving and de-interleaving operation is, in DSP terms, a sample-rate conversion between streams with different Δ. Here a broad, mature literature exists. The closest bridge is the work of Samadi, Ahmad, and Swamy (2004), which formulates the perfect-reconstruction condition for nonuniform filter banks based on the system's response to delayed unit-step signals [\[16\]](references.md#16) — thereby introducing step-function (and, indirectly, floor-function) machinery into the domain of multirate DSP. The broader strand is periodic-nonuniform sampling of band-limited signals [\[17\]](references.md#17), and — directly relevant — filter banks with **rational** decimation factors (Kovačević and Vetterli) [\[18\]](references.md#18).
+In SDF, actors consume and produce statically known token counts, which makes it possible to derive a graph schedule before execution [\[26\]](references.md#26). CSDF extends this model with cyclically changing production and consumption rates and supports static schedules and buffer bounds [\[27\]](references.md#27). This is a mature model of declarative multirate dataflow, so neither rate analysis nor static scheduling is unique to RetractorDB.
+
+SDF/CSDF can describe related multirate behavior, which justifies the “partial” assessment for lossless sample partition. A Beatty partition is not, however, a distinct semantic operator in those models. RetractorDB places that operator in a query language and connects it to persistent results.
+
+**What this strand does not touch:** SDF/CSDF does not define this particular lossless partition of sample positions as the semantics of a query system or provide an artifact inspection and replay model around it.
+
+## Synchronous languages and clock calculi (4)
+
+Synchronous languages describe periodic streams through clocks and can check their compatibility and derive required buffers and delays during compilation. In n-synchronous models, clock relations may have rational rate ratios, and the compiler takes over part of the synchronization burden [\[28\]](references.md#28). This is one of the closest reference points for RetractorDB's declarative boundary.
+
+The object being described is different, however: a clock usually marks whether a value is present at a logical tick, whereas RetractorDB assigns a rational interval to a regular stream and uses it to form one ordered stream from two inputs.
+
+**What this strand does not touch:** clock calculi primarily support the compilation of reactive programs. They do not carry this semantics into a query engine with public descriptors and persistent, replayable artifacts.
+
+## Digital signal processing: nonuniform sampling and filter banks (5)
+
+Interleaving and de-interleaving meet DSP in the problem of working with streams at different sampling rates, but they are not simply another signal-reconstruction method. The closest bridge is the work of Samadi, Ahmad, and Swamy (2004), which formulates the perfect-reconstruction condition for nonuniform filter banks from the system's response to delayed unit-step signals [\[16\]](references.md#16). The broader strand includes periodic nonuniform sampling of band-limited signals [\[17\]](references.md#17) and filter banks with **rational** decimation factors (Kovačević and Vetterli) [\[18\]](references.md#18).
 
 Number-theoretic constructions even show up there: Ramanujan filter banks extract periodic components of a signal [\[19\]](references.md#19). But I have not found Beatty sequences or Fraenkel's theorem specifically in this literature — and that's part of the gap.
 
-**What this strand does not touch:** DSP operates in the z-domain, the frequency domain, on frames and bases. It doesn't treat resampling as a declarative algebraic operator, nor does it embed it in a database system. Coefficients are sometimes rational, but the apparatus is analysis, not the number theory of set partitioning.
+**What this strand does not touch:** the cited DSP methods reconstruct or transform signal values. They do not define this particular Beatty-based interleaving of sample positions or embed it in an artifact-producing query engine.
 
-## Data stream management systems (DSMS) (4)
+## Data stream management systems (DSMS) (6)
 
 On the database side, the canon is CQL from Stanford's STREAM project (Arasu, Babu, Widom). In this model, a stream is a potentially infinite multiset of elements ⟨s, τ⟩, where s is a tuple and τ a timestamp [\[20\]](references.md#20); query semantics is built on windows and stream↔relation mappings. A second close neighbor is the temporal algebra of Krämer and Seeger (the PIPES system), providing deterministic results for continuous queries and a rich set of transformation rules underlying optimization [\[21\]](references.md#21).
 
@@ -76,19 +95,27 @@ In deployment terms, the relationship is complementary rather than competitive: 
 
 **What this strand does not touch:** DSMS encompass both deterministic semantics and mechanisms for scaling, windows, out-of-order handling, and state management. The cited systems do not, however, define this particular lossless partition of regular sample positions using Beatty sequences or use number theory as the semantics of resampling.
 
-## Time-series systems (TSMS) and in-database DSP (5)
+## Multi-query sharing and shared state (7)
+
+Multi-query optimization has long reused common parts of query plans. More recent streaming systems also share maintained indexes and state across concurrent dataflows [\[29\]](references.md#29), while semantic normalization makes it possible to merge queries whose syntax or plan structure differs [\[30\]](references.md#30). Automatic sharing is therefore not, by itself, a new contribution of RetractorDB.
+
+In RetractorDB, this problem concerns materialized intermediate streams. The compiler may share them only after plan normalization and a compatibility check grounded in regular-series semantics. This is close to existing shared-state mechanisms, although the compatibility criterion here follows from the stream-rate model.
+
+**What this strand does not touch:** the cited methods do not use rate alignment and a Beatty partition to normalize a plan before deciding whether to share. The detailed boundary of this comparison is beyond the scope of the system documentation.
+
+## Time-series systems (TSMS) and in-database DSP (8)
 
 This is the narrowest niche — and the closest to RetractorDB's actual goal. The canonical survey is Jensen, Pedersen, and Thomsen's "Time Series Management Systems: A Survey" (IEEE TKDE, 2017) [\[22\]](references.md#22). The Plato system described there is the closest real "DSP inside a database": it combines an RDBMS with signal-processing methods, eliminating the need to export data to external tools like R or SPSS [\[22\]](references.md#22). The other approaches to "signals in a database" boil down to approximation and compression — wavelet, dictionary, and shape-based representations.
 
-All of them, however, treat DSP as approximation or after-the-fact analytics. None makes signal-processing operations **exact, deterministic first-class operators** within a query algebra. This confirms that the niche is thin, and that my angle of attack — exactness over rational numbers — is distinct.
+These approaches focus on approximation, compression, or after-the-fact analytics. They do not make Beatty-based multiplexing of sample positions a first-class operator within a query algebra. RetractorDB does not compete with them on ingestion scale or retention: it runs ahead of a central system and supplies deterministic results and correctable artifacts.
 
 **What this strand does not touch:** TSMS optimize ingestion scale, compression, and retention. DSP is a second-class citizen in them — an analytical add-on, not the core of the semantics.
 
 ## The blank spot: where the contribution lies
 
-The table below is a qualitative capability map, not evidence of priority or a claim that the review is complete. Within the broader stream-systems strand, it separates SDF/CSDF and synchronous languages because they are the closest systems models. “Partial” denotes a related capability, not semantic equivalence.
+The table below is a qualitative capability map, not evidence of priority or a claim that the review is complete. The final column concerns evaluation through inspectable artifacts or replay, not persistence alone. “Partial” denotes a related capability, not semantic equivalence.
 
-| Field | Beatty/Fraenkel | Lossless sample partition | Declarative dataflow | Artifacts / replay |
+| Field | Beatty/Fraenkel | Lossless sample partition | Declarative dataflow | Artifact / replay evaluation |
 | --- | :---: | :---: | :---: | :---: |
 | Number theory | ✔ | – | – | – |
 | Scheduling (pinwheel) | ✔ | – | – | partial |
@@ -96,10 +123,13 @@ The table below is a qualitative capability map, not evidence of priority or a c
 | Synchronous languages / clock calculi | – | – | ✔ | – |
 | Multirate DSP | – | partial | partial | – |
 | DSMS (CQL, PIPES) | – | – | ✔ | partial |
+| Multi-query sharing / shared state | – | – | ✔ | partial |
 | TSMS / in-database DSP | – | partial | partial | partial |
 | **RetractorDB** | **✔** | **✔** | **✔** | **✔** |
 
-The strongest neighbors are SDF/CSDF and synchronous languages and clock calculi: they already provide multirate declarative dataflow, deterministic semantics, static schedules, or buffer inference. RetractorDB's integration scope is narrower: the system combines a Beatty-defined, exactly invertible partition of sample positions with a query compiler, a sequential slot runtime, and persistent artifacts that can be inspected and replayed. This describes the system's architecture and semantics; it does not claim that the individual ingredients are new. RetractorDB does not claim hard real-time guarantees.
+The strongest neighbors in the execution-model dimension are SDF/CSDF and synchronous languages and clock calculi: they already provide multirate declarative dataflow, deterministic semantics, static schedules, or buffer inference. The multi-query strand is equally close along an axis not represented by the columns: it can share maintained state automatically and formulate preservation conditions for individual queries. Its “partial” entry understates that proximity because the table does not describe how the identity of a shared object is established.
+
+RetractorDB's integration scope is narrower: the system combines a Beatty-defined, exactly invertible partition of sample positions with a query compiler, a sequential slot runtime, and persistent artifacts that can be inspected and replayed. This describes the system's architecture and semantics; it does not claim that the individual ingredients are new. RetractorDB does not claim hard real-time guarantees.
 
 > **⚠️ Warning**
 >
@@ -108,4 +138,4 @@ The strongest neighbors are SDF/CSDF and synchronous languages and clock calculi
 
 ## Methodological caveat
 
-This is a targeted review, not a systematic one — based on searching across five strands, not a full citation analysis. A "forward citation" review of Samadi's paper [\[16\]](references.md#16) confirms the point: according to Semantic Scholar (as of July 2026), its only recorded citations are a paper on Gabor window design, two systems-theoretic papers on multirate systems, and the 2006 bridge paper itself [\[3\]](references.md#3) — none of them uses Beatty sequences or Fraenkel's theorem. The closest use of this machinery outside number theory that I'm aware of is the construction of exponential Riesz bases from Beatty–Fraenkel sequences (Pfander, Revay, and Walnut) [\[24\]](references.md#24) — but that belongs to pure harmonic analysis and doesn't touch filter banks or sample-rate conversion. What remains for full closure is a systematic review of the scheduling strand [\[14\]](references.md#14) and of the filter-bank literature as a whole; if a use of Fraenkel's theorem in multirate DSP exists, it narrows the scope of the novelty claim and should be accounted for here.
+This is a targeted review, not a systematic one — based on searching across eight strands, not a full citation analysis. A "forward citation" review of Samadi's paper [\[16\]](references.md#16) confirms the point: according to Semantic Scholar (as of July 2026), its only recorded citations are a paper on Gabor window design, two systems-theoretic papers on multirate systems, and the 2006 bridge paper itself [\[3\]](references.md#3) — none of them uses Beatty sequences or Fraenkel's theorem. The closest use of this machinery outside number theory that I'm aware of is the construction of exponential Riesz bases from Beatty–Fraenkel sequences (Pfander, Revay, and Walnut) [\[24\]](references.md#24) — but that belongs to pure harmonic analysis and doesn't touch filter banks or sample-rate conversion. What remains for full closure is a systematic review of the scheduling strand [\[14\]](references.md#14) and of the filter-bank literature as a whole; the query-sharing discussion cites representative mechanisms rather than attempting a complete catalog. If a use of Fraenkel's theorem in multirate DSP exists, it narrows the scope of the novelty claim and should be accounted for here.

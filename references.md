@@ -49,3 +49,13 @@
 24\. G. E. Pfander, S. Revay and D. Walnut, "Exponential bases for partitions of intervals" Applied and Computational Harmonic Analysis, vol. 68, art. 101607, 2024.
 
 25\. M. Widera, J. Jezewski, R. Winiarczyk, J. Wrobel, K. Horoba and A. Gacek, "Data stream processing in fetal monitoring system: I. Algebra and query language" Journal of Medical Informatics & Technologies, vol. 5, pp. 83-90, 2003.
+
+<a id="26"></a>26\. E. A. Lee and D. G. Messerschmitt, "Static Scheduling of Synchronous Data Flow Programs for Digital Signal Processing" IEEE Transactions on Computers, vol. C-36, no. 1, pp. 24-35, 1987. ([doi](https://doi.org/10.1109/TC.1987.5009446))
+
+<a id="27"></a>27\. G. Bilsen, M. Engels, R. Lauwereins and J. A. Peperstraete, "Cyclo-Static Dataflow" IEEE Transactions on Signal Processing, vol. 44, no. 2, pp. 397-408, 1996.
+
+<a id="28"></a>28\. A. Cohen, M. Duranton, C. Eisenbeis, C. Pagetti, F. Plateau and M. Pouzet, "N-Synchronous Kahn Networks: A Relaxed Model of Synchrony for Real-Time Systems" in Proceedings of the 33rd ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages (POPL), pp. 180-193, 2006. ([doi](https://doi.org/10.1145/1111037.1111054))
+
+<a id="29"></a>29\. F. McSherry, A. Lattuada, M. Schwarzkopf and T. Roscoe, "Shared Arrangements: Practical Inter-Query Sharing for Streaming Dataflows" Proceedings of the VLDB Endowment, vol. 13, no. 10, pp. 1793-1806, 2020. ([doi](https://doi.org/10.14778/3401960.3401974))
+
+<a id="30"></a>30\. A. Chaudhary, J. Karimov, S. Zeuch and V. Markl, "Incremental Stream Query Merging" in Proceedings of the 26th International Conference on Extending Database Technology (EDBT), pp. 604-617, 2023. ([doi](https://doi.org/10.48786/edbt.2023.51))
