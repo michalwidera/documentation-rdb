@@ -220,6 +220,12 @@ cat > "$TEMP_DIR/header.tex" <<'EOF'
 \usepackage{tocloft}
 \RecustomVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\},breaklines=true,breakanywhere=true}
 \titlelabel{\thetitle.\quad}
+\titleformat{\chapter}[display]
+  {\normalfont\sffamily\huge\bfseries}
+  {\chaptertitlename\ \thechapter.}{20pt}{\Huge}
+\titleformat*{\section}{\normalfont\sffamily\Large\bfseries}
+\titleformat*{\subsection}{\normalfont\sffamily\large\bfseries}
+\titleformat*{\subsubsection}{\normalfont\sffamily\normalsize\bfseries}
 \renewcommand{\cftchapaftersnum}{.}
 \renewcommand{\cftsecaftersnum}{.}
 \renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
@@ -659,6 +665,7 @@ pandoc "$TEMP_DIR/combined.md" \
   -V fontsize=11pt \
   -V documentclass=report \
   -V mainfont="DejaVu Serif" \
+  -V sansfont="DejaVu Sans" \
   -V monofont="DejaVu Sans Mono" \
   -V secnumdepth=1 \
   --metadata title-meta="$ANONYMOUS_PROJECT_NAME" \

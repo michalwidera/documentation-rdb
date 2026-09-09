@@ -76,6 +76,12 @@ jobs:
           \renewcommand{\maketitle}{\AtEndDocument{\clearpage\origmaketitle}}
           \usepackage{titlesec}
           \titlelabel{\thetitle.\quad}
+          \titleformat{\chapter}[display]
+            {\normalfont\sffamily\huge\bfseries}
+            {\chaptertitlename\ \thechapter.}{20pt}{\Huge}
+          \titleformat*{\section}{\normalfont\sffamily\Large\bfseries}
+          \titleformat*{\subsection}{\normalfont\sffamily\large\bfseries}
+          \titleformat*{\subsubsection}{\normalfont\sffamily\normalsize\bfseries}
           \usepackage{tocloft}
           \renewcommand{\cftchapaftersnum}{.}
           \renewcommand{\cftsecaftersnum}{.}
@@ -353,6 +359,7 @@ jobs:
             -V fontsize=11pt \
             -V documentclass=report \
             -V mainfont="DejaVu Serif" \
+            -V sansfont="DejaVu Sans" \
             -V monofont="DejaVu Sans Mono" \
             --metadata title="RetractorDB" \
             --metadata subtitle="Edge Signal Processing Engine" \
