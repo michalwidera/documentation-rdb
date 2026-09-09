@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="297mm" viewBox="0 0 2100 2970">
+  <rect width="2100" height="2970" fill="#f7f8fb"/>
+  <rect x="0" y="0" width="2100" height="34" fill="#5f8ff7"/>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M250 720 H720 C865 720 900 900 1045 900 H1850" stroke="#cad6f3" stroke-width="28"/>
+    <path d="M250 940 H720 C865 940 900 900 1045 900" stroke="#92ace8" stroke-width="28"/>
+    <path d="M1045 900 C1190 900 1225 1120 1370 1120 H1850" stroke="#5f8ff7" stroke-width="28"/>
+    <path d="M1045 900 C1190 900 1225 680 1370 680 H1850" stroke="#2f477a" stroke-width="28"/>
+    <circle cx="250" cy="720" r="30" fill="#cad6f3" stroke="none"/>
+    <circle cx="250" cy="940" r="30" fill="#92ace8" stroke="none"/>
+    <circle cx="1850" cy="680" r="30" fill="#2f477a" stroke="none"/>
+    <circle cx="1850" cy="1120" r="30" fill="#5f8ff7" stroke="none"/>
+  </g>
+
+  <text x="1050" y="1550" text-anchor="middle" fill="#17233d"
+        font-family="DejaVu Sans, sans-serif" font-size="82" font-weight="700"
+        letter-spacing="8">SYSTEM UNDER REVIEW</text>
+  <text x="1050" y="1670" text-anchor="middle" fill="#5f8ff7"
+        font-family="DejaVu Sans, sans-serif" font-size="43" font-weight="600"
+        letter-spacing="5">EDGE SIGNAL PROCESSING ENGINE</text>
+
+  <line x1="550" y1="1815" x2="1550" y2="1815" stroke="#cad6f3" stroke-width="4"/>
+
+  <text x="1050" y="2000" text-anchor="middle" fill="#17233d"
+        font-family="DejaVu Serif, serif" font-size="62">Supplementary Documentation</text>
+  <text x="1050" y="2110" text-anchor="middle" fill="#667085"
+        font-family="DejaVu Sans, sans-serif" font-size="34" letter-spacing="3">ANONYMOUS REVIEW COPY</text>
+
+  <rect x="650" y="2510" width="800" height="116" rx="58" fill="#e8eefc"/>
+  <text x="1050" y="2582" text-anchor="middle" fill="#2f477a"
+        font-family="DejaVu Sans, sans-serif" font-size="31" font-weight="600"
+        letter-spacing="2">DOUBLE-BLIND PEER REVIEW</text>
+</svg>

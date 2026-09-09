@@ -88,6 +88,8 @@ jobs:
           \setlength{\cftsubsecindent}{5.5em}
           \tcbuselibrary{breakable}
           \usepackage{mdframed}
+          \usepackage{fvextra}
+          \RecustomVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\},breaklines=true,breakanywhere=true}
           \captionsetup{labelformat=empty,labelsep=none}
           \newtcolorbox{calloutNote}{breakable,colback=green!8,colframe=green!45!black,fonttitle=\bfseries,title={Note}}
           \newtcolorbox{calloutInfo}{breakable,colback=cyan!6,colframe=cyan!55!black,fonttitle=\bfseries,title={Info}}
@@ -169,9 +171,50 @@ jobs:
             return result
           end
 
-          function Table(table)
+          local function customize_table_layout(element)
+            if #element.head.rows == 0 then return end
+            local first_cell = element.head.rows[1].cells[1]
+            if not first_cell then return end
+
+            local first_heading = pandoc.utils.stringify(first_cell.content)
+            local widths
+            if #element.colspecs == 5 and first_heading == "Field" then
+              widths = {0.23, 0.21, 0.19, 0.18, 0.19}
+            elseif #element.colspecs == 3 and first_heading == "Written in SELECT" then
+              widths = {0.31, 0.43, 0.26}
+            elseif #element.colspecs == 3 and first_heading == "Unit" then
+              widths = {0.30, 0.27, 0.43}
+            elseif #element.colspecs == 3 and first_heading == "State" then
+              widths = {0.25, 0.37, 0.38}
+            elseif #element.colspecs == 2 and first_heading == "Option"
+                and pandoc.utils.stringify(element):find("xqrywait", 1, true) then
+              widths = {0.25, 0.75}
+            else
+              return
+            end
+
+            for index, width in ipairs(widths) do
+              element.colspecs[index] = {element.colspecs[index][1], width}
+            end
+
+            local function pad_first_cell(row)
+              local cell = row.cells[1]
+              local block = cell and cell.content[1]
+              if block and block.content then
+                block.content:insert(1, pandoc.RawInline("latex", "\\setlength{\\leftskip}{0.5em}"))
+              end
+            end
+
+            for _, row in ipairs(element.head.rows) do pad_first_cell(row) end
+            for _, body in ipairs(element.bodies) do
+              for _, row in ipairs(body.body) do pad_first_cell(row) end
+            end
+          end
+
+          function Table(element)
             if not FORMAT:match('latex') then return nil end
-            return table:walk({ Code = break_long_code })
+            customize_table_layout(element)
+            return element:walk({ Code = break_long_code })
           end
           TABLELUAEOF
 
