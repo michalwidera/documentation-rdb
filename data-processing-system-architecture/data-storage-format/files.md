@@ -699,37 +699,23 @@ In this section, the relationships between the files are shown at two levels. Th
 ```mermaid
 %% pdf-width: 100%
 graph LR
-    subgraph "Writing a new record (append)"
-        A1["storage::write(data, pos=MAX)"]
-        A2["→ main file: append at the end"]
-        A3["→ .meta: onRecordAppended(nullBitset)"]
-        A1 --> A2
-        A1 --> A3
+    UP["update<br/>write(data, pos=N)"] -->|append| SHD
+    AP["append<br/>write(data, pos=MAX)"] -->|append at the end| MAIN
+
+    subgraph SHD["shadow layer"]
+        direction TB
+        S[".shadow<br/>(N, data)"]
+        MS[".meta.shadow<br/>(N, nullBitset)"]
     end
 
-    subgraph "Modifying a record (update)"
-        U1["storage::write(data, pos=N)"]
-        U2["→ .shadow: append (N, data)"]
-        U3["→ .meta.shadow: append (index=N, nullBitset)"]
-        U1 --> U2
-        U1 --> U3
+    subgraph MAIN["main layer"]
+        direction TB
+        D["main file<br/>data"]
+        M[".meta<br/>nullBitset"]
     end
 
-    subgraph "Reading a record"
-        R1["storage::read(pos=N)"]
-        R2{"does .shadow\nhave entry N?"}
-        R3["data from .shadow"]
-        R4["data from the main file"]
-        R5{"does .meta.shadow\nhave entry N?"}
-        R6["nullBitset from .meta.shadow"]
-        R7["nullBitset from .meta"]
-        R1 --> R2
-        R2 -->|yes| R3
-        R2 -->|no| R4
-        R1 --> R5
-        R5 -->|yes| R6
-        R5 -->|no| R7
-    end
+    SHD ==>|"1. entry N exists"| RD["read(pos=N)<br/>data + nullBitset"]
+    MAIN -->|"2. no entry N"| RD
 ```
 
 _Fig. 24. The relationship between an artifact's write, modify, and read operations_
