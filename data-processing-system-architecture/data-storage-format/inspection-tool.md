@@ -154,7 +154,7 @@ $ xtrdb -s sensor
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Interpretation: the binary file contains 80 records (the gap takes no space in the data file); the gap is encoded solely in `.meta`. The `[binary data]` column shows an empty range for the gap segment — there is no binary data for it. The `pressure` field in records 50–79 has null values in some records (`[----]`). The shadow file contains 2 modifications that have not yet been merged into the main file.
+Interpretation: the binary file contains 80 records (the gap takes no space in the data file); the gap is encoded solely in `.meta`. The `[binary data]` column shows an empty range for the gap segment — there is no binary data for it. The `pressure` field in records 50–79 has null values in some records (`[----]`).
 
 ---
 
