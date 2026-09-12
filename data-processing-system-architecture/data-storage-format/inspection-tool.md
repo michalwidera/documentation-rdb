@@ -10,7 +10,7 @@ The command `xtrdb -s <path>` displays a complete picture of an artifact's stora
 | -------- | ------------------- |
 | Post-crash diagnosis | You can immediately see whether the data file is consistent with the metadata — differing record counts signal a problem |
 | Retention verification | The DATA TOTAL section shows the segment breakdown and the current fill level of the circular buffer |
-| Modification control | The SHADOW section reveals the number of uncommitted changes — `Updates: N` means `merge()` has not been run |
+| Modification control | The SHADOW section reveals the number of uncommitted changes — `Updates: N` is the number of entries in `.shadow`; in normal operation this is the expected state, because the engine never invokes `merge()` on its own |
 | Data-quality analysis | The META bar, with the symbols `=`, `-`, `~`, `X`, shows the null/gap pattern without parsing the binary file |
 | Rotation-history audit | The ROTATED FILES section lists old versions of the file after successive rotations |
 

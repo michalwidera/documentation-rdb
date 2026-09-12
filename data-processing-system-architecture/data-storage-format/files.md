@@ -694,17 +694,17 @@ storageShadow.mergeShadow() → .meta rebuilt, .meta.shadow deleted
 
 ## The relationship between the files
 
-In this section, the relationships between the files are shown at two levels. The structural level describes how the data file carries the records, the `.desc` descriptor defines their format, the `.meta` file stores information about null values and transmission gaps, `.shadow` collects data modifications without destroying the original, and `.meta.shadow` similarly collects overrides of null patterns. The operational level (Fig. 24) shows the read and write flow: reads check `.shadow` and `.meta.shadow` first, `merge()` moves corrections into the main file and the main index, and the `append`, `update`, and `read` operations keep the data and metadata consistent throughout the artifact's lifecycle.
+In this section, the relationships between the files are shown at two levels. The structural level describes how the data file carries the records, the `.desc` descriptor defines their format, the `.meta` file stores information about null values and transmission gaps, `.shadow` collects data modifications without destroying the original, and `.meta.shadow` similarly collects overrides of null patterns. The operational level (Fig. 24) shows the read and write flow: reads check `.shadow` and `.meta.shadow` first and fall back to the main file and `.meta` only when there is no entry. In this way the `append`, `update`, and `read` operations keep the data and metadata consistent throughout the artifact's lifecycle. Merging with `merge()` / `mergeShadow()` is not part of this flow: it is a separate API operation that the engine never invokes on its own (Fig. 21).
 
 ```mermaid
 %% pdf-width: 100%
 graph LR
-    UP["update<br/>write(data, pos=N)"] -->|append| SHD
-    AP["append<br/>write(data, pos=MAX)"] -->|append at the end| MAIN
+    UP["update<br/>write(N), N < count"] -->|append| SHD
+    AP["append<br/>write(N), N ≥ count"] -->|append at the end| MAIN
 
     subgraph SHD["shadow layer"]
         direction TB
-        S[".shadow<br/>(N, data)"]
+        S[".shadow<br/>(N·size, data)"]
         MS[".meta.shadow<br/>(N, nullBitset)"]
     end
 
@@ -718,9 +718,9 @@ graph LR
     MAIN -->|"2. no entry N"| RD
 ```
 
-_Fig. 24. The relationship between an artifact's write, modify, and read operations_
+_Fig. 24. The relationship between an artifact's write, modify, and read operations (`DEFAULT` and `POSIXSHD` types)_
 
-Fig. 24 shows the flow of `append`, `update`, and `read` operations through the `storage` layer, and their direct effect on the data file, `.meta`, `.shadow`, and `.meta.shadow`.
+Fig. 24 shows the flow of `append`, `update`, and `read` operations through the `storage` layer, and their direct effect on the data file, `.meta`, `.shadow`, and `.meta.shadow`. The record index decides the kind of write: `N` equal to or greater than the record count is an `append`, a smaller one is an `update`. An entry in `.shadow` is keyed by a byte offset (`N·size`, relative to the segment when retention is used), an entry in `.meta.shadow` by the record index `N`. A record made up solely of null values outside the nullfill phase does not reach the main file — it leaves only a gap entry in `.meta`. The shadow layer exists only for the `DEFAULT` and `POSIXSHD` types; in the remaining types (`POSIX`, `DIRECT`, `GENERIC`, `MEMORY`) an `update` overwrites the record directly in the main file and in `.meta`.
 
 ## Starting point — a binary file without metadata
 
