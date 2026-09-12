@@ -38,6 +38,17 @@ SELECT * STREAM total FROM SUMC(src@(1,5))
 
 The postfix forms `stream.min`, `.max`, `.avg`, and `.sumc` remain backward compatible but are deprecated. The parser emits a warning and recommends the function form. The existing `src@(1,5).sumc` syntax is valid, but new queries should use `SUMC(src@(1,5))`.
 
+The reducer result is **not read by name in the `SELECT` list**. The compiler rejects
+`SELECT avg STREAM o FROM AVG(src)` through the `Check result:` channel, because in that
+position `avg` is a stream operator rather than a field, and nothing can execute it. Read the
+reduction result with `SELECT *`, or — when further computation is needed — materialize the
+reducer as a separate stream:
+
+```rql
+SELECT * STREAM m FROM AVG(src)
+SELECT m[0]*2 STREAM o FROM m
+```
+
 ### Array fields and NULL values
 
 A numeric declaration `T[N]` is one descriptor entry but occupies `N` flat record slots.
