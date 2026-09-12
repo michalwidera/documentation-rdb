@@ -70,17 +70,27 @@ not reach the `SELECT` list: they live in the `RULE` condition.
 | Functions                                                              | Result type         |
 | ---------------------------------------------------------------------- | ------------------- |
 | `isnull`, `IsZero`, `IsNonZero`, `Length`                              | always `INTEGER`    |
-| `sin`, `cos`, `exp`                                                     | always `DOUBLE`     |
-| `Sqrt`, `Ceil`, `Floor`, `round`, `trunc`, `tan`, `log`, `log2`           | argument type       |
+| `sin`, `cos`, `exp`                                                     | always `DOUBLE`; **rejected** over `RATIONAL` |
+| `Sqrt`, `tan`, `log`, `log2`                                            | argument type; **rejected** over `RATIONAL` |
+| `Ceil`, `Floor`, `round`, `trunc`                                       | argument type       |
 | `Abs`, `null2zero`                                                     | argument type       |
 | `to_integer`, `to_float`, `to_double`, `to_string`                     | target type         |
 
-`sin`, `cos`, and `exp` compute in `double` and **return `DOUBLE`** even for integer and
-`RATIONAL` arguments. The other mathematical functions compute through `double` and cast the
+`sin`, `cos`, and `exp` compute in `double` and **return `DOUBLE`** even for integer
+arguments. The other mathematical functions compute through `double` and cast the
 result back to the argument's type: `Ceil` over a `DOUBLE` field yields `DOUBLE`, and `Sqrt`
 over `INTEGER` yields `INTEGER`. Explicit conversions determine the type of their result **also when they sit in the
 middle of an expression**: `to_float('2.5') * 2` is `FLOAT`, and `to_integer(AVG(x : 10)) + 1` is
 `INTEGER`.
+
+Seven functions with an irrational range — `Sqrt`, `sin`, `cos`, `exp`, `tan`, `log` and
+`log2` — **do not compile** over an argument of type `RATIONAL`: the compiler rejects the plan
+and requires an explicit `to_double`. This matters in practice, because the reducers `MIN`,
+`MAX`, `AVG` and `SUMC` are `RATIONAL` by definition. The reason, the error message, the reach
+of the gate (it also covers a `RULE ... WHEN` condition) and the exception for the rounding
+functions are described in
+[Field expressions and scalar functions](../query-language-construction/select-command/field-expressions-and-scalar-functions.md);
+they are not repeated here, so that the two pages cannot drift apart on the next change.
 
 A **record-window aggregate** takes its type from the whole program of its argument, passed
 through the same rule as the stream reducers: an arithmetic source (`BYTE`, `INTEGER`, `UINT`,
