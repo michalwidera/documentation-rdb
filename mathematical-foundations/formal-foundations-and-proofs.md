@@ -410,28 +410,48 @@ their relative phase: \\(O_{\mathrm{LHS}}=O_{\varphi(A,B)}+L=O_{\mathrm{RHS}}\\)
 The content of a record at a given logical index is the same on both sides,
 because the choice of component depends only on phase, which is unchanged.
 
-*Tails.* Because adding the integer \\(L\\) commutes with the ceiling,
-\\(\operatorname{conv}(W_A-i,\Delta_a,\Delta_c)=\operatorname{conv}(W_A,\Delta_a,\Delta_c)-L\\)
-and analogously for B. From \\(\max(0,W-m)\ge W-m\\) and monotonicity of
-\\(\operatorname{conv}\\) we obtain
+*Tails.* Let \\(s(n)\in\\{A,B\\}\\) denote the component selected in phase
+\\(n\\), and \\(j(n)\\) its index. Write the shifts as
+\\(t_A=i\\) and \\(t_B=k\\). After shifting, the component tail is
+\\(W_s^{\prime}=\max(0,W_s-t_s)\ge W_s-t_s\\). The intervals and the choice of
+component and its index in each interleave phase remain unchanged. Let
+\\(R_n\\) be the availability requirement from the phase formula above
+for tails \\(W_A,W_B\\), and \\(R_n^{\prime}\\) the requirement for
+\\(W_A^{\prime},W_B^{\prime}\\). The auxiliary step gives
+\\(t_s\Delta_s/\Delta_c=L\in\mathbb{N}\\) for both components.
+Monotonicity of the ceiling and its compatibility with shifts by the
+integer \\(L\\) give, in every phase:
 
 \\[
 \begin{aligned}
-W_{\mathrm{LHS}}
-&=\max\left(
-\operatorname{conv}\bigl(\max(0,W_A-i),\Delta_a,\Delta_c\bigr),
-\operatorname{conv}\bigl(\max(0,W_B-k),\Delta_b,\Delta_c\bigr)+H_{a,b}
-\right)\\\\
-&\ge\max\left(
-\operatorname{conv}(W_A,\Delta_a,\Delta_c)-L,
-\operatorname{conv}(W_B,\Delta_b,\Delta_c)+H_{a,b}-L
-\right)
-=W_{\varphi(A,B)}-L,
+R_n^{\prime}
+&=\left\lceil
+\frac{(j(n)+1+W_{s(n)}^{\prime})\Delta_{s(n)}}{\Delta_c}
+\right\rceil-1-n\\\\
+&\ge\left\lceil
+\frac{(j(n)+1+W_{s(n)}-t_{s(n)})\Delta_{s(n)}}{\Delta_c}
+\right\rceil-1-n
+=R_n-L.
 \end{aligned}
 \\]
 
-and since \\(W_{\mathrm{LHS}}\ge 0\\), we get
-\\(W_{\mathrm{LHS}}\ge\max(0,W_{\varphi(A,B)}-L)=W_{\mathrm{RHS}}\\). ∎
+We take the maximum over the same full period \\(p+q\\), since the shifts
+do not change the interval ratio. Using nonnegativity of tails as well,
+we obtain:
+
+\\[
+W_{\mathrm{LHS}}
+\ge\max\left(0,\max_{0\le n<p+q}R_n-L\right)
+=\max\left(0,W_{\varphi(A,B)}-L\right)
+=W_{\mathrm{RHS}}.
+\\]
+
+Above the scan limit, the engine uses the \\(O(1)\\) fallback bound
+described earlier. For that bound, the same inequality follows from
+monotonicity of both \\(\operatorname{conv}\\) terms: a matched shift reduces
+each by at most \\(L\\), while the \\(H_{a,b}\\) term remains unchanged.
+Both sides use the same calculation variant because their intervals do not
+change. The fallback bound need not equal the exact phase maximum. ∎
 
 > **⚠️ Scope of the theorem**
 >
