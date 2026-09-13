@@ -465,7 +465,7 @@ def anonymize(text, path):
         )
     if path == repo / "appendices/README.md":
         text = re.sub(
-            r"(?ms)^\*\*System Origin\*\*.*?(?=^\*\*Further Development Directions\*\*)",
+            r"(?ms)^\*\*System Origin\*\*.*?(?=^\*\*RQL Syntax Highlighting\*\*)",
             "",
             text,
         )

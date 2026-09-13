@@ -70,8 +70,6 @@
     * [xtrdb](appendices/command-line-options/xtrdb.md)
   * [System Origin](appendices/system-origin/README.md)
     * [Why Was This Name Chosen for the System?](appendices/system-origin/why-this-name.md)
-  * [Further Development Directions](appendices/further-development-directions/README.md)
-    * [Yet Another Mathematics](appendices/further-development-directions/yet-another-mathematics.md)
   * [RQL Syntax Highlighting](appendices/syntax-highlighting/README.md)
   * [Integration Tests](appendices/integration-tests.md)
 * [References](references.md)

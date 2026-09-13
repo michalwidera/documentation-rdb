@@ -27,12 +27,6 @@ A description of the historical circumstances that led to RetractorDB's creation
 
 Full description: [System Origin](system-origin/README.md)
 
-**Further Development Directions**
-
-An outline of potential extensions to the algebra underlying RQL. The main thread is the search for a generalization to complex numbers — a direct application of Gaussian integers, assuming the computational basis would be rational numbers, did not produce the expected results, due to the nature of the modulus (the modulus of a complex number with rational components is real, not rational). An alternative is **Eisenstein integers** — a threefold-symmetric counterpart to Gaussian numbers, whose modulus preserves rational properties. The chapter includes a derivation of their definition and a preliminary analysis of their applicability to time-series algebra.
-
-Full description: [Further Development Directions](further-development-directions/README.md)
-
 **RQL Syntax Highlighting**
 
 RetractorDB query files (extension `.rql`) have dedicated syntax-highlighting definitions for three environments:
