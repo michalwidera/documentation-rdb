@@ -35,19 +35,19 @@ If the source stream has `W` fields per record and interval `Δ`, the output str
 ## Typical usage patterns
 
 ```
--- serialization: 2 fields → 1 field (interval ÷ 2)
+# serialization: 2 fields → 1 field (interval ÷ 2)
 SELECT * STREAM s1 FROM A@(1,1)
 
--- tumbling window: windows of 4 records, no overlap
+# tumbling window: windows of 4 records, no overlap
 SELECT * STREAM s2 FROM A@(4,4)
 
--- sliding window: a 5-element window shifted by 1
+# sliding window: a 5-element window shifted by 1
 SELECT * STREAM s3 FROM A@(1,5)
 
--- sampling: every fifth record (skip=5, window=1)
+# sampling: every fifth record (skip=5, window=1)
 SELECT * STREAM s4 FROM A@(5,1)
 
--- mirrored deserialization: restoring field order
+# mirrored deserialization: restoring field order
 SELECT * STREAM s5 FROM s1@(2,-2)
 ```
 

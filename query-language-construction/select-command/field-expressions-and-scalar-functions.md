@@ -114,8 +114,9 @@ An existing artifact with the old schema must be recreated or written to a separ
 
 `Sqrt`, `sin`, `cos`, `exp`, `tan`, `log`, and `log2` do **not accept** a `RATIONAL` argument —
 the compiler rejects such a query through the `Check result:` channel and names the workaround.
-In practice this concerns stream reducers, because `MIN`/`MAX`/`AVG`/`SUMC` always produce
-`RATIONAL`:
+In practice this concerns stream reducers over `BYTE`, `INTEGER`, `UINT`, and `RATIONAL`
+fields, whose result type is `RATIONAL`. Reducers over `FLOAT` and `DOUBLE` preserve the input
+type:
 
 ```rql
 SELECT * STREAM m FROM AVG(src)
@@ -127,13 +128,14 @@ One rule applies: **a function with an irrational range over an exact rational v
 an explicit `to_double`**. The same rule covers a rule condition (`RULE ... WHEN`), which the
 compiler checks in a separate pass.
 
-For `Sqrt`, `tan`, `log`, and `log2` the reason is not a loss of precision but a silent **wrong
-value**. These four are computed through `double` and cast back to the argument type, and the
-return path to `RATIONAL` approximates the result with a fraction of a very large denominator
-(`Sqrt(2)` yields `19601/13860`, `log(2)` yields `2731/3940`). `RATIONAL` stores numerator and
-denominator in 32 bits with no range check, so two further multiplications overflow it:
-`Sqrt(x)*Sqrt(x)*Sqrt(x)` returned `-4.247` instead of `+2.828` — with the wrong sign and no
-error at all.
+For `Sqrt`, `tan`, `log`, and `log2`, the reason for the gate is the return from a `double`
+calculation to `RATIONAL`: the result used to be approximated by a fraction with a large
+denominator (for the rational argument `2/1`, the square root yielded `19601/13860` and the
+logarithm `2731/3940`). In an older version, two further multiplications of such an
+approximation could silently overflow its 32-bit numerator or denominator;
+`Sqrt(x)*Sqrt(x)*Sqrt(x)` returned `-4.247` instead of `+2.828`. Arithmetic on `INTEGER`
+and `RATIONAL` field values now detects overflow and writes `NULL`, but these functions
+still require an explicit `to_double`.
 
 For `sin`, `cos`, and `exp` the reason is different: these three end at `DOUBLE` and never
 return to `RATIONAL`, so they would compute correctly. Their rejection is a **language contract

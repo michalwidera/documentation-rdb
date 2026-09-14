@@ -110,12 +110,12 @@ SELECT accRow[0] \
 STREAM output \
 FROM SUMC(accRow)
 
-SELECT (output[0]/25)/1000,source[0] \
+SELECT int(output[0]/25/1000),source[0] \
 STREAM outputAll \
 FROM output+source
 ```
 
-The first of these three queries places the window directly in the `FROM` clause. The `source[_]` index takes the width of the 25 slots contributed by `source@(1,25)`, so the compiler creates 25 products with the corresponding `filter[_]` coefficients. A separate named window stream is unnecessary; the compiler extracts it as a plan substrate. `SUMC(accRow)` then sums the products, and the final query joins the filtered result with the current source sample.
+The first of these three queries places the window directly in the `FROM` clause. The `source[_]` index takes the width of the 25 slots contributed by `source@(1,25)`, so the compiler creates 25 products with the corresponding `filter[_]` coefficients. A separate named window stream is unnecessary; the compiler extracts it as a plan substrate. `SUMC(accRow)` then sums the products, and the final query joins the filtered result with the current source sample. The `SUMC` sum has type `RATIONAL`, so the final query scales it and casts it to an integer with `int(...)`; without the cast `xqry` would print fractions such as `2225159/12500`, of which gnuplot reads only the numerator, and the filtered trace would fall outside the axis range.
 
 After `[_]` is expanded, the plan contains many fields, so the full compilation result spans several screens. A compact view of the process can be generated with:
 

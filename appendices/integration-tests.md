@@ -92,6 +92,21 @@ ran the command under test and did not mask its exit status.
 | [`xqry_elem_limit`](https://github.com/michalwidera/retractordb/tree/master/test/IntegrationTest/xqry_elem_limit) | The `-m N` parameter in `xqry` — limits the number of received records to exactly N, regardless of the source's length. See: *Command-Line Options — xqry*. |
 | [`xqrywait_gate`](https://github.com/michalwidera/retractordb/tree/master/test/IntegrationTest/xqrywait_gate) | The `--xqrywait` gate does not lose the first command, does not reset the `--llimitqry` budget, and can be interrupted by a signal before a client arrives. |
 
+### Newer regression scenarios
+
+| Test name | Description |
+|:--------|:----------------------------|
+| [`expr_result_types`](https://github.com/michalwidera/retractordb/tree/master/test/IntegrationTest/expr_result_types) | Result-field types and sizes, fractional values, `NULL`, and schema copying through `SELECT *`. |
+| [`field_ref_outside_from`](https://github.com/michalwidera/retractordb/tree/master/test/IntegrationTest/field_ref_outside_from) | Rejects a reference to a field of a stream outside `FROM` and verifies a reference through the result stream's field. |
+| [`reducer_field_ref`](https://github.com/michalwidera/retractordb/tree/master/test/IntegrationTest/reducer_field_ref) | Rejects a reducer name used as a field in `SELECT` and reads the result through a materialized stream. |
+| [`reducer_float_max_avg_count`](https://github.com/michalwidera/retractordb/tree/master/test/IntegrationTest/reducer_float_max_avg_count) | `MAX` over negative `FLOAT` and `DOUBLE` values, and `AVG` over records with 256 and 257 fields. |
+| [`self_ref_field_shape`](https://github.com/michalwidera/retractordb/tree/master/test/IntegrationTest/self_ref_field_shape) | A field referenced by the stream's own name takes its type from the corresponding `FROM` record slot. |
+| [`self_ref_simplify_synth`](https://github.com/michalwidera/retractordb/tree/master/test/IntegrationTest/self_ref_simplify_synth) | Input-slot types for windows and reducers protect `FLOAT` calculations from incorrect constant simplification. |
+| [`self_ref_simplify_type`](https://github.com/michalwidera/retractordb/tree/master/test/IntegrationTest/self_ref_simplify_type) | A self-reference in an expression eligible for simplification uses the `FROM` slot type, not the output-field type. |
+| [`silent_arith_overflow`](https://github.com/michalwidera/retractordb/tree/master/test/IntegrationTest/silent_arith_overflow) | Overflow in `INTEGER` and `RATIONAL` expressions and reducers yields `NULL` instead of a wrapped number. |
+| [`synth_node_output_shape`](https://github.com/michalwidera/retractordb/tree/master/test/IntegrationTest/synth_node_output_shape) | Output-field types after a window, reducer, or join match the actual input slots. |
+| [`xqrywait_first_row`](https://github.com/michalwidera/retractordb/tree/master/test/IntegrationTest/xqrywait_first_row) | The first record survives the interval between opening the `--xqrywait` gate and creating the `xqry` subscription queue. |
+
 ## Compilation and offline scenarios
 
 The following directories primarily register compilation variants, plan presentation,

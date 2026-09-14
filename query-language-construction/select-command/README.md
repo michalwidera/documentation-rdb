@@ -77,7 +77,7 @@ flattened input schema.
 > Record-window aggregates are checked by `window_aggregate`. Integration tests are
 > described in [Integration Tests](../../appendices/integration-tests.md).
 
-The VOLATILE clause creates an ephemeral form of the query. A query with this clause holds only a single record in memory — only the descriptor describing the data structure appears on disk.
+The VOLATILE clause creates an ephemeral form of the query. Its data remains in an in-memory buffer whose capacity the compiler sets to meet the plan's needs; only the descriptor describing the data structure appears on disk.
 
 The STORAGE clause allows choosing how the artifacts created are managed and stored. The full table of types, with a description of each, is in the chapter [Storage Types](storage-types.md).
 

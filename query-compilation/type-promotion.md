@@ -14,7 +14,7 @@ At present, RetractorDB supports the following data types:
 | DOUBLE   | double-precision floating-point numbers       |
 | STRING   | character strings                             |
 
-The STRING and RATIONAL types still need review, fixes, and test coverage. During development I focused my effort on number processing. In the future I want to add complex numbers and rational Eisenstein complex numbers to this set as well.
+`STRING` and `RATIONAL` are used in descriptors, conversions, and expressions; their representation and behavior are checked by `ut_payload`, `ut_convertTypes`, and integration scenarios. Complex numbers and rational Eisenstein complex numbers remain outside the current set of types.
 
 An example of type promotion in practice — the `scaled` query from the chapter [Underscore Symbol Processing](underscore-symbol-processing.md):
 
@@ -86,7 +86,7 @@ middle of an expression**: `to_float('2.5') * 2` is `FLOAT`, and `to_integer(AVG
 Seven functions with an irrational range — `Sqrt`, `sin`, `cos`, `exp`, `tan`, `log` and
 `log2` — **do not compile** over an argument of type `RATIONAL`: the compiler rejects the plan
 and requires an explicit `to_double`. This matters in practice, because the reducers `MIN`,
-`MAX`, `AVG` and `SUMC` are `RATIONAL` by definition. The reason, the error message, the reach
+`MAX`, `AVG` and `SUMC` yield `RATIONAL` for integer or rational inputs. The reason, the error message, the reach
 of the gate (it also covers a `RULE ... WHEN` condition) and the exception for the rounding
 functions are described in
 [Field expressions and scalar functions](../query-language-construction/select-command/field-expressions-and-scalar-functions.md);
@@ -111,8 +111,9 @@ field shape slot by slot. The type travels through an arbitrarily long chain of 
 streams.
 
 Operators that **synthesize** a schema keep their own: the `MIN`/`MAX`/`AVG`/`SUMC` reducer in the
-`FROM` clause yields one `RATIONAL` field regardless of the source type, and the `@(step, width)`
-window yields fields of the widest type in the source record.
+`FROM` clause yields one field: `RATIONAL` for an integer or rational source, `FLOAT` for
+`FLOAT`, and `DOUBLE` for `DOUBLE`. The `@(step, width)` window yields fields of the widest
+type in the source record.
 
 A `DECLARE` declaration is a contract with the source file and is **not subject to inference** —
 no compiler pass modifies it.
