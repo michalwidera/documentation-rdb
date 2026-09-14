@@ -16,5 +16,5 @@ no-section-label = false
 git-repository-url = "https://github.com/michalwidera/documentation-rdb"
 edit-url-template = "https://github.com/michalwidera/documentation-rdb/edit/main/{path}"
 additional-js = ["mermaid.min.js", "mermaid-init.js"]
-additional-css = ["no-print.css"]
+additional-css = ["no-print.css", "timeline.css"]
 # additional-css = ["print-b5.css"]  # [pdfb5] uncomment before printing to B5

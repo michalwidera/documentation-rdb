@@ -31,22 +31,46 @@ The `-c` flag stops `xretractor` after this step and prints the plan to standard
 
 The chapter is structured following the order of the compiler's stages — from a description of the data structure and the chain of stages, through the individual transformations, to error handling.
 
-[**Compilation Passes**](compilation-passes.md) describes the entire chain of stages in the `compiler::compile()` function. Compilation is not a single step — it is an ordered sequence of seventeen stages over the internal `qTree` representation, from expanding generators and reducing FROM expressions to two-argument form, through determining intervals, validating substrate names, simplifying expressions, and locating fields, all the way to semantic verification, buffer allocation, and the final topological sort. Each stage assumes the previous one succeeded, and returns an error message when its conditions aren't met.
+<div class="timeline">
 
-[**Dependency Tree Construction**](dependency-tree-construction.md) describes the DAG structure produced during compilation — the foundation on which every stage rests. The roots are ephemeris declarations (external sources); inside the graph lie intermediate substrates; and the leaves are artifacts. The `-d` flag generates output in DOT format, which `graphviz` turns into a visual dependency graph. The order of queries in the `.rql` file matters — a reference to a stream not yet defined results in an error.
+- **[Compilation Passes](compilation-passes.md)**
 
-[**Substrates**](substrates.md) explains the `extractIntermediateStreams` stage — the first step after generator expansion. When a FROM expression contains more than two arguments (e.g. `(core0#core1)+core2`, `core0+core1+core2`), the compiler breaks it down into two-argument operations and creates named substrates. A later stage, `deduplicateSubstrats`, detects when a substrate is structurally identical to a user query and replaces the references — avoiding duplicate computation.
+  Describes the entire chain of stages in the `compiler::compile()` function. Compilation is not a single step — it is an ordered sequence of seventeen stages over the internal `qTree` representation, from expanding generators and reducing FROM expressions to two-argument form, through determining intervals, validating substrate names, simplifying expressions, and locating fields, all the way to semantic verification, buffer allocation, and the final topological sort. Each stage assumes the previous one succeeded, and returns an error message when its conditions aren't met.
 
-[**Asterisk Expansion**](asterisk-expansion.md) explains the `expandSchemaWildcards` stage. The `*` symbol in a SELECT clause is replaced with the full field list derived from the source stream's schema — including fields arising from stream-sum operations. An example shows how field types determine which field ends up in which position of the resulting schema.
+- **[Dependency Tree Construction](dependency-tree-construction.md)**
 
-[**Interval Resolution**](interval-resolution.md) describes the `resolveStreamIntervals` stage. The compiler determines the delta of every output stream from the stream-algebra equations: for the `+` operator the delta is the minimum of the inputs, for `#` it's the harmonic mean, for `@(step, window)` it's a derivative of the window size. The algorithm runs iteratively — each round resolves at least one stream, until all deltas are known.
+  Describes the DAG structure produced during compilation — the foundation on which every stage rests. The roots are ephemeris declarations (external sources); inside the graph lie intermediate substrates; and the leaves are artifacts. The `-d` flag generates output in DOT format, which `graphviz` turns into a visual dependency graph. The order of queries in the `.rql` file matters — a reference to a stream not yet defined results in an error.
 
-[**Loop Detection**](loop-detection.md) describes the mechanism built into the `resolveStreamIntervals` stage. If the number of unresolved streams stops decreasing, no stream can obtain a delta — a sign that the dependency graph contains a cycle. Compilation ends with the error `"Circular dependency in stream definitions"`. The chapter includes an example of a cyclic query and how to fix it.
+- **[Substrates](substrates.md)**
 
-[**Aliasing**](aliasing.md) describes the `resolveFieldReferences` and `localizeFieldOffsets` stages. After a sum `+`, an output field can be referenced either by its index in the combined schema (`str1[1]`) or by the source stream name with a local index (`core1[0]`). After an interleave `#`, the components share one schema, so named references to components are rejected; use the output stream name or de-interleave with `&`/`%`.
+  Explains the `extractIntermediateStreams` stage — the first step after generator expansion. When a FROM expression contains more than two arguments (e.g. `(core0#core1)+core2`, `core0+core1+core2`), the compiler breaks it down into two-argument operations and creates named substrates. A later stage, `deduplicateSubstrats`, detects when a substrate is structurally identical to a user query and replaces the references — avoiding duplicate computation.
 
-[**Underscore Symbol Processing**](underscore-symbol-processing.md) describes the `expandIndexWildcards` stage — syntactic sugar for parallel operations on pairs of fields. The `_` symbol in an index causes the formula to be repeated for all compatible slots that the referenced stream contributes to the record produced by the complete `FROM` clause. Thus `src[_] * coef[_]` with `FROM src@(1,5)+coef` generates five products even though `src` itself has only one field. Use case: building signal-filter queries.
+- **[Asterisk Expansion](asterisk-expansion.md)**
 
-[**Type Promotion**](type-promotion.md) defines the type-promotion rules that apply throughout the compilation chain. The result of `BYTE * INTEGER` has type `INTEGER` — the compiler determines the output field's type statically, before any data is processed. The complete type hierarchy supported by RetractorDB is also described.
+  Explains the `expandSchemaWildcards` stage. The `*` symbol in a SELECT clause is replaced with the full field list derived from the source stream's schema — including fields arising from stream-sum operations. An example shows how field types determine which field ends up in which position of the resulting schema.
 
-[**Compilation Debugging**](compilation-debugging.md) gathers diagnostic tools in one place: the `-c` flag for plan inspection, the `-c -d -f -s` pipeline for graph visualization via `graphviz`, a table of plan-instruction meanings (PUSH\_ID, PUSH\_STREAM, STREAM\_ADD, ...), and a catalog of common compilation errors with their causes and fixes.
+- **[Interval Resolution](interval-resolution.md)**
+
+  Describes the `resolveStreamIntervals` stage. The compiler determines the delta of every output stream from the stream-algebra equations: for the `+` operator the delta is the minimum of the inputs, for `#` it's the harmonic mean, for `@(step, window)` it's a derivative of the window size. The algorithm runs iteratively — each round resolves at least one stream, until all deltas are known.
+
+- **[Loop Detection](loop-detection.md)**
+
+  Describes the mechanism built into the `resolveStreamIntervals` stage. If the number of unresolved streams stops decreasing, no stream can obtain a delta — a sign that the dependency graph contains a cycle. Compilation ends with the error `"Circular dependency in stream definitions"`. The chapter includes an example of a cyclic query and how to fix it.
+
+- **[Aliasing](aliasing.md)**
+
+  Describes the `resolveFieldReferences` and `localizeFieldOffsets` stages. After a sum `+`, an output field can be referenced either by its index in the combined schema (`str1[1]`) or by the source stream name with a local index (`core1[0]`). After an interleave `#`, the components share one schema, so named references to components are rejected; use the output stream name or de-interleave with `&`/`%`.
+
+- **[Underscore Symbol Processing](underscore-symbol-processing.md)**
+
+  Describes the `expandIndexWildcards` stage — syntactic sugar for parallel operations on pairs of fields. The `_` symbol in an index causes the formula to be repeated for all compatible slots that the referenced stream contributes to the record produced by the complete `FROM` clause. Thus `src[_] * coef[_]` with `FROM src@(1,5)+coef` generates five products even though `src` itself has only one field. Use case: building signal-filter queries.
+
+- **[Type Promotion](type-promotion.md)**
+
+  Defines the type-promotion rules that apply throughout the compilation chain. The result of `BYTE * INTEGER` has type `INTEGER` — the compiler determines the output field's type statically, before any data is processed. The complete type hierarchy supported by RetractorDB is also described.
+
+- **[Compilation Debugging](compilation-debugging.md)**
+
+  Gathers diagnostic tools in one place: the `-c` flag for plan inspection, the `-c -d -f -s` pipeline for graph visualization via `graphviz`, a table of plan-instruction meanings (PUSH\_ID, PUSH\_STREAM, STREAM\_ADD, ...), and a catalog of common compilation errors with their causes and fixes.
+
+</div>

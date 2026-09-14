@@ -10,37 +10,41 @@ Compilation of the system's code is supported by the Conan package manager \[[8]
 
 The chapter is built in layers — from the general view down to implementation detail.
 
-### [General Perspective](architecture-overview.md)
+<div class="timeline">
 
-The system as a trio of cooperating programs: `xretractor` as the process executing a query plan, `xqry` as the multi-instance client for current data, and `xtrdb` as the binary-file inspection tool. Several named `xretractor` processes can run on one host, each with its own Boost IPC area. The diagram in Fig. 12 shows component boundaries for one such instance.
+- **[General Perspective](architecture-overview.md)**
 
-### [Multiple Instances and the Bus](multiple-instances-and-bus.md)
+  The system as a trio of cooperating programs: `xretractor` as the process executing a query plan, `xqry` as the multi-instance client for current data, and `xtrdb` as the binary-file inspection tool. Several named `xretractor` processes can run on one host, each with its own Boost IPC area. The diagram in Fig. 12 shows component boundaries for one such instance.
 
-Instance names, separation of IPC objects, the `xrdbbus` registry, global protection of stream and storage-file names, and automatic routing rules for `xqry` commands. This section also describes the stable `service` identity, complete plan replacement with `xqry --reset`, and the modes shown by `xqry --bus`.
+- **[Multiple Instances and the Bus](multiple-instances-and-bus.md)**
 
-### [Data and Control Flow](data-and-control-flow.md)
+  Instance names, separation of IPC objects, the `xrdbbus` registry, global protection of stream and storage-file names, and automatic routing rules for `xqry` commands. This section also describes the stable `service` identity, complete plan replacement with `xqry --reset`, and the modes shown by `xqry --bus`.
 
-Which data paths are always active (data arrival → xretractor → artifacts), and which are optional or diagnostic. The graceful-shutdown mechanism is also described — xretractor reacts to `SIGINT`, `SIGTERM`, and `SIGHUP` signals by finishing the current cycle without risking file corruption.
+- **[Data and Control Flow](data-and-control-flow.md)**
 
-### [Artifacts, Substrates, and Ephemerides](artifacts-substrates-ephemerides.md)
+  Which data paths are always active (data arrival → xretractor → artifacts), and which are optional or diagnostic. The graceful-shutdown mechanism is also described — xretractor reacts to `SIGINT`, `SIGTERM`, and `SIGHUP` signals by finishing the current cycle without risking file corruption.
 
-The system's key taxonomic split. Each stream type has a different purpose and a different storage strategy: artifacts are materialized on disk as a durable result, substrates are intermediate streams necessary during computation, and ephemerides are ephemeral data sources that cannot, or need not, be stored.
+- **[Artifacts, Substrates, and Ephemerides](artifacts-substrates-ephemerides.md)**
 
-### [Data Storage Format](data-storage-format/readme.md)
+  The system's key taxonomic split. Each stream type has a different purpose and a different storage strategy: artifacts are materialized on disk as a durable result, substrates are intermediate streams necessary during computation, and ephemerides are ephemeral data sources that cannot, or need not, be stored.
 
-The four-file structure of an artifact: a binary data file (fixed-length records, no header), a `.desc` descriptor describing the record schema in ANTLR4 grammar, a `.meta` metadata file with an index of null values and transmission gaps (RLE encoding), and an optional `.shadow` file for non-destructive modification of historical records. The descriptor determines the storage strategy via the `TYPE` field.
+- **[Data Storage Format](data-storage-format/readme.md)**
 
-### [Compilation and Plan Construction](compilation-and-plan-construction.md)
+  The four-file structure of an artifact: a binary data file (fixed-length records, no header), a `.desc` descriptor describing the record schema in ANTLR4 grammar, a `.meta` metadata file with an index of null values and transmission gaps (RLE encoding), and an optional `.shadow` file for non-destructive modification of historical records. The descriptor determines the storage strategy via the `TYPE` field.
 
-The process of turning an `.rql` file into a ready-to-run query execution plan. The `-c` flag runs compile-only mode without execution; combined with `-d -f -s` it generates DOT output, which `graphviz` turns into a data-flow graph. The graph shows two domains: the arithmetic-expression stack (PUSH, ADD, etc.) and the stream algebra. The full set of compile-mode and execution-mode flags is described.
+- **[Compilation and Plan Construction](compilation-and-plan-construction.md)**
 
-### [Data Processing and Distribution](data-processing-and-distribution.md)
+  The process of turning an `.rql` file into a ready-to-run query execution plan. The `-c` flag runs compile-only mode without execution; combined with `-d -f -s` it generates DOT output, which `graphviz` turns into a data-flow graph. The graph shows two domains: the arithmetic-expression stack (PUSH, ADD, etc.) and the stream algebra. The full set of compile-mode and execution-mode flags is described.
 
-A complete walkthrough: from preparing a data file, through running `xretractor`, through viewing streaming statistics (`xqry -d`), to live visualization in gnuplot (`xqry -s str1 -p 50,50 | gnuplot`) and network transmission via `nc`. The example combines two sources — a text file and `/dev/urandom` — illustrating how the `+` operator in the FROM clause performs algebraic stream joining.
+- **[Data Processing and Distribution](data-processing-and-distribution.md)**
 
-### [Artifact Analysis](artifact-analysis.md)
+  A complete walkthrough: from preparing a data file, through running `xretractor`, through viewing streaming statistics (`xqry -d`), to live visualization in gnuplot (`xqry -s str1 -p 50,50 | gnuplot`) and network transmission via `nc`. The example combines two sources — a text file and `/dev/urandom` — illustrating how the `+` operator in the FROM clause performs algebraic stream joining.
 
-The `xtrdb` tool — an interactive binary-file inspector modeled after the dbase style. The `.open`, `.desc`, `.list`, `.rlist`, and `.meta` commands let you browse the contents of artifacts without knowing the binary format. The tool is also used to verify determinism: the same input data should always produce identical results.
+- **[Artifact Analysis](artifact-analysis.md)**
+
+  The `xtrdb` tool — an interactive binary-file inspector modeled after the dbase style. The `.open`, `.desc`, `.list`, `.rlist`, and `.meta` commands let you browse the contents of artifacts without knowing the binary format. The tool is also used to verify determinism: the same input data should always produce identical results.
+
+</div>
 
 ***
 

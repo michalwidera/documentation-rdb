@@ -100,6 +100,25 @@ jobs:
           \newtcolorbox{calloutNote}{breakable,colback=green!8,colframe=green!45!black,fonttitle=\bfseries,title={Note}}
           \newtcolorbox{calloutInfo}{breakable,colback=cyan!6,colframe=cyan!55!black,fonttitle=\bfseries,title={Info}}
           \newtcolorbox{calloutWarning}{breakable,colback=orange!10,colframe=orange!70!black,fonttitle=\bfseries,title={Warning}}
+          \usepackage{needspace}
+          \usepackage{tikz}
+          \definecolor{rdbtlline}{gray}{0.72}
+          \definecolor{rdbtldot}{HTML}{20609F}
+          \newenvironment{rdbtimeline}{%
+            \par\needspace{12\baselineskip}\begin{mdframed}[topline=false,rightline=false,bottomline=false,
+              leftline=true,linewidth=1pt,linecolor=rdbtlline,
+              leftmargin=6pt,rightmargin=0pt,innerleftmargin=18pt,innerrightmargin=0pt,
+              innertopmargin=0pt,innerbottommargin=0pt,skipabove=10pt,skipbelow=10pt]}%
+            {\end{mdframed}}
+          \newcommand{\rdbtlitem}[1]{%
+            \par\needspace{5\baselineskip}\medskip\noindent
+            \tikz[overlay]{%
+              \fill[white] (-18.5pt,0.6ex) circle (5.5pt);
+              \draw[rdbtldot,line width=1pt] (-18.5pt,0.6ex) circle (4.5pt);
+              \fill[rdbtldot] (-18.5pt,0.6ex) circle (2.4pt);}%
+            \tcbox[on line,arc=2.4mm,boxrule=0.5pt,colframe=rdbtlline,colback=white,
+              left=5pt,right=5pt,top=1pt,bottom=1pt]{\sffamily\bfseries\small #1}%
+            \par\smallskip}
           TEXEOF
 
           cat > /tmp/cover.tex << COVEOF
@@ -224,6 +243,30 @@ jobs:
           end
           TABLELUAEOF
 
+          cat > /tmp/timeline.lua << 'TLLUAEOF'
+          function Div(el)
+            if not FORMAT:match("latex") then return nil end
+            if not el.classes:includes("timeline") then return nil end
+            local out = {pandoc.RawBlock("latex", "\\begin{rdbtimeline}")}
+            for _, block in ipairs(el.content) do
+              if block.t == "BulletList" then
+                for _, item in ipairs(block.content) do
+                  local title = item[1]
+                  local head = pandoc.Plain({pandoc.RawInline("latex", "\\rdbtlitem{")})
+                  head.content:extend(title.content)
+                  head.content:insert(pandoc.RawInline("latex", "}"))
+                  table.insert(out, head)
+                  for i = 2, #item do table.insert(out, item[i]) end
+                end
+              else
+                table.insert(out, block)
+              end
+            end
+            table.insert(out, pandoc.RawBlock("latex", "\\end{rdbtimeline}"))
+            return out
+          end
+          TLLUAEOF
+
           cat > /tmp/callouts.lua << 'CALLUAEOF'
           local envs = {Note="calloutNote", Info="calloutInfo",
                         Warning="calloutWarning", NOTE="calloutNote",
@@ -346,6 +389,7 @@ jobs:
             --lua-filter /tmp/callouts.lua \
             --lua-filter /tmp/fix_math.lua \
             --lua-filter /tmp/table_breaks.lua \
+            --lua-filter /tmp/timeline.lua \
             --include-in-header=/tmp/header.tex \
             --include-before-body=/tmp/cover.tex \
             --pdf-engine=xelatex \
