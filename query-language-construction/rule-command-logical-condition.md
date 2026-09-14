@@ -58,7 +58,7 @@ DO DUMP -5 TO 0
 
 ## Field access
 
-The condition refers to the fields of the stream specified in `ON`. The field index corresponds to its position in that stream's schema — the same as in the `SELECT` clause. Aliasing works exactly as described in the chapter [Aliasing](../query-compilation/aliasing.md).
+The condition refers to the fields of the stream specified in `ON`. The field index corresponds to its position in that stream's schema — the same as in the `SELECT` clause. The condition reads the stream's output record, so an index equal to or greater than its field count is a compilation error (see [Index out of range](../query-compilation/aliasing.md#index-out-of-range)). Aliasing works exactly as described in the chapter [Aliasing](../query-compilation/aliasing.md).
 
 If the stream in `ON` was produced by an interleave `A#B`, the condition must use the output stream name:
 

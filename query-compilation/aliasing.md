@@ -69,6 +69,29 @@ SELECT merged[0], merged[2] STREAM result FROM merged
 
 The restriction does not apply to substrates created automatically for a compound `FROM` clause, e.g. `FROM (core0 + core1) > 1`: source aliases still work through them.
 
+## Index out of range
+
+The index in `stream[k]` must point to a slot the query actually reads. The compiler rejects an index outside that range instead of producing a plan that reads past the end of the input record. The bound depends on what the name refers to:
+
+| Reference | Bound | Accepted example | Rejected example |
+|---|---|---|---|
+| a stream in the `FROM` clause | the number of slots that stream contributes to `FROM` | `core1[1]` with `FROM core0 + core1` | `core1[2]` |
+| a stream behind a window or a reducer | the number of slots after the operator, not the stream width | `core0[2]` with `FROM core0@(1,3)` | `core0[3]`; `acc[1]` with `FROM SUMC(acc)` |
+| the query's own name in the `SELECT` list | the width of the `FROM` input record | `merged[3]` in `STREAM merged FROM core0 + core1` | `merged[4]` |
+| the stream's own name in a `RULE` condition | the width of the stream's output record | `merged[3]` with `SELECT * STREAM merged` | `merged[4]` |
+
+Windows and reducers change the slot count: `core0@(1,3)` contributes three slots although `core0` has two fields, and `SUMC(acc)` contributes one. The same count drives the expansion of `core0[_]`, so a hand-written index and the `_` form share one range.
+
+Example messages:
+
+```
+Check result:Stream 'merged': stream 'core1' has 2 element(s) in its FROM clause, so 'core1[2]' is out of range
+Check result:Stream 'merged': the FROM record of 'merged' has 4 element(s), so 'merged[4]' is out of range
+Check result:Stream 'merged': rule 'alarm' reads the record of 'merged', which has 4 element(s), so 'merged[4]' is out of range
+```
+
+An index folded from `$` in a stream generator goes through the same check and produces the same message as a hand-written index.
+
 ## Aliasing after sum and interleave
 
 The source aliases described above apply to the stream sum operator `+`. Sum concatenates schemas, so it preserves the position and identity of every component: `core0[0]` and `core1[0]` point to different locations in the output record.

@@ -53,7 +53,7 @@ Within a template, `$` may occur:
 - as an expression value, for example `cells[0]+$`;
 - in a reference to another family in the `FROM` clause, for example `cell[$]@(2,4)`.
 
-A generator-index expression is integral and may contain literals, `$`, parentheses, and the operators `*`, `+`, and `-`. The family size must be positive and the template must actually use `$`. A generator cannot carry a `FILE` clause because one file name cannot serve multiple streams. The compiler also rejects family indices outside the declared range, negative field indices, and collisions between generated and existing stream names.
+A generator-index expression is integral and may contain literals, `$`, parentheses, and the operators `*`, `+`, and `-`. The family size must be positive and the template must actually use `$`. A generator cannot carry a `FILE` clause because one file name cannot serve multiple streams. The compiler also rejects family indices outside the declared range, negative field indices, field indices beyond the source's slots, and collisions between generated and existing stream names. The field-index range is checked by the same rule as for a hand-written index — see [Index out of range](../../query-compilation/aliasing.md#index-out-of-range).
 
 Expansion is the compiler's first pass. Afterwards the plan is identical to one containing hand-written `cell$0`...`cell$3` streams; runtime has no separate generator mechanism.
 
