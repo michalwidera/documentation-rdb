@@ -10,7 +10,7 @@ STREAM output_stream_name [instance_count]
 FROM stream_algebraic_expression 
 [FILE 'artifact_file_name'] 
 [RETENTION capacity [segments]]
-[VOLATILE]
+[VOLATILE | PERSISTENT]
 [STORAGE profile]
 ```
 
@@ -18,7 +18,7 @@ FROM stream_algebraic_expression
 
 _Fig. 4. SELECT command syntax diagram_
 
-The railroad diagram in Fig. 4 was generated from the `select_statement` rule in the system's ANTLR4 grammar (`RQL.g4`). The diagram is read by following the lines from left to right: rounded green boxes are keywords and symbols entered literally, rectangles are values supplied by the user. The branch after the word SELECT shows that the field list is either an asterisk (the full record) or one or more expressions separated by commas (a loop looping back through a comma). An optional size in square brackets after the stream name creates a stream family. Tracks bypassing the FILE, RETENTION (with an optional second parameter — the number of segments), VOLATILE, and STORAGE clauses mean each of them is optional.
+The railroad diagram in Fig. 4 was generated from the `select_statement` rule in the system's ANTLR4 grammar (`RQL.g4`). The diagram is read by following the lines from left to right: rounded green boxes are keywords and symbols entered literally, rectangles are values supplied by the user. The branch after the word SELECT shows that the field list is either an asterisk (the full record) or one or more expressions separated by commas (a loop looping back through a comma). An optional size in square brackets after the stream name creates a stream family. Tracks bypassing the FILE, RETENTION (with an optional second parameter — the number of segments), VOLATILE/PERSISTENT, and STORAGE clauses mean each of them is optional.
 
 Readers familiar with SQL will immediately notice that the command shown above differs significantly from what they know from relational databases.
 
@@ -141,3 +141,6 @@ For integer and rational types, a non-negative integral power has exactly the se
 > **_NOTE:_** The shift operator `A > N` is covered by the test: `issue56_timeshift`, described in the appendix [Integration Tests](../../appendices/integration-tests.md).
 
 > **_NOTE:_** Null-value propagation through SELECT expressions is covered by the test: `issue121_null_propagation`, described in the appendix [Integration Tests](../../appendices/integration-tests.md).
+
+`DEFAULT VOLATILE` sets default volatility for the plan. `PERSISTENT` overrides
+it for one result. See [VOLATILE and PERSISTENT](volatile-clause.md).
