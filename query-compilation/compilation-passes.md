@@ -31,7 +31,7 @@ SELECT * \
 STREAM merged \
 FROM core0 + core1
 
-SELECT merged[0], merged[2], core0[0], core1[0] \
+SELECT merged[0], merged[2] \
 STREAM result \
 FROM merged
 ```
@@ -39,43 +39,76 @@ FROM merged
 After passing through all the stages, `xretractor -c query.rql` prints:
 
 ```
-merged(1/10)
-        :- PUSH_STREAM(core0)
-        :- PUSH_STREAM(core1)
-        :- STREAM_ADD
-        core0_0: BYTE
-                PUSH_ID(merged[0])
-        core0_1: INTEGER
-                PUSH_ID(merged[1])
-        core1_2: INTEGER
-                PUSH_ID(merged[2])
-        core1_3: FLOAT
-                PUSH_ID(merged[3])
-result(1/10)
-        :- PUSH_STREAM(merged)
-        result_0: BYTE
-                PUSH_ID(merged[0])
-        result_1: INTEGER
-                PUSH_ID(merged[2])
-        result_2: BYTE
-                PUSH_ID(merged[0])
-        result_3: INTEGER
-                PUSH_ID(merged[2])
-core0(1/10)     sensor_a.txt
-        a: BYTE
-        b: INTEGER
-core1(1/5)      sensor_b.txt
-        c: INTEGER
-        d: FLOAT
-core2(3/10)     sensor_c.txt
-        e: INTEGER
+core0(1/10)	sensor_a.txt
+	a: BYTE
+	b: INTEGER
+core1(1/5)	sensor_b.txt
+	c: INTEGER
+	d: FLOAT
+merged(1/10)	tail=1
+	:- PUSH_STREAM(core0)
+	:- PUSH_STREAM(core1)
+	:- STREAM_ADD
+	core0_0: BYTE
+		PUSH_ID(merged[0])
+	core0_1: INTEGER
+		PUSH_ID(merged[1])
+	core1_2: INTEGER
+		PUSH_ID(merged[2])
+	core1_3: FLOAT
+		PUSH_ID(merged[3])
+result(1/10)	tail=1
+	:- PUSH_STREAM(merged)
+	result_0: BYTE
+		PUSH_ID(result[0])
+	result_1: INTEGER
+		PUSH_ID(result[2])
+core2(3/10)	sensor_c.txt
+	e: INTEGER
 ```
+
+The plan is printed in the final topological order: the declarations `core0` and `core1` precede their consumer `merged`, which precedes the query `result`. The unused declaration `core2` goes last. `tail=1` is the startup tail determined by `computeStartupLatency`. `PUSH_ID` references point to positions in the query's input record, written under the query's own name: `result[2]` is the third field of the `merged` record, that is `core1.c`.
+
+The field list of `result` refers only to the stream in its own `FROM` clause. Writing `core1[0]` there ends in the compilation error `Stream 'result' refers to 'core1', which is not in its FROM clause`: `core1` is a source of `merged`, not of `result` — see [Aliasing](aliasing.md).
 
 The subchapters on substrates and the `_` symbol use extended variants of the same set of declarations. For how to interpret every element of this plan, see [Compilation Debugging](compilation-debugging.md).
 
 ## The chain of stages
 
-The chain of stages is defined by the `compiler::compile()` function:
+The chain of twenty-three stages is defined by the `compiler::compile()` function:
+
+<div class="timeline compact">
+
+- `checkFunctionCalls` — scalar-function names and arity
+- `checkStreamReducerFieldRefs` — stream reducer outside the `FROM` clause
+- `expandStreamGenerators` — expansion of `name[N]` stream families
+- `snapshotNamedSourceRefs` — snapshot of user-written references
+- `extractIntermediateStreams` — two-argument `FROM` expressions, substrates
+- `expandSchemaWildcards` — expansion of `*` and `[_]`
+- `resolveStreamIntervals` — stream intervals, loop detection
+- `factorMatchedHashTimeMoves` — factoring a common shift out of an interleave
+- `deduplicateSubstrats` — elimination of repeated substrates
+- `validateSubstratNameUniqueness` — unambiguous substrate names
+- `resolveFieldReferences` — field references as flat indexes
+- `resolveWindowAggregates` — record-history aggregate groups
+- `inferFieldShapes` — type, length, and cardinality of every field
+- `checkRuleConditionShapes` — computability of `RULE` conditions
+- `simplifyFieldExpressions` — simplification of field and rule programs
+- `shareEquivalentSelectComputations` — sharing equivalent `SELECT` computations
+- `localizeFieldOffsets` — field offsets in the input buffer
+- `computeLogicalOrigin` — logical origin of a stream
+- `computeStartupLatency` — startup tail
+- `computeRequiredCapacities` — required buffer history
+- `validateConstraints` — semantic validation of the plan
+- `applyCapacitiesToStreams` — capacity application
+- `topologicalSort` — final producer–consumer order
+
+</div>
+
+The stages `factorMatchedHashTimeMoves`, `deduplicateSubstrats`, `simplifyFieldExpressions`,
+and `shareEquivalentSelectComputations` are optimizations that the `RDB_OPT_*` switches can
+disable. Disabling them does not change result values; at most it can lengthen the startup
+tail (see `factorMatchedHashTimeMoves`). All other stages always run.
 
 #### checkFunctionCalls
 
@@ -84,9 +117,19 @@ Matching is case-insensitive and the canonical spelling is stored in the token. 
 function or invalid width stops compilation through `Check result:` before generator
 expansion, so one template error is not multiplied N times.
 
+#### checkStreamReducerFieldRefs
+
+Rejects a stream reducer (`MIN`, `MAX`, `AVG`, `SUMC` without a window width) used in a
+`SELECT` field program or in a `RULE` condition. The grammar admits it in a scalar
+expression, but no execution mechanism evaluates it there: the query
+`SELECT avg STREAM o FROM AVG(src)` used to pass compilation and then never emitted a single
+record. A stream reducer belongs in the `FROM` clause; the working `SELECT * FROM AVG(src)`
+is not affected by this check. The stage sits next to `checkFunctionCalls` for the same
+reason — before generator expansion.
+
 #### expandStreamGenerators
 
-Expands every `SELECT ... STREAM name[N] ...` template into `N` ordinary queries named `name$0`...`name$(N-1)` and substitutes the instance ordinal for `$` in fields, values, and `FROM` references. It is the first pass: everything after it receives a plan indistinguishable from hand-written queries. See [SELECT Command](../query-language-construction/select-command/README.md#stream-generators) for syntax and constraints.
+Expands every `SELECT ... STREAM name[N] ...` template into `N` ordinary queries named `name$0`...`name$(N-1)` and substitutes the instance ordinal for `$` in fields, values, and `FROM` references. It is the first pass that rewrites the plan (only the `checkFunctionCalls` and `checkStreamReducerFieldRefs` checks precede it): everything after it receives a plan indistinguishable from hand-written queries. See [SELECT Command](../query-language-construction/select-command/README.md#stream-generators) for syntax and constraints.
 
 #### snapshotNamedSourceRefs
 
@@ -145,19 +188,27 @@ history source, at least one field read, and the bans on nesting and `RULE` use.
 source–expression–width triples share a group and one history scan. The aggregate token
 becomes a zero-argument operand that points to the computed group result.
 
-#### propagateCopiedFieldShapes
+#### inferFieldShapes
 
-Carries an established history-aggregate result type through nodes that only copy a schema:
-`SELECT *`, shift, difference, interleave, de-interleave, and stream sum. The pass runs to a
-fixed point because a copy may read another copy while the tree is still interval-sorted.
-Without it, a derived copy of `RATIONAL` would retain the parser's `INTEGER` type and silently
-truncate a fractional result.
+The only stage that establishes the public shape of a `SELECT` field: its type, length, and
+cardinality. The shape follows from the whole field program — the pass replays the runtime
+arithmetic on a stack of types, including `BYTE` promotion, explicit conversions in the middle
+of an expression, the result of a record-history aggregate, and the width of `STRING`. The
+stage replaced the earlier local rules (`propagateCopiedFieldShapes`, `inferStringFieldTypes`),
+which settled the shape only in selected cases — see [Type Promotion](type-promotion.md).
 
-#### inferStringFieldTypes
+The pass runs to a fixed point because the tree is still sorted by interval and a consumer may
+precede its producer. It covers only nodes that copy their operand's schema; reducers and the
+`@` window keep the schema built by their operator, and `DECLARE` declarations are left
+untouched. The stage precedes expression simplification: after constant folding, a field's
+width would depend on an optimization switch.
 
-After references are resolved, determines the result `STRING` type and width from actual
-source fields, literals, and `to_string`. It runs before simplification so folding a constant
-expression cannot shrink the declared width. This pass is not general numeric type inference.
+#### checkRuleConditionShapes
+
+Applies to `RULE` conditions the same computability check that `inferFieldShapes` applies to
+fields. A rule condition is executed by the same expression evaluator, so without this stage an
+invalid condition would bypass the check and silently produce a wrong value. The pass writes
+nothing into the plan — it only rejects conditions that cannot be computed.
 
 #### simplifyFieldExpressions
 
@@ -181,7 +232,9 @@ Detects explicit `SELECT` queries with equivalent field programs and `FROM` tree
 
 #### localizeFieldOffsets
 
-Converts field references (`b[x]`, `c[y]`) into positions in the flattened output schema (`merged[z]`). For sum `+`, the offset follows from the number of fields in the preceding components. For interleave `#`, both arguments share the same positions in one schema; component identity is no longer available through its name.
+Converts field references (`b[x]`, `c[y]`) into positions in the query's flattened input record, written under the query's own name (`result[z]`). For sum `+`, the offset follows from the number of fields in the preceding components. For interleave `#`, both arguments share the same positions in one schema; component identity is no longer available through its name.
+
+A position can be determined only for streams in the `FROM` clause and for sources reached through compiler-generated substrates. A reference to a source of an intermediate stream that is a user query — e.g. `core1[0]` with `FROM merged` — stops compilation with `Stream '…' refers to '…', which is not in its FROM clause`. Such a stream has its own interval and buffer, so the position of its sources in the consumer's input record cannot be determined.
 
 At this stage the compiler rejects user-written `A[0]`, `A.field`, `A[_]`, `A.*`, and bare field names if they refer to a component reached through `#`. The check also covers `RULE` conditions and sources hidden behind automatic substrates. References through the output stream name, an unqualified `*`, and explicit component recovery with `&` or `%` remain legal.
 
@@ -280,4 +333,4 @@ internal substrates, but it cannot change field names of a public stream,
 because those names enter the observable `.desc` descriptor.
 
 
-Every stage returns `"OK"` or an error message — in which case compilation stops.
+Check and rewrite stages return `"OK"` or an error message — in which case compilation stops. `snapshotNamedSourceRefs`, `computeRequiredCapacities` (which returns the capacity map), and `topologicalSort` return no result of this kind. Some plan inconsistencies, such as a reference to a nonexistent stream, stop compilation with an exception instead of a message.

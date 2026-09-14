@@ -333,27 +333,35 @@ If all conditions hold, substrate `it` is considered a duplicate of substrate `i
 
 ### Position in the compilation pipeline
 
-Deduplication is the sixth step of the pipeline (the `compiler::compile()` function):
+Deduplication is the ninth of the twenty-three pipeline stages (the `compiler::compile()` function):
 
-```
-1. expandStreamGenerators       – stream-family expansion
-2. extractIntermediateStreams   – substrate extraction
-3. expandSchemaWildcards        – expansion of `*` and `[_]`
-4. resolveStreamIntervals       – time-interval computation
-5. factorMatchedHashTimeMoves   – matched interleave-shift factorization
-6. deduplicateSubstrats         – duplicate elimination  ← this step
-7. validateSubstratNameUniqueness – substrate-name validation
-8. resolveFieldReferences       – field-reference resolution
-9. simplifyFieldExpressions     – field and rule simplification
-10. shareEquivalentSelectComputations – sharing equivalent SELECT computations
-11. localizeFieldOffsets        – field-offset computation
-12. computeLogicalOrigin        – logical-origin computation
-13. computeStartupLatency       – startup-tail computation
-14. computeRequiredCapacities   – required-history computation
-15. validateConstraints         – operator-constraint validation
-16. applyCapacitiesToStreams    – capacity application
-17. topologicalSort             – final producer–consumer order
-```
+<div class="timeline compact">
+
+- `checkFunctionCalls` — scalar-function names and arity
+- `checkStreamReducerFieldRefs` — stream reducer outside the `FROM` clause
+- `expandStreamGenerators` — stream-family expansion
+- `snapshotNamedSourceRefs` — snapshot of user-written references
+- `extractIntermediateStreams` — substrate extraction
+- `expandSchemaWildcards` — expansion of `*` and `[_]`
+- `resolveStreamIntervals` — time-interval computation
+- `factorMatchedHashTimeMoves` — matched interleave-shift factorization
+- **`deduplicateSubstrats` — duplicate elimination ← this step**
+- `validateSubstratNameUniqueness` — substrate-name validation
+- `resolveFieldReferences` — field-reference resolution
+- `resolveWindowAggregates` — record-history aggregate groups
+- `inferFieldShapes` — result-field shapes
+- `checkRuleConditionShapes` — computability of rule conditions
+- `simplifyFieldExpressions` — field and rule simplification
+- `shareEquivalentSelectComputations` — sharing equivalent SELECT computations
+- `localizeFieldOffsets` — field-offset computation
+- `computeLogicalOrigin` — logical-origin computation
+- `computeStartupLatency` — startup-tail computation
+- `computeRequiredCapacities` — required-history computation
+- `validateConstraints` — operator-constraint validation
+- `applyCapacitiesToStreams` — capacity application
+- `topologicalSort` — final producer–consumer order
+
+</div>
 
 Matched interleave-shift factorization and deduplication must happen after interval resolution because both operations compare intervals. Deduplication follows the algebraic rewrite so that it can merge interleave substrates exposed by that rewrite.
 

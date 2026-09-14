@@ -34,14 +34,41 @@ This chapter is a map, not a catalog. Instead of listing everything ever written
 
 The problem RetractorDB solves does not belong entirely to any single discipline. It lies at the intersection of eight strands:
 
-1. **Number theory** – Beatty sequences, Fraenkel's theorem, covering systems. This provides the formal foundation.
-2. **Task scheduling via Beatty sequences** – the same mathematics, a different application. The closest application-level neighbor.
-3. **Synchronous and cyclo-static dataflow (SDF/CSDF)** – multirate actor graphs, static schedules, and buffer bounds.
-4. **Synchronous languages and clock calculi** – declarative relations between periodic streams and compile-time delay inference.
-5. **Digital signal processing (DSP)** – nonuniform sampling and filter banks with rational coefficients. This is the DSP counterpart of the interleaving operation.
-6. **Data stream management systems (DSMS)** – stream algebras and continuous-query semantics. This is the database reference point.
-7. **Multi-query sharing and shared state** – reuse of computation, indexes, and materializations across plans.
-8. **Time-series systems (TSMS) and in-database DSP** – the narrowest niche, closest to the system's actual goal.
+<div class="timeline">
+
+- **1. Number theory**
+
+  Beatty sequences, Fraenkel's theorem, covering systems. This provides the formal foundation.
+
+- **2. Task scheduling via Beatty sequences**
+
+  The same mathematics, a different application. The closest application-level neighbor.
+
+- **3. Synchronous and cyclo-static dataflow (SDF/CSDF)**
+
+  Multirate actor graphs, static schedules, and buffer bounds.
+
+- **4. Synchronous languages and clock calculi**
+
+  Declarative relations between periodic streams and compile-time delay inference.
+
+- **5. Digital signal processing (DSP)**
+
+  Nonuniform sampling and filter banks with rational coefficients. This is the DSP counterpart of the interleaving operation.
+
+- **6. Data stream management systems (DSMS)**
+
+  Stream algebras and continuous-query semantics. This is the database reference point.
+
+- **7. Multi-query sharing and shared state**
+
+  Reuse of computation, indexes, and materializations across plans.
+
+- **8. Time-series systems (TSMS) and in-database DSP**
+
+  The narrowest niche, closest to the system's actual goal.
+
+</div>
 
 I discuss them in turn, from the foundation toward the application.
 

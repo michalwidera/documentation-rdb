@@ -110,12 +110,14 @@ jobs:
               leftmargin=6pt,rightmargin=0pt,innerleftmargin=18pt,innerrightmargin=0pt,
               innertopmargin=0pt,innerbottommargin=0pt,skipabove=10pt,skipbelow=10pt]}%
             {\end{mdframed}}
-          \newcommand{\rdbtlitem}[1]{%
-            \par\needspace{5\baselineskip}\medskip\noindent
+          \newcommand{\rdbtldot}{%
             \tikz[overlay]{%
               \fill[white] (-18.5pt,0.6ex) circle (5.5pt);
               \draw[rdbtldot,line width=1pt] (-18.5pt,0.6ex) circle (4.5pt);
-              \fill[rdbtldot] (-18.5pt,0.6ex) circle (2.4pt);}%
+              \fill[rdbtldot] (-18.5pt,0.6ex) circle (2.4pt);}}
+          \newcommand{\rdbtlcitem}{\par\smallskip\noindent\rdbtldot}
+          \newcommand{\rdbtlitem}[1]{%
+            \par\needspace{5\baselineskip}\medskip\noindent\rdbtldot
             \tcbox[on line,arc=2.4mm,boxrule=0.5pt,colframe=rdbtlline,colback=white,
               left=5pt,right=5pt,top=1pt,bottom=1pt]{\sffamily\bfseries\small #1}%
             \par\smallskip}
@@ -247,15 +249,22 @@ jobs:
           function Div(el)
             if not FORMAT:match("latex") then return nil end
             if not el.classes:includes("timeline") then return nil end
+            local compact = el.classes:includes("compact")
             local out = {pandoc.RawBlock("latex", "\\begin{rdbtimeline}")}
             for _, block in ipairs(el.content) do
               if block.t == "BulletList" then
                 for _, item in ipairs(block.content) do
-                  local title = item[1]
-                  local head = pandoc.Plain({pandoc.RawInline("latex", "\\rdbtlitem{")})
-                  head.content:extend(title.content)
-                  head.content:insert(pandoc.RawInline("latex", "}"))
-                  table.insert(out, head)
+                  local first = item[1]
+                  if compact then
+                    local head = pandoc.Para({pandoc.RawInline("latex", "\\rdbtlcitem{}")})
+                    head.content:extend(first.content)
+                    table.insert(out, head)
+                  else
+                    local head = pandoc.Plain({pandoc.RawInline("latex", "\\rdbtlitem{")})
+                    head.content:extend(first.content)
+                    head.content:insert(pandoc.RawInline("latex", "}"))
+                    table.insert(out, head)
+                  end
                   for i = 2, #item do table.insert(out, item[i]) end
                 end
               else

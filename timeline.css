@@ -67,3 +67,22 @@
     break-inside: avoid;
   }
 }
+
+/* wariant zwarty: <div class="timeline compact"> z listą bez pustych linii,
+   każda pozycja to jedna linia bez plakietki */
+.timeline.compact > ul {
+  margin: 1em 0;
+}
+
+.timeline.compact > ul > li {
+  padding-bottom: 0.45em;
+}
+
+.timeline.compact > ul > li::before {
+  top: 0.75em;
+  bottom: -0.75em;
+}
+
+.timeline.compact > ul > li::after {
+  top: calc(0.75em - 8px);
+}

@@ -69,6 +69,15 @@ The command's exit code is checked:
 
 `DO DUMP` is more complex, since it requires gathering data **from the past** (moments before the event) and **from the future** (moments after the event). This is handled by the `dumpManager` class.
 
+<div class="timeline compact">
+
+- **Event** — `WHEN` holds for sample `t`; the rule calls `dumpManager::registerTask()`
+- **Phase 1** — writes `|step_back|` historical samples from the stream buffer (or sets a delayed start)
+- **Phase 2** — on subsequent iterations `processStreamChunk()` appends future samples
+- **End** — `dumpedRecordsToGo` reaches 0, the file is closed, and the task leaves the queue
+
+</div>
+
 ### Phase 1: historical data (when the task is registered)
 
 At the moment the rule fires — right after the condition is found to be true — `dumpManager::registerTask()`:

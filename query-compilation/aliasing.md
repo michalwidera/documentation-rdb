@@ -46,6 +46,29 @@ core1(1/5)      sensor_b.txt
 
 `merged[0]` and `core0[0]` both end up as `PUSH_ID(merged[0])` — they are the same field. But `core1[0]` — the first field of `core1`'s schema — ends up as `PUSH_ID(merged[2])`, not `merged[0]`. The compiler translated the local index `core1[0]` into an absolute position in the combined schema: `core0` occupies positions 0 and 1, so `core1` starts at position 2.
 
+## A reference outside the `FROM` clause
+
+A source alias works only when the sum stands directly in the query's `FROM` clause. If the sum has been named by a separate query, the consumer's field list sees only that named stream:
+
+```
+SELECT * STREAM merged FROM core0 + core1
+SELECT merged[0], core1[0] STREAM result FROM merged
+```
+
+Compilation ends with the error:
+
+```
+Check result:Stream 'result' refers to 'core1', which is not in its FROM clause. A field list reads only the streams named in FROM: refer to the field by its position in the record of a stream in FROM, or move the reference to a query whose FROM names 'core1'.
+```
+
+`merged` is a user query with its own interval and buffer, so the compiler does not determine the position of its sources in the `result` record. The correct form addresses the field by its position in the `merged` record — `core1` starts there at position 2:
+
+```
+SELECT merged[0], merged[2] STREAM result FROM merged
+```
+
+The restriction does not apply to substrates created automatically for a compound `FROM` clause, e.g. `FROM (core0 + core1) > 1`: source aliases still work through them.
+
 ## Aliasing after sum and interleave
 
 The source aliases described above apply to the stream sum operator `+`. Sum concatenates schemas, so it preserves the position and identity of every component: `core0[0]` and `core1[0]` point to different locations in the output record.
@@ -91,4 +114,4 @@ SELECT interleaved[_] * 2 STREAM scaled FROM interleaved
 
 When a particular component is needed again, recover it with the de-interleave operator `&` or `%` instead of using a source name through a `#` node.
 
-> **_NOTE:_** Aliasing after `+` is covered by the `Pattern7` integration test. Rejection of named `#` components and positive controls for the result name are covered by `ut_compiler` unit tests.
+> **_NOTE:_** Aliasing after `+` is covered by the `Pattern7` integration test, and rejection of a reference outside `FROM` by the `field_ref_outside_from` test. Rejection of named `#` components and positive controls for the result name are covered by `ut_compiler` unit tests.

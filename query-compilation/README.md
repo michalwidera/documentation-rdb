@@ -10,13 +10,17 @@ In this chapter I want to explain how I solved the syntactic problems I encounte
 
 ### The `.rql` file
 
-Compiler input — text in the RetractorQL language containing `DECLARE` and `SELECT` directives. The ANTLR4 parser reads the file sequentially; a reference to a stream not yet defined earlier in the file results in a compilation error.
+Compiler input — text in the RQL language containing `DECLARE`, `SELECT`, and `RULE` statements as well as configuration directives (e.g. `:STORAGE`). The ANTLR4 parser reads the file statement by statement.
+
+The order of `DECLARE` and `SELECT` in the file does not matter: a query may refer to a stream defined further down, because dependencies between streams are resolved only by the compiler. `RULE` is the exception — the parser attaches a rule to a stream that has already been read, so a rule must come after the definition of its stream; otherwise the parser reports `Rule '…' refers to stream '…', but no such stream is defined`. A reference to a stream that does not exist anywhere in the file stops compilation with `Referenced Stream in QUERY _not found_ in CORE TREE`.
 
 ### The ANTLR4 parser → `qTree`
 
-The parser builds an internal representation, `qTree`: a topologically sorted `std::vector<query>`. Each element describes one stream — its field schema, its stack-instruction sequence, its dependencies on other streams, and its time interval (delta).
+The parser builds the internal representation `qTree` — a `std::vector<query>` — by appending one element for every `DECLARE` and `SELECT` statement and configuration directive, in file order and without sorting. A `SELECT` element carries the field schema with its stack programs and the `FROM` program that names the source streams. At this point the time interval (delta) is known only for `DECLARE` declarations; for `SELECT` queries the compiler determines it. A `STREAM name[N]` generator template is still a single element, and a `RULE` does not create an element of its own — it goes onto the rule list of its stream.
 
-### The 15 compilation stages
+The order of the vector changes during compilation: interval resolution sorts it by delta, and the topological order (producer before consumer) is restored only by the last stage.
+
+### The 23 compilation stages
 
 `qTree` passes through an ordered chain of transformations: from breaking down FROM expressions into two-argument operations, through determining deltas, simplifying expressions, and locating fields, all the way to semantic verification, buffer-size computation, and the final topological sort. Each stage assumes the previous one succeeded.
 
@@ -35,11 +39,11 @@ The chapter is structured following the order of the compiler's stages — from 
 
 - **[Compilation Passes](compilation-passes.md)**
 
-  Describes the entire chain of stages in the `compiler::compile()` function. Compilation is not a single step — it is an ordered sequence of seventeen stages over the internal `qTree` representation, from expanding generators and reducing FROM expressions to two-argument form, through determining intervals, validating substrate names, simplifying expressions, and locating fields, all the way to semantic verification, buffer allocation, and the final topological sort. Each stage assumes the previous one succeeded, and returns an error message when its conditions aren't met.
+  Describes the entire chain of stages in the `compiler::compile()` function. Compilation is not a single step — it is an ordered sequence of twenty-three stages over the internal `qTree` representation, from expanding generators and reducing FROM expressions to two-argument form, through determining intervals, validating substrate names, simplifying expressions, and locating fields, all the way to semantic verification, buffer allocation, and the final topological sort. Each stage assumes the previous one succeeded, and an error at any stage stops compilation.
 
 - **[Dependency Tree Construction](dependency-tree-construction.md)**
 
-  Describes the DAG structure produced during compilation — the foundation on which every stage rests. The roots are ephemeris declarations (external sources); inside the graph lie intermediate substrates; and the leaves are artifacts. The `-d` flag generates output in DOT format, which `graphviz` turns into a visual dependency graph. The order of queries in the `.rql` file matters — a reference to a stream not yet defined results in an error.
+  Describes the DAG structure produced during compilation — the foundation on which every stage rests. The roots are ephemeris declarations (external sources); inside the graph lie intermediate substrates; and the leaves are artifacts. The `-d` flag generates output in DOT format, which `graphviz` turns into a visual dependency graph. The order of `DECLARE` and `SELECT` in the `.rql` file does not matter — the compiler builds the dependency graph; only a `RULE` must come after the definition of the stream it refers to.
 
 - **[Substrates](substrates.md)**
 

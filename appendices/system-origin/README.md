@@ -9,3 +9,30 @@ The neonatal monitoring system I developed served a dozen or so pulse oximeters.
 The monitoring system was built and deployed at a client, in one of Warsaw's hospitals. I was on site and saw it work. Unfortunately, inside it there was no data-management system of the kind I described in scientific publications. I built the solution by hand, without implementing a query language, algorithms, or management mechanisms. The deadline and limited resources required delivering the project on time. The publications that emerged at the time described noble needs and assumptions — but practice was different. A product had to be delivered, and there was no time.
 
 This is, in broad outline, the generic reason that gave rise to the need to create a data-management system for signal processing. Over time, further application areas were added, arising from the expanding development areas related to telemetry, monitoring, and the growth of IoT systems.
+
+## In brief
+
+<div class="timeline">
+
+- **Early 2000s — Zabrze**
+
+  A neonatal monitoring system built on a relational database. High-granularity signals and a continuous stream of incoming data expose its performance limits.
+
+- **2003 — stream databases**
+
+  Stream databases as the closest field. The assumption: a streaming database for signal processing.
+
+- **Deployment — a hospital in Warsaw**
+
+  The monitoring system runs at the client, but without the query language and data-management mechanisms described in the publications — the deadline forced a hand-built solution.
+
+- **2019 — the RetractorDB repository**
+
+  First commit of the repository (December 2019): the start of implementing a data-management system for signal processing.
+
+- **Today — telemetry, monitoring, IoT**
+
+  Stream-processing systems have evolved into time-series databases, and the application area has expanded to telemetry and IoT systems.
+
+</div>
+
