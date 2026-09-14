@@ -86,8 +86,8 @@ middle of an expression**: `to_float('2.5') * 2` is `FLOAT`, and `to_integer(AVG
 Seven functions with an irrational range — `Sqrt`, `sin`, `cos`, `exp`, `tan`, `log` and
 `log2` — **do not compile** over an argument of type `RATIONAL`: the compiler rejects the plan
 and requires an explicit `to_double`. This matters in practice, because the reducers `MIN`,
-`MAX`, `AVG` and `SUMC` yield `RATIONAL` for integer or rational inputs. The reason, the error message, the reach
-of the gate (it also covers a `RULE ... WHEN` condition) and the exception for the rounding
+`MAX`, `AVG` and `SUMC` yield `RATIONAL` for integer or rational inputs. The reason, the error
+message, the reach of the gate (it also covers a `RULE ... WHEN` condition), and the exception for the rounding
 functions are described in
 [Field expressions and scalar functions](../query-language-construction/select-command/field-expressions-and-scalar-functions.md);
 they are not repeated here, so that the two pages cannot drift apart on the next change.

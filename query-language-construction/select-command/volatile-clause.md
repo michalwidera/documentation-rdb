@@ -16,7 +16,8 @@ if (ctx->VOLATILE()) {
 }
 ```
 
-The compiler then determines the capacity required by the plan. If another stream reads the history of a `VOLATILE` result, the buffer may hold more than one record. This means that:
+The compiler then determines the capacity required by the plan. If another stream reads the
+history of a `VOLATILE` result, the buffer may hold more than one record. This means that:
 
 * the in-memory buffer holds at least the most recent record and any history its consumers need,
 * data never reaches disk,
