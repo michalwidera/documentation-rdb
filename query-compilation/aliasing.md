@@ -23,25 +23,7 @@ FROM core0 + core1
 After compilation we get:
 
 ```
-$ xretractor -c query.rql
-merged(1/10)
-        :- PUSH_STREAM(core0)
-        :- PUSH_STREAM(core1)
-        :- STREAM_ADD
-        merged_0: BYTE
-                PUSH_ID(merged[0])
-        merged_1: INTEGER
-                PUSH_ID(merged[2])
-        merged_2: BYTE
-                PUSH_ID(merged[0])
-        merged_3: INTEGER
-                PUSH_ID(merged[2])
-core0(1/10)     sensor_a.txt
-        a: BYTE
-        b: INTEGER
-core1(1/5)      sensor_b.txt
-        c: INTEGER
-        d: FLOAT
+{{#include ../regen/out/alias.txt}}
 ```
 
 `merged[0]` and `core0[0]` both end up as `PUSH_ID(merged[0])` — they are the same field. But `core1[0]` — the first field of `core1`'s schema — ends up as `PUSH_ID(merged[2])`, not `merged[0]`. The compiler translated the local index `core1[0]` into an absolute position in the combined schema: `core0` occupies positions 0 and 1, so `core1` starts at position 2.

@@ -1,0 +1,16 @@
+% Creating diagram output grid is on, cycle count:3
+% Minimum interval is 1000ms
+% Maximum interval is 2000ms
+% Grid time is 500ms, divider:2
+% Full cycle step count in grid is 4
+-|a-a-|a-a-|a-a-|-
+title = A,1
+
+-|b---|b---|b---|-
+title = B,2
+
+> SELECT * STREAM str1 FROM A+B
+
+-|c-c-|c-c-|c-c-|-
+title = str1,1
+

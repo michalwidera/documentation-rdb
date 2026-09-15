@@ -312,8 +312,20 @@ jobs:
           import re, sys, subprocess, os
           from pathlib import Path
           MERMAID_DIR = '/tmp/mermaid'
+          REPO_DIR = Path.cwd().resolve()
           os.makedirs(MERMAID_DIR, exist_ok=True)
           mermaid_n = [0]
+          def expand_includes(text, d):
+              def replace_include(m):
+                  include_path = (d / m.group(1)).resolve()
+                  try:
+                      include_path.relative_to(REPO_DIR)
+                  except ValueError:
+                      raise ValueError(f'Include outside repository: {m.group(1)}')
+                  if not include_path.is_file():
+                      raise FileNotFoundError(f'Included file not found: {include_path}')
+                  return include_path.read_text()
+              return re.sub(r'\{\{#include\s+([^}\s]+)\s*\}\}', replace_include, text)
           def render_mermaid(m):
               mermaid_n[0] += 1
               idx = mermaid_n[0]
@@ -370,6 +382,7 @@ jobs:
           for filepath, level in file_entries:
               d = Path(filepath).parent.resolve()
               text = Path(filepath).read_text()
+              text = expand_includes(text, d)
               text = re.sub(r'<div class="no-print">.*?</div>', '', text, flags=re.DOTALL)
               text = text.replace('✔', '$\\checkmark$')
               text = re.sub(r'```mermaid\n(.*?)```', render_mermaid, text, flags=re.DOTALL)

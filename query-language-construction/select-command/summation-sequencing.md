@@ -30,21 +30,7 @@ When xretractor is given, as its first parameter, the name of the file containin
 If you look at the generated out.txt file, you'll see the following content:
 
 ```
-% Creating diagram output grid is on, cycle count:3
-% Minimum interval is 1000ms
-% Maximum interval is 2000ms
-% Grid time is 500ms, divider:2
-% Full cycle step count in grid is 4
--|a-a-|a-a-|a-a-|-
-title = A,1
-
--|b---|b---|b---|-
-title = B,2
-
-> SELECT * STREAM str1 FROM A+B
-
--|c-c-|c-c-|c-c-|-
-title = str1,1
+{{#include ../../regen/out/sum-sequence.txt}}
 ```
 
 In this file, note the data shown in the comments. These are the times computed while generating the diagram, relative to the scale shown in the marble diagram. As you can see, for our query the minimum window interval is 1 second and the maximum is 2 seconds. The identified and computed grid is half a second. On the diagram, each letter or dash represents a half-second period between successive operations.

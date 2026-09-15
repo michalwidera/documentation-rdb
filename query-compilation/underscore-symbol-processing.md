@@ -18,25 +18,7 @@ FROM core0 + core1
 After compiling:
 
 ```
-$ xretractor -c query.rql
-scaled(1/10)
-        :- PUSH_STREAM(core0)
-        :- PUSH_STREAM(core1)
-        :- STREAM_ADD
-        scaled_0: INTEGER
-                PUSH_ID(scaled[0])
-                PUSH_ID(scaled[2])
-                MULTIPLY
-        scaled_1: FLOAT
-                PUSH_ID(scaled[1])
-                PUSH_ID(scaled[3])
-                MULTIPLY
-core0(1/10)     sensor_a.txt
-        a: BYTE
-        b: INTEGER
-core1(1/5)      sensor_b.txt
-        c: INTEGER
-        d: FLOAT
+{{#include ../regen/out/underscore.txt}}
 ```
 
 The `_` symbol expanded into two fields: `scaled[0] * scaled[2]` (i.e. `a * c`) and `scaled[1] * scaled[3]` (i.e. `b * d`). References to `core0` and `core1` were translated, via aliasing, into absolute positions in the combined schema. The resulting types are INTEGER (`BYTE * INTEGER`) and FLOAT (`INTEGER * FLOAT`) — the result of type promotion, described in a separate subchapter.

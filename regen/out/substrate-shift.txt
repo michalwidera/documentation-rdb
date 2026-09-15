@@ -1,0 +1,24 @@
+core0(1/10)	sensor_a.txt
+	a: BYTE
+	b: INTEGER
+STREAM_TIMEMOVE_2_core0(1/10)	origin=2
+	:- PUSH_STREAM(core0)
+	:- STREAM_TIMEMOVE(2)
+	a: BYTE
+		PUSH_ID(STREAM_TIMEMOVE_2_core0[0])
+	b: INTEGER
+		PUSH_ID(STREAM_TIMEMOVE_2_core0[1])
+core1(1/5)	sensor_b.txt
+	c: INTEGER
+	d: FLOAT
+merged(1/10)	tail=1	origin=2
+	:- PUSH_STREAM(STREAM_TIMEMOVE_2_core0)
+	:- PUSH_STREAM(core1)
+	:- STREAM_ADD
+	merged_0: BYTE
+		PUSH_ID(merged[0])
+shifted(1/10)	origin=2
+	:- PUSH_STREAM(core0)
+	:- STREAM_TIMEMOVE(2)
+	shifted_0: BYTE
+		PUSH_ID(shifted[0])

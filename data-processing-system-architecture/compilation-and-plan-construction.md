@@ -29,15 +29,7 @@ $ xretractor -c query.rql
 The following system response will be printed on the screen:
 
 ```
-str1(1/10)
-      :- PUSH_STREAM(core0)
-      :- STREAM_TIMEMOVE(2)
-      str1_0: INTEGER
-            PUSH_ID(str1[0])
-            PUSH_VAL(1)
-            ADD
-core0(1/10) datafile1.dat
-      a: INTEGER
+{{#include ../regen/out/plan-basic.txt}}
 ```
 
 Omitting the -c parameter will cause the system to attempt compilation and immediately send the compiled query execution plan for execution. This will cause an error, since the data file datafile1.dat presumably hasn't been prepared yet.
@@ -45,12 +37,12 @@ Omitting the -c parameter will cause the system to attempt compilation and immed
 Besides the text view, we can also look at the compilation output in graphical form. To do this, invoke the following sequence of commands:
 
 ```
-$ xretractor -c -d -f -s query.rql > out.dot && dot -Tpng out.dot -o out.png
+$ xretractor -c -d -f -t -s query.rql > out.dot && dot -Tsvg out.dot -o out.svg
 ```
 
 Assuming you have the dot program from the graphviz package installed in your runtime environment, this command will generate an image file showing the system's response in the form of a graph.
 
-<figure><img src="../assets/graf_plan_zapytania.png" alt=""><figcaption><p>Fig. 27. Graphical representation of a query plan</p></figcaption></figure>
+<figure><img src="../assets/graf_plan_zapytania.svg" alt=""><figcaption><p>Fig. 27. Graphical representation of a query plan</p></figcaption></figure>
 
 RetractorDB can generate an image in response to one of the requested data-processing chains. The graphical presentation is most suitable for creating and presenting data-processing graphs. Unfortunately, readability suffers for very complex schemas.
 
@@ -69,6 +61,7 @@ Different sets of flags are available in compile mode (`-c`) and in execution mo
 | `-c`  | `--onlycompile`    | compile only — does not start processing            |
 | `-d`  | `--dot`            | generate output in DOT (graphviz) format             |
 | `-f`  | `--fields`         | show stream fields in the DOT graph                  |
+| `-t`  | `--tags`           | show individual field programs (requires `-f`)       |
 | `-s`  | `--streamprogs`    | show stream programs in the DOT graph                |
 | `-u`  | `--rules`          | show RULE rules in the DOT graph                      |
 | `-p`  | `--transparent`    | transparent background for the DOT graph               |

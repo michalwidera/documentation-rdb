@@ -125,7 +125,7 @@ $ xretractor -c query.rql -p -d > out.dot && dot -Tsvg out.dot -o out.svg
 
 We'll see the following picture (Fig. 57):
 
-<figure><img src="../assets/zaleznosc_strumieni_filtr_sygnalowy.png" width="50%" alt=""><figcaption><p>Fig. 57. Dependency between the processed data streams while carrying out the signal filter</p></figcaption></figure>
+<figure><img src="../assets/zaleznosc_strumieni_filtr_sygnalowy.svg" width="50%" alt=""><figcaption><p>Fig. 57. Dependency between the processed data streams while carrying out the signal filter</p></figcaption></figure>
 
 ### Running it
 

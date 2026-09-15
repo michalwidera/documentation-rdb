@@ -1,0 +1,2 @@
+DECLARE a UINT STREAM core0, 0.1 FILE 'datafile1.txt'
+SELECT str1[0] STREAM str1 FROM core0

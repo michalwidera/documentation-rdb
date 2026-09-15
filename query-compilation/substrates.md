@@ -31,33 +31,7 @@ FROM (core0 # core1) + core2
 Compilation:
 
 ```
-$ xretractor -c query.rql
-STREAM_HASH_core0_core1(1/15)
-        :- PUSH_STREAM(core0)
-        :- PUSH_STREAM(core1)
-        :- STREAM_HASH
-        a: BYTE
-                PUSH_ID(STREAM_HASH_core0_core1[0])
-        b: INTEGER
-                PUSH_ID(STREAM_HASH_core0_core1[1])
-        c: INTEGER
-                PUSH_ID(STREAM_HASH_core0_core1[2])
-        d: FLOAT
-                PUSH_ID(STREAM_HASH_core0_core1[3])
-merged(1/15)
-        :- PUSH_STREAM(STREAM_HASH_core0_core1)
-        :- PUSH_STREAM(core2)
-        :- STREAM_ADD
-        merged_0: BYTE
-                PUSH_ID(merged[0])
-core0(1/10)     sensor_a.txt
-        a: BYTE
-        b: INTEGER
-core1(1/5)      sensor_b.txt
-        c: INTEGER
-        d: FLOAT
-core2(3/10)     sensor_c.txt
-        e: INTEGER
+{{#include ../regen/out/substrate-hash.txt}}
 ```
 
 An unannounced stream, `STREAM_HASH_core0_core1`, appeared — this is exactly a substrate. The compiler broke `(core0 # core1) + core2` into two two-argument operations and inserted an intermediate stream. The substrate's delta: Δ = (1/10 · 1/5) / (1/10 + 1/5) = 1/15.
@@ -71,11 +45,7 @@ SELECT merged2[0] STREAM merged2 FROM (core0 # core1) > 2
 Only one new query gets attached to the plan:
 
 ```
-merged2(1/15)
-        :- PUSH_STREAM(STREAM_HASH_core0_core1)
-        :- STREAM_TIMEMOVE(2)
-        merged2_0: BYTE
-                PUSH_ID(merged2[0])
+{{#include ../regen/out/substrate-hash-plus.txt}}
 ```
 
 You're probably wondering why only one, and not two again? The answer is optimization. We're reusing the intermediate results from before. This is one of the unexpected benefits of using RetractorDB.
@@ -113,23 +83,7 @@ SELECT shifted[0] STREAM shifted FROM core0 > 2
 Without reduction, the compiler would generate three streams: the substrate `STREAM_TIMEMOVE_core0`, `merged`, and `shifted`. The substrate and `shifted` have an identical structure — the same source stream `core0` and the same `>2` operation. After reduction, the substrate is removed, and the reference `PUSH_STREAM(STREAM_TIMEMOVE_core0)` inside `merged` is replaced with `PUSH_STREAM(shifted)`:
 
 ```
-merged(1/10)
-        :- PUSH_STREAM(shifted)
-        :- PUSH_STREAM(core1)
-        :- STREAM_ADD
-        merged_0: BYTE
-                PUSH_ID(merged[0])
-shifted(1/10)
-        :- PUSH_STREAM(core0)
-        :- STREAM_TIMEMOVE(2)
-        shifted_0: BYTE
-                PUSH_ID(shifted[0])
-core0(1/10)     sensor_a.txt
-        a: BYTE
-        b: INTEGER
-core1(1/5)      sensor_b.txt
-        c: INTEGER
-        d: FLOAT
+{{#include ../regen/out/substrate-shift.txt}}
 ```
 
 ### An important restriction: only substrates are reduced
@@ -390,7 +344,7 @@ Both queries require the sum `core0+core1` to be computed first.
 
 The `extractIntermediateStreams` phase creates a separate substrate for each query, producing two identical intermediate nodes in the graph (Fig. 37):
 
-<figure><img src="../assets/dedup_przed.svg" width="70%" alt=""><figcaption><p>Fig. 37. Graph before deduplication — two identical STREAM_ADD_core0_core1 substrates</p></figcaption></figure>
+<figure><img src="../assets/dedup_przed.svg" width="40%" alt=""><figcaption><p>Fig. 37. Graph before deduplication — two identical STREAM_ADD_core0_core1 substrates</p></figcaption></figure>
 
 Once `deduplicateSubstrats()` runs, one of the duplicates is removed and every `PUSH_STREAM` reference is repointed to the surviving node. A single shared substrate remains in the graph (Fig. 38):
 

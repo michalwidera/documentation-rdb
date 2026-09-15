@@ -44,7 +44,7 @@ The file will contain consecutive numbers from 20 to 28.
 
 A look at the query execution plan gives us the picture in Fig. 29:
 
-<figure><img src="../assets/graf_plan_zapytania_2.png" width="100%" alt=""><figcaption><p>Fig. 29. Graphical representation of query plan 2</p></figcaption></figure>
+<figure><img src="../assets/graf_plan_zapytania_2.svg" width="100%" alt=""><figcaption><p>Fig. 29. Graphical representation of query plan 2</p></figcaption></figure>
 
 Once we've prepared the data file, we can start the compilation and data-processing process. We do this by running the following command:
 
