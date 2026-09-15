@@ -6,10 +6,25 @@ script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 book_dir=$(cd -- "$script_dir/.." && pwd)
 workspace_dir=$(cd -- "$book_dir/.." && pwd)
 
+debug_build=$workspace_dir/retractordb/build/Debug
+
+# Bring xretractor in a build directory up to date before drawing with it: a stale binary
+# silently produces figures from an older src/ tree.
+refresh() {
+  local build_dir=$1
+  if ! command -v ninja >/dev/null; then
+    echo "Ninja is required to refresh xretractor in $build_dir." >&2
+    exit 2
+  fi
+  echo "Refreshing xretractor in $build_dir" >&2
+  ninja -C "$build_dir" xretractor >&2
+}
+
 if [[ -n ${XRETRACTOR:-} ]]; then
   xretractor=$XRETRACTOR
-elif [[ -x "$workspace_dir/retractordb/build/Debug/src/retractor/xretractor" ]]; then
-  xretractor=$workspace_dir/retractordb/build/Debug/src/retractor/xretractor
+elif [[ -f "$debug_build/build.ninja" ]]; then
+  refresh "$debug_build"
+  xretractor=$debug_build/src/retractor/xretractor
 else
   xretractor=$(command -v xretractor || true)
 fi
@@ -73,9 +88,10 @@ picture filter zaleznosc_strumieni_filtr_sygnalowy svg
 
 no_dedup=${XRETRACTOR_NO_DEDUP:-}
 if [[ -z $no_dedup ]]; then
-  for candidate in "$workspace_dir"/retractordb/build/Release-Ablation/*/src/retractor/xretractor; do
-    if [[ -x $candidate ]] && "$candidate" --build-info | grep -qx 'RDB_OPT_DEDUP_SUBSTRATES=OFF'; then
-      no_dedup=$candidate
+  for build_dir in "$workspace_dir"/retractordb/build/Release-Ablation/*; do
+    if [[ -f "$build_dir/build.ninja" ]] && grep -qx 'RDB_OPT_DEDUP_SUBSTRATES:BOOL=OFF' "$build_dir/CMakeCache.txt"; then
+      refresh "$build_dir"
+      no_dedup=$build_dir/src/retractor/xretractor
       break
     fi
   done
