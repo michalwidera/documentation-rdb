@@ -13,7 +13,7 @@ We adopt a fixed indexing convention: stream indices run from zero, and element 
 
 A data series defined this way is referred to in the system as a data stream. Such a regularly flowing set of data passing through the system, usually described by a data schema, contains fields of various types. Each reading occurs at an equal time interval between consecutive measurements. This construction resembles a digital signal more than an irregular data stream — however, referring to it as a "stream" throughout the rest of the research will prove justified.
 
-> **ℹ️ Info**
+> **ℹ️️ Info**
 >
 > Note:\
 > The terms "stream" and "time series" are used interchangeably in this work and mean the same thing.\

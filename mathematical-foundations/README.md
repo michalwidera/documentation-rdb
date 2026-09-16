@@ -2,7 +2,7 @@
 
 ## Mathematical Foundations
 
-> **ℹ️ Info**
+> **ℹ️️ Info**
 >
 > Do you know what the Fields Medal is? It is an award given exclusively to outstanding mathematicians under the age of 40. It is called the mathematical Nobel Prize. Interestingly, no mathematician will ever receive the actual Nobel Prize — as per the founder's wishes. John Charles Fields himself (1863-1932) was a Canadian mathematician. John Charles Fields had one doctoral student — Samuel Beatty (1881-1970).
 

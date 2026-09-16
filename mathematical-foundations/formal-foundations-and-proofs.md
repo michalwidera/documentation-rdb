@@ -2,7 +2,7 @@
 
 In the chapter on the [algebra of regular time series](algebra-of-regular-time-series.md) I presented a set of operators together with the equations describing them. I deliberately omitted formal proofs there — I wanted to first show _what_ the system does before explaining _why_ it is allowed to do so. This page fills that gap. Here I gather the formal skeleton of the algebra: the connection between the stream operators and covering-system theory, along with proofs of the theorems underlying the correctness and optimization of query plans.
 
-> **ℹ️ Info**
+> **ℹ️️ Info**
 >
 > The entire construction below stays within a single domain — the rational numbers. This is not a stylistic choice. It is the whole point. Beatty's theorem needs irrational numbers, which a computer does not have. Fraenkel's theorem lets us descend to rational numbers. The proofs on this page show that the interleaving and de-interleaving operations are a special case of Beatty sequences satisfying Fraenkel's postulates — and are therefore realizable using rational numbers alone.
 
@@ -488,6 +488,6 @@ The theorems presented are not formalism for its own sake. Each of them plays a 
 
 The branch of mathematics in which these equations are situated is the theory of covering systems [\[4\]](../references.md#4) within number theory. I presented the full formalism along with a complete set of proofs in the paper [A Deterministic Method for Processing Data Sequences](https://www.academia.edu/1840563/Deterministyczna_metoda_przetwarzania_ciagow_danych) [\[3\]](../references.md#3).
 
-> **ℹ️ Info**
+> **ℹ️️ Info**
 >
 > A numerical verification of the equations above — Python prototypes operating on rational numbers (the `Fraction` library) — can be found on the [Model Implementation](model-implementation.md) page and in the repository [github.com/michalwidera/equations](https://github.com/michalwidera/equations).

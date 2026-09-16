@@ -82,7 +82,7 @@ Execution-mode flags (without `-c`):
 | `-g F` | `--config F`      | TOML configuration file instead of the search order     |
 | `-b`   | `--build-info`    | print the optimizer configuration and exit              |
 
-> **ℹ️ Info**
+> **ℹ️️ Info**
 >
 > The `-m N` parameter counts iterations of the main loop, not seconds. For streams with a 0.1 s interval (10 Hz), `-m 10` means \~1 second of processing.
 

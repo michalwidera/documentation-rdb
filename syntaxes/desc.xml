@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language name="DESC" version="1" kateversion="5.0" section="Sources" extensions="*.desc" mimetype="text/x-retractordb-desc">
+  <highlighting>
+    <list name="keywords">
+      <item>REF</item>
+      <item>TYPE</item>
+      <item>RETENTION</item>
+      <item>RETMEMORY</item>
+    </list>
+    <list name="types">
+      <item>BYTE</item>
+      <item>STRING</item>
+      <item>UINT</item>
+      <item>INTEGER</item>
+      <item>FLOAT</item>
+      <item>DOUBLE</item>
+      <item>RATIONAL</item>
+    </list>
+    <list name="profiles">
+      <item>DEFAULT</item>
+      <item>MEMORY</item>
+      <item>DIRECT</item>
+      <item>POSIX</item>
+      <item>POSIXSHD</item>
+      <item>GENERIC</item>
+      <item>DEVICE</item>
+      <item>TEXTSOURCE</item>
+    </list>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <StringDetect attribute="Comment" context="Block Comment" String="/*"/>
+        <StringDetect attribute="Comment" context="Line Comment" String="# "/>
+        <StringDetect attribute="Comment" context="Line Comment" String="//"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <keyword attribute="Constant" context="#stay" String="profiles"/>
+        <Int attribute="Number" context="#stay"/>
+        <AnyChar attribute="Keyword" context="#stay" String="{}[]"/>
+      </context>
+      <context name="Line Comment" attribute="Comment" lineEndContext="#pop"/>
+      <context name="Block Comment" attribute="Comment" lineEndContext="#stay">
+        <StringDetect attribute="Comment" context="Block Comment" String="/*"/>
+        <StringDetect attribute="Comment" context="#pop" String="*/"/>
+      </context>
+      <context name="String" attribute="String" lineEndContext="#pop">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Data Type" defStyleNum="dsDataType"/>
+      <itemData name="Constant" defStyleNum="dsConstant"/>
+      <itemData name="Number" defStyleNum="dsDecVal"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1"/>
+  </general>
+</language>

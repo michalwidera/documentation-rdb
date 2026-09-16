@@ -247,7 +247,7 @@ to_string(expression)
 
 The `width` parameter (a natural number after the colon `:`) specifies the output field's width in bytes. Omitting the parameter gives a default width of 32 bytes.
 
-> **ℹ️ Info**
+> **ℹ️️ Info**
 >
 > The argument separator is a colon `:`, not a comma `,`. A comma is the SELECT list separator — using a comma in `to_string(x, n)` will cause a parse error.
 

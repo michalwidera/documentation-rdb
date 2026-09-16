@@ -4,7 +4,7 @@ I initially modeled these equations as Python programs. The formal form presente
 
 The branch of mathematics that contains the research related to these equations is called covering systems \[[4](../references.md#4)] within number theory.
 
-> **ℹ️ Info**
+> **ℹ️️ Info**
 >
 > Presenting the mathematical foundations of the system is necessary in order to understand the further technical aspects of the solution. The methods presented go beyond the standard material currently taught in technical-science degree programs. This is because I drew the mathematical foundations from an area that, to my knowledge, had not previously been applied in engineering. These are methods that make it possible to build a new way of processing data. This is one of the aspects that sets RetractorDB apart from other similar solutions.
 

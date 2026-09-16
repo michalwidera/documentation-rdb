@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language name="RQL" version="1" kateversion="5.0" section="Sources" extensions="*.rql" mimetype="text/x-rql">
+  <highlighting>
+    <list name="keywords">
+      <item>SELECT</item><item>select</item>
+      <item>STREAM</item><item>stream</item>
+      <item>FROM</item><item>from</item>
+      <item>DECLARE</item><item>declare</item>
+      <item>RETENTION</item><item>retention</item>
+      <item>FILE</item><item>file</item>
+      <item>STORAGE</item><item>storage</item>
+      <item>ROTATION</item><item>rotation</item>
+      <item>SUBSTRAT</item><item>substrat</item>
+      <item>RULE</item><item>rule</item>
+      <item>DISPOSABLE</item><item>disposable</item>
+      <item>ONESHOT</item><item>oneshot</item>
+      <item>HOLD</item><item>hold</item>
+      <item>VOLATILE</item><item>volatile</item>
+      <item>PERSISTENT</item><item>persistent</item>
+      <item>DEFAULT</item><item>default</item>
+      <item>ON</item><item>on</item>
+      <item>WHEN</item><item>when</item>
+      <item>DUMP</item><item>dump</item>
+      <item>SYSTEM</item><item>system</item>
+      <item>DO</item><item>do</item>
+      <item>TO</item><item>to</item>
+      <item>AND</item><item>and</item>
+      <item>OR</item><item>or</item>
+      <item>NOT</item><item>not</item>
+    </list>
+    <list name="types">
+      <item>BYTE</item><item>Byte</item><item>byte</item>
+      <item>CHAR</item><item>Char</item><item>char</item>
+      <item>STRING</item><item>String</item><item>string</item>
+      <item>UINT</item><item>Uint</item><item>uint</item>
+      <item>INTEGER</item><item>Integer</item><item>integer</item>
+      <item>FLOAT</item><item>Float</item><item>float</item>
+      <item>DOUBLE</item><item>Double</item><item>double</item>
+    </list>
+    <list name="profiles">
+      <item>MEMORY</item><item>memory</item>
+      <item>DIRECT</item><item>direct</item>
+      <item>POSIX</item><item>posix</item>
+      <item>POSIXSHD</item><item>posixshd</item>
+      <item>GENERIC</item><item>generic</item>
+      <item>DEVICE</item><item>device</item>
+      <item>TEXTSOURCE</item><item>textsource</item>
+    </list>
+    <list name="aggregators">
+      <item>MIN</item><item>min</item>
+      <item>MAX</item><item>max</item>
+      <item>AVG</item><item>avg</item>
+      <item>SUMC</item><item>sumc</item>
+    </list>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="Line Comment" char="#" firstNonSpace="true"/>
+        <StringDetect attribute="Comment" context="Line Comment" String="//"/>
+        <StringDetect attribute="Comment" context="Block Comment" String="/*"/>
+        <DetectChar attribute="String" context="String" char="'"/>
+        <RegExpr attribute="Built-in" context="#stay" String="\b(?:sqrt|ceil|floor|abs|round|trunc|sin|cos|exp|tan|log2|log|isnull|null2zero|iszero|isnonzero|length|to_integer|to_float|to_double|to_string|int|real|str)\b(?=\s*\()" insensitive="true"/>
+        <RegExpr attribute="Built-in" context="#stay" String="\bfloat\b(?=\s*\()"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <keyword attribute="Constant" context="#stay" String="profiles"/>
+        <keyword attribute="Built-in" context="#stay" String="aggregators"/>
+        <RegExpr attribute="Number" context="#stay" String="\b[0-9]+/[0-9]+\b"/>
+        <RegExpr attribute="Number" context="#stay" String="(?:\b[0-9]+(?:\.[0-9]*)?|\B\.[0-9]+)E[+-]?[0-9]+\b"/>
+        <RegExpr attribute="Number" context="#stay" String="(?:\b[0-9]+\.[0-9]*|\B\.[0-9]+)"/>
+        <Int attribute="Number" context="#stay"/>
+        <StringDetect attribute="Keyword" context="#stay" String="!="/>
+        <StringDetect attribute="Keyword" context="#stay" String="&gt;="/>
+        <StringDetect attribute="Keyword" context="#stay" String="&lt;="/>
+        <StringDetect attribute="Keyword" context="#stay" String="||"/>
+        <StringDetect attribute="Keyword" context="#stay" String="::"/>
+        <AnyChar attribute="Keyword" context="#stay" String="=&lt;&gt;!#&amp;%@+$:*/~^|-"/>
+      </context>
+      <context name="Line Comment" attribute="Comment" lineEndContext="#pop"/>
+      <context name="Block Comment" attribute="Comment" lineEndContext="#stay">
+        <StringDetect attribute="Comment" context="Block Comment" String="/*"/>
+        <StringDetect attribute="Comment" context="#pop" String="*/"/>
+      </context>
+      <context name="String" attribute="String" lineEndContext="#stay">
+        <StringDetect attribute="Special Character" context="#stay" String="''"/>
+        <DetectChar attribute="String" context="#pop" char="'"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Data Type" defStyleNum="dsDataType"/>
+      <itemData name="Constant" defStyleNum="dsConstant"/>
+      <itemData name="Built-in" defStyleNum="dsBuiltIn"/>
+      <itemData name="Number" defStyleNum="dsDecVal"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Special Character" defStyleNum="dsSpecialChar"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1"/>
+  </general>
+</language>

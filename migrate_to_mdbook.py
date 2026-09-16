@@ -35,7 +35,7 @@ def remove_frontmatter(text: str) -> str:
 
 def convert_hints(text: str) -> str:
     PREFIXES = {
-        "info":    "> **ℹ️ Info**",
+        "info":    "> **ℹ️️ Info**",
         "warning": "> **⚠️ Ostrzeżenie**",
         "success": "> **✅ Uwaga**",
         "danger":  "> **🚨 Błąd**",

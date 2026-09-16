@@ -36,7 +36,7 @@ mdbook build               # output → book/
   - **Subscript after command:** write `\Delta_{a}` (no space before `_`), NOT `\Delta _{a}`. Space before `_` followed by `{` makes it a left-flanking emphasis opener; if a matching right-flanking `_` (e.g. `a_{`) appears later, Markdown consumes both as `<em>`, destroying the MathJax block. Rule: `_` must be immediately preceded by an alphanumeric character.
   - **No line may start with `:`** inside `\\[...\\]`: a line like `:= ...` is parsed as a definition list (`<dl>/<dt>/<dd>`), which splits the math across HTML elements and MathJax leaves it unrendered. Put `:=` at the end of the previous line instead.
 - **Diagrams:** use standard ` ```mermaid ``` ` fenced blocks — rendered by `mdbook-mermaid` plugin.
-- **Callouts:** use blockquotes with bold prefix: `> **ℹ️ Info**` / `> **⚠️ Warning**` / `> **✅ Note**`.
+- **Callouts:** use blockquotes with bold prefix: `> **ℹ️️ Info**` / `> **⚠️ Warning**` / `> **✅ Note**`.
 - **Images:** paths relative to each `.md` file pointing to `assets/` (e.g. `../assets/foo.png` from a subdirectory).
 - No GitBook-specific shortcodes (hint/tabs/embed blocks), no YAML frontmatter. Never write a literal curly-brace-percent tag anywhere in this repo, even inside backticks or code fences — Jekyll's Liquid engine parses it before Markdown rendering and ignores code-span escaping, which breaks the GitHub Pages fallback build if the mdBook Actions workflow ever fails to run.
 
