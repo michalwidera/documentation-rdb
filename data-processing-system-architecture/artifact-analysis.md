@@ -41,8 +41,11 @@ $ hexdump str1
 
 Alongside the artifact file, metadata files are also created. Their content describes the structure of the file.
 
-```
+```bash
 $ cat str1.desc
+```
+
+```desc
 {       INTEGER str1_0
         INTEGER str1_1
 }
@@ -50,13 +53,22 @@ $ cat str1.desc
 
 The descriptions of the ephemeris files are far more interesting. The description files for ephemeral data point to files in the Linux filesystem.
 
-```
+```bash
 $ cat core0.desc
+```
+
+```desc
 {       INTEGER a
         REF "datafile1.txt"
         TYPE TEXTSOURCE
 }
+```
+
+```bash
 $ cat core1.desc
+```
+
+```desc
 {       BYTE a
         REF "/dev/urandom"
         TYPE DEVICE

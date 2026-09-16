@@ -65,7 +65,7 @@ Below the map come further sections:
 
 Stream `measurement` with two fields, 100 records, no modifications, no gaps:
 
-```
+```desc
 {
   INTEGER  ts
   FLOAT    value
@@ -111,7 +111,7 @@ Interpretation: one RLE segment, no gaps, no nulls, no shadow file present. The 
 
 Stream `sensor` with three fields. After 50 records there was a gap (10 interval units), then 30 records arrived with partial gaps in the `pressure` field. Two records were later modified (a shadow file is present):
 
-```
+```desc
 {
   INTEGER  ts
   FLOAT    temp
@@ -162,7 +162,7 @@ Interpretation: the binary file contains 80 records (the gap takes no space in t
 
 Stream `buffer` with cyclic retention: up to 10 segments of 100 records each (1000 records total). Currently 280 records have been written, across three segments:
 
-```
+```desc
 {
   DOUBLE   value
   TYPE     DEFAULT

@@ -12,13 +12,13 @@ The `.desc` file describes the record structure. It is parsed by an ANTLR4 gramm
 
 ### Syntax
 
-```
+```desc
 { <statement>* }
 ```
 
 Each statement is one of the following:
 
-```
+```desc
 BYTE     name [N]          # array of N bytes (default N=1)
 INTEGER  name [N]          # 32-bit signed integers
 UINT     name [N]          # 32-bit unsigned
@@ -36,7 +36,7 @@ RETMEMORY capacity         # cyclic in-memory retention
 
 **A default artifact** — two numeric fields, `DEFAULT` storage (data file + shadow file):
 
-```
+```desc
 {
   INTEGER  ts
   FLOAT    value
@@ -46,7 +46,7 @@ RETMEMORY capacity         # cyclic in-memory retention
 
 **An ephemeris** — an ephemeral, RAM-only stream:
 
-```
+```desc
 {
   DOUBLE   x
   DOUBLE   y
@@ -56,7 +56,7 @@ RETMEMORY capacity         # cyclic in-memory retention
 
 **A substrate with retention** — a cyclic on-disk buffer of the last 1000 records (10 segments of 100):
 
-```
+```desc
 {
   INTEGER  ts
   FLOAT    a
@@ -68,7 +68,7 @@ RETMEMORY capacity         # cyclic in-memory retention
 
 **A binary source declaration** (`DECLARE` in RQL generates this schema):
 
-```
+```desc
 {
   INTEGER  a
   FLOAT    b
