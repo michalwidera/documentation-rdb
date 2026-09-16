@@ -4,7 +4,7 @@ Every SELECT command in RetractorDB creates a continuous query. These queries ru
 
 The syntax of the SELECT command is as follows:
 
-```
+```rql
 SELECT algebraic_expression [, algebraic_expression] 
 STREAM output_stream_name [instance_count]
 FROM stream_algebraic_expression 
@@ -26,7 +26,7 @@ The first difference, beyond syntax, is that once entered into the system, these
 
 An example of a query creating a new data stream might be the following RQL command.
 
-```
+```rql
 SELECT str1[0]*10 + str1[1]*10, str1[2] \
 STREAM str1 \
 FROM A+B

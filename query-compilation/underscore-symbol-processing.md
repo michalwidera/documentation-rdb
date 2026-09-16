@@ -6,7 +6,7 @@ The number of copies is not determined solely by a stream's own schema. `x[_]` d
 
 The example uses the canonical declarations used throughout the chapter — `core0` has two fields (BYTE, INTEGER), `core1` has two fields (INTEGER, FLOAT), the schemas have equal cardinality:
 
-```
+```rql
 DECLARE a BYTE, b INTEGER   STREAM core0, 0.1 FILE 'sensor_a.txt'
 DECLARE c INTEGER, d FLOAT  STREAM core1, 0.2 FILE 'sensor_b.txt'
 
@@ -59,7 +59,7 @@ The compiler rejects a reference when the named stream does not occur in `FROM`,
 
 Component aliases such as `A[_]` are valid for sum `+`, because sum preserves separate schema segments for both arguments. Do not use this form for a component reached through interleave `#`:
 
-```
+```rql
 SELECT A[_] - B[_] STREAM difference FROM A#B
 ```
 
@@ -67,7 +67,7 @@ After interleaving, positions `A[k]` and `B[k]` are the same position in the sha
 
 To process an interleaved record with `_`, name the interleave first and then refer to that result:
 
-```
+```rql
 SELECT * STREAM interleaved FROM A#B
 SELECT interleaved[_] * 2 STREAM scaled FROM interleaved
 ```

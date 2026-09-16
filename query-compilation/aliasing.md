@@ -6,7 +6,7 @@ We can, however, also use the names the stream was built from. A value can be po
 
 The example uses the canonical declarations used throughout the chapter:
 
-```
+```rql
 DECLARE a BYTE, b INTEGER \
 STREAM core0, 0.1 \
 FILE 'sensor_a.txt'
@@ -32,7 +32,7 @@ After compilation we get:
 
 A source alias works only when the sum stands directly in the query's `FROM` clause. If the sum has been named by a separate query, the consumer's field list sees only that named stream:
 
-```
+```rql
 SELECT * STREAM merged FROM core0 + core1
 SELECT merged[0], core1[0] STREAM result FROM merged
 ```
@@ -45,7 +45,7 @@ Check result:Stream 'result' refers to 'core1', which is not in its FROM clause.
 
 `merged` is a user query with its own interval and buffer, so the compiler does not determine the position of its sources in the `result` record. The correct form addresses the field by its position in the `merged` record — `core1` starts there at position 2:
 
-```
+```rql
 SELECT merged[0], merged[2] STREAM result FROM merged
 ```
 
@@ -89,7 +89,7 @@ Comparing compilation for the `core0` and `core1` declarations above shows the d
 
 The second row corresponds to this query:
 
-```
+```rql
 SELECT core0[0], core1[0] STREAM interleaved FROM core0#core1
 ```
 
@@ -105,14 +105,14 @@ The compiler therefore rejects user-written named references that try to reach a
 
 The correct form refers to the only schema that exists after the interleave:
 
-```
+```rql
 SELECT result[0], result[1] STREAM result FROM A#B
 SELECT result2.* STREAM result2 FROM A#B
 ```
 
 An unqualified `*` also denotes the complete output schema and remains legal. If a later computation needs `[_]`, name the interleave first and then use its result:
 
-```
+```rql
 SELECT * STREAM interleaved FROM A#B
 SELECT interleaved[_] * 2 STREAM scaled FROM interleaved
 ```

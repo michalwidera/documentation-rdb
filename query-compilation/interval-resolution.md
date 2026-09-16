@@ -29,7 +29,7 @@ Every round resolves at least one stream — because the graph is acyclic, and t
 
 ### Stream sum (`+`, STREAM\_ADD)
 
-```
+```rql
 SELECT ... STREAM c FROM a + b
 ```
 
@@ -41,7 +41,7 @@ Example: core0(Δ=1/10) + core1(Δ=1/5) → str1(Δ=1/10)
 
 ### Stream synchronization (`#`, STREAM\_HASH)
 
-```
+```rql
 SELECT ... STREAM c FROM a # b
 ```
 
@@ -53,7 +53,7 @@ Example: core0(Δ=1/10) # core1(Δ=1/5) → str1(Δ=1/15)
 
 ### Time shift (`>n`, STREAM\_TIMEMOVE)
 
-```
+```rql
 SELECT ... STREAM c FROM a > n
 ```
 
@@ -80,7 +80,7 @@ Reducers operate on a complete stream expression, e.g. `AVG(a@(1,10))`. They red
 
 ### The AGSE algorithm (`@(step, window)`, STREAM\_AGSE)
 
-```
+```rql
 SELECT ... STREAM c FROM a @ (step, window)
 ```
 
@@ -98,7 +98,7 @@ The inverse operations of `#` — they determine what interval one of the input 
 
 In a query with multiple output streams, one stream may depend on another:
 
-```
+```rql
 DECLARE a INTEGER STREAM core0, 0.1 FILE 'data.dat'
 SELECT str1[0] STREAM str1 FROM core0
 SELECT str2[0] STREAM str2 FROM str1

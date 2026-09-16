@@ -32,7 +32,7 @@ default volatility: add `PERSISTENT` to store history.
 
 ## Behavior
 
-```
+```rql
 SELECT expression STREAM name FROM source VOLATILE
 ```
 
@@ -64,7 +64,7 @@ history of a `VOLATILE` result, the buffer may hold more than one record. This m
 
 ## Example
 
-```
+```rql
 DECLARE a INTEGER STREAM sensor, 0.1 FILE '/dev/sensor0'
 
 SELECT sensor[0] * 100 STREAM scaled FROM sensor VOLATILE

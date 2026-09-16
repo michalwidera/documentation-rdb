@@ -6,7 +6,7 @@ The query dependency graph must be a directed acyclic graph (DAG). If a query re
 
 ## Example of a loop
 
-```
+```rql
 DECLARE a BYTE, b INTEGER \
 STREAM core0, 0.1 \
 FILE 'sensor_a.txt'
@@ -70,12 +70,12 @@ The `>=` condition (rather than `>`) guards against false positives: if the coun
 
 Remove the stream's reference to itself, or to a stream that depends on it. In the example above, the query:
 
-```
+```rql
 SELECT * STREAM broken FROM merged + broken
 ```
 
 should be replaced with a reference to a stream that exists independently of `broken`:
 
-```
+```rql
 SELECT * STREAM broken FROM merged + core0
 ```

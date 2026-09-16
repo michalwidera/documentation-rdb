@@ -198,7 +198,7 @@ The **append** operation (adding a new record) writes data to the end of the fil
 
 ### Example
 
-```
+```rql
 DECLARE a INTEGER, b FLOAT STREAM str1, 0.1 FILE 'data.dat'
 ```
 

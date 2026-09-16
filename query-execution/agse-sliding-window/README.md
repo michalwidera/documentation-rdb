@@ -34,7 +34,7 @@ If the source stream has `W` fields per record and interval `Δ`, the output str
 
 ## Typical usage patterns
 
-```
+```rql
 # serialization: 2 fields → 1 field (interval ÷ 2)
 SELECT * STREAM s1 FROM A@(1,1)
 

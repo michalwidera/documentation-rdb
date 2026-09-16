@@ -4,7 +4,7 @@ The DECLARE command is used to declare a data source.
 
 Its syntax is described as follows:
 
-```
+```rql
 DECLARE field type[N] [, field type[N]]
 STREAM name, rate
 FILE source
@@ -36,7 +36,7 @@ Every field has a name and a type. Available types:
 
 Any field can be given an array multiplier `[N]` — the field then occupies `N × type_size` bytes and creates `N` consecutive positions in the record schema:
 
-```
+```rql
 DECLARE coef INTEGER[25] \
 STREAM filter, 1 \
 FILE 'coefficients.txt'
@@ -46,7 +46,7 @@ The field `coef INTEGER[25]` creates a record of size 25 × 4 = 100 bytes and gi
 
 Multiple fields of different types can be combined in a single record:
 
-```
+```rql
 DECLARE id UINT, value FLOAT, name STRING[16] \
 STREAM measurement, 0.1 \
 FILE 'sensor.dat'
@@ -58,7 +58,7 @@ RetractorDB, running under Linux, reads and writes data to files. On Linux, acce
 
 An example of a command that creates an object in RetractorDB returning random values from the /dev/random stream 10 times per second, with values of type int, looks as follows:
 
-```
+```rql
 DECLARE random_field INTEGER \
 STREAM random_stream, 0.1 \
 FILE '/dev/random'
@@ -66,7 +66,7 @@ FILE '/dev/random'
 
 The source mentioned in the command, if declared as a text file with the .txt extension, will be interpreted by the system as a continuous, unbounded data file read line by line. Upon reaching the end of the file, reading resumes from the beginning. This functionality is built into RetractorDB. Basic support for the format is provided — if we specify two integer fields in the declaration, and the file contains two integer values separated by a space, those values will be read as consecutive elements of the record.
 
-```
+```rql
 DECLARE field_1 INTEGER \
 STREAM cyclic_stream, 0.1 \
 FILE 'file.txt'

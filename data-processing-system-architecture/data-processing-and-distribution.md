@@ -8,7 +8,7 @@ To carry out the processing, we'll need to prepare data and build a data-process
 
 We'll change the source query.rql file to the following:
 
-```
+```rql
 DECLARE a INTEGER \
 STREAM core0, 0.1 \
 FILE 'datafile1.txt'

@@ -25,13 +25,13 @@ The `WHEN` clause of the `RULE` command takes a logical expression, which is eva
 
 A condition is built from the fields of the stream schema specified in the `ON` clause. Fields are identified the same way as in `SELECT` — by the stream name with an index:
 
-```
+```rql
 WHEN stream[index] operator value
 ```
 
 Compound conditions are joined with connectives:
 
-```
+```rql
 WHEN stream[0] > 10 AND stream[1] != 0
 WHEN stream[0] = 5 OR stream[0] = 7
 WHEN NOT stream[0] < 0
@@ -39,7 +39,7 @@ WHEN NOT stream[0] < 0
 
 ## Examples
 
-```
+```rql
 RULE high_alarm \
 ON measurements \
 WHEN measurements[0] > 100 OR measurements[0] < -100 \
@@ -62,13 +62,13 @@ The condition refers to the fields of the stream specified in `ON`. The field in
 
 If the stream in `ON` was produced by an interleave `A#B`, the condition must use the output stream name:
 
-```
+```rql
 RULE valid ON result WHEN result[0] > 0 DO DUMP -1 TO 0
 ```
 
 A reference to a named interleave component is ambiguous and causes compilation to fail:
 
-```
+```rql
 RULE invalid ON result WHEN A[0] > 0 DO DUMP -1 TO 0
 ```
 

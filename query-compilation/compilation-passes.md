@@ -14,7 +14,7 @@ guarantees that a producer precedes its consumer during execution.
 
 Throughout the chapter we follow a single query — `query.rql` — through the successive stages:
 
-```
+```rql
 DECLARE a BYTE, b INTEGER \
 STREAM core0, 0.1 \
 FILE 'sensor_a.txt'

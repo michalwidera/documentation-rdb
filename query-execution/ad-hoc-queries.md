@@ -74,7 +74,7 @@ without rewinding, even when the new query introduces a new rate to the system.
 
 We'll start the example by preparing a simple query:
 
-```
+```rql
 DECLARE a BYTE STREAM A, 1 FILE 'data1.txt'
 DECLARE a BYTE STREAM B, 2 FILE 'data2.txt'
 SELECT * STREAM str1 FROM A+B

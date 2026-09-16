@@ -28,7 +28,7 @@ $ seq 10 5 60 > temp.txt
 
 The file `avg.rql`:
 
-```
+```rql
 DECLARE temp INTEGER \
 STREAM sensor, 1 \
 FILE 'temp.txt'

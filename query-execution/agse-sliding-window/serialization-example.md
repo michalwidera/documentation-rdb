@@ -2,7 +2,7 @@
 
 Let's start by creating a file qplan3.rql with the following content:
 
-```
+```rql
 DECLARE a BYTE, b BYTE STREAM A, 1 FILE 'data3.txt'
 SELECT * STREAM str3 FROM A@(1,1)
 ```
@@ -53,7 +53,7 @@ From a source stream, where data containing two bytes arrives every second, a da
 
 Now that we have a str3 data stream in the system, returning sequential numbers, we can use it for further transformations. Let's add the following query to the qplan3.rql file:
 
-```
+```rql
 SELECT * STREAM str4 FROM str3@(2,2)
 ```
 
@@ -73,7 +73,7 @@ $ xqry -s str4
 
 Along the difficult path of stream processing, there are traps. This is one of them. Only once the reader looks closely will they notice that the data is mirror-flipped. Please change this query to the following form:
 
-```
+```rql
 SELECT * STREAM str4 FROM str3@(2,-2)
 ```
 

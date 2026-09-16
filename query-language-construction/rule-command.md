@@ -6,7 +6,7 @@ This command is one of the most recent extensions I have developed for the syste
 
 The syntax of the RULE command is as follows:
 
-```
+```rql
 RULE rule_name
 ON data_stream_name
 WHEN logical_condition
@@ -15,7 +15,7 @@ DO DUMP steps_back TO steps_forward [RETENTION segments]
 
 Or like this:
 
-```
+```rql
 RULE rule_name
 ON data_stream_name
 WHEN logical_condition
@@ -38,7 +38,7 @@ The DO SYSTEM clause allows a system event to be triggered once the logical cond
 
 Examples of rule declarations in RQL:
 
-```
+```rql
 RULE testrule1 \
 ON str1 \
 WHEN str1[0] > 11 \
@@ -58,7 +58,7 @@ The second rule, with a slightly different logical condition, prints the text "s
 
 The full syntax of the RULE command is:
 
-```
+```rql
 RULE <name>
 ON <stream>
 WHEN <condition>
@@ -67,7 +67,7 @@ DO <action>
 
 Where `<action>` can take one of two forms:
 
-```
+```rql
 SYSTEM '<system_command>'
 DUMP [-]<step_back> TO [-]<step_forward> [RETENTION <n>]
 ```
@@ -76,7 +76,7 @@ DUMP [-]<step_back> TO [-]<step_forward> [RETENTION <n>]
 
 A rule can only be attached to a stream declared with a `SELECT` command (an artifact or substrate). Attaching it to a `DECLARE` input stream is a compilation error:
 
-```
+```rql
 # INVALID — core0 is a declaration, a rule cannot be attached to it
 RULE r1 ON core0 WHEN core0[0] > 10 DO SYSTEM 'echo alarm'
 ```
@@ -87,7 +87,7 @@ The condition is a logical expression evaluated to true/false after every new sa
 
 Comparison operators: `=`, `!=`, `<`, `>`, `<=`, `>=`. Logical operators: `OR`, `AND`, `NOT`. Examples:
 
-```
+```rql
 WHEN str1[0] > 100
 WHEN str1[0] = 0 OR str1[0] = 255
 WHEN str1[0] >= 10 AND str1[0] <= 90
@@ -98,7 +98,7 @@ WHEN NOT str1[0] = 0
 
 The `DO SYSTEM` action executes the given shell command (via a `system(3)` call) the moment the condition is satisfied. RetractorDB logs the command's exit code — a non-zero code is reported as an error in the log.
 
-```
+```rql
 RULE alert1 \
 ON results \
 WHEN results[0] > 1000 \
@@ -111,7 +111,7 @@ Any program available on `PATH` can be used in the command: shell scripts, Pytho
 
 The `DO DUMP` action writes a window of stream samples to a binary file the moment the condition is satisfied. It lets you preserve the context of an event: data before it occurred and data after it.
 
-```
+```rql
 RULE event \
 ON results \
 WHEN results[0] > 500 \
@@ -146,7 +146,7 @@ The file format is raw binary data matching the stream descriptor (no header). T
 
 The `RETENTION <n>` parameter limits the number of stored dumps — the oldest file is overwritten by the new one (a circular buffer). Without `RETENTION`, every trigger overwrites a single `_dump.tmp` file.
 
-```
+```rql
 RULE event \
 ON results \
 WHEN results[0] > 500 \
@@ -159,7 +159,7 @@ The example above keeps the last 20 dumps in files `results_event_dump_0.tmp` �
 
 Any number of rules of different types can be attached to a single stream:
 
-```
+```rql
 RULE high_alert \
 ON measurements \
 WHEN measurements[0] > 900 \

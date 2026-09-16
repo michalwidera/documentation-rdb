@@ -89,7 +89,7 @@ For testing purposes, we'll take the source signal from a pseudo-random number g
 
 The initial part of the query.rql file, containing the source declarations for RetractorDB, looks as follows:
 
-```
+```rql
 DECLARE coef INTEGER[25] \
 STREAM filter, 1 \
 FILE 'filterremez.txt'

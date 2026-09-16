@@ -4,7 +4,7 @@ Data flows into the system and is processed within it. The order in which it arr
 
 Let's start by analyzing the following query:
 
-```
+```rql
 DECLARE a BYTE STREAM A, 1 FILE 'data1.txt'
 DECLARE a BYTE STREAM B, 2 FILE 'data2.txt'
 SELECT * STREAM str1 FROM A+B

@@ -4,7 +4,7 @@ Everyone who has written SQL knows the magic `*` character in that language. Inv
 
 The example uses the canonical declarations used throughout the chapter:
 
-```
+```rql
 DECLARE a BYTE, b INTEGER \
 STREAM core0, 0.1 \
 FILE 'sensor_a.txt'

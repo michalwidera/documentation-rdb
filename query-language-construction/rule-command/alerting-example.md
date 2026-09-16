@@ -42,7 +42,7 @@ The `DO DUMP` action lets you capture a window of samples surrounding an event â
 
 We create a `query.rql` file:
 
-```
+```rql
 STORAGE 'temp'
 
 DECLARE a INTEGER STREAM core0, 1 FILE 'datafile1.txt'
@@ -85,7 +85,7 @@ $ xtrdb
 
 Without `RETENTION`, each successive trigger of the rule overwrites the same file. When events repeat, use `RETENTION N` to keep the last N dumps in separate files.
 
-```
+```rql
 STORAGE 'temp'
 
 DECLARE a INTEGER STREAM core0, 1 FILE 'datafile1.txt'
@@ -113,7 +113,7 @@ Once capacity is exceeded (`RETENTION 5`), the oldest file is overwritten by the
 
 Any number of rules can be attached to a single stream. The example below combines both actions â€” a system notification and context recording:
 
-```
+```rql
 STORAGE 'temp'
 
 DECLARE a INTEGER STREAM core0, 1 FILE 'datafile1.txt'

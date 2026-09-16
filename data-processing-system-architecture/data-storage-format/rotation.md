@@ -14,7 +14,7 @@ Rotation and deletion do not apply to ephemerides (`DECLARE`). That does not mea
 
 The `ROTATION` directive enables history-preservation mode. It takes the path to a file that stores a persistent session counter:
 
-```
+```rql
 ROTATION rdb_counter
 ```
 

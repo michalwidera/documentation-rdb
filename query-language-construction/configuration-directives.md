@@ -10,7 +10,7 @@ Four configuration directives are available:
 `STORAGE`, `SUBSTRAT`, and `ROTATION` take a text argument in single quotes.
 `DEFAULT VOLATILE` takes no string. Example directives with arguments:
 
-```
+```rql
 STORAGE 'temp_folder'
 SUBSTRAT 'memory'
 ROTATION 'rotation_counter.txt'

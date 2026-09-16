@@ -15,7 +15,7 @@ one record to one value.
 
 ### Syntax
 
-```
+```rql
 FROM AGGREGATOR(stream_expression)
 ```
 
@@ -94,7 +94,7 @@ or explicitly pass the result through `to_string`, `to_double`, or `to_integer`.
 
 ### Example: mean of an AGSE-window record
 
-```
+```rql
 DECLARE val INTEGER STREAM src, 1 FILE 'data.txt'
 
 # AGSE builds a five-sample record; AVG reduces its five fields
@@ -118,7 +118,7 @@ The window appears directly in `FROM`, so it does not require a separate query. 
 
 ### Example: MIN and MAX
 
-```
+```rql
 DECLARE v INTEGER STREAM src, 0.1 FILE '/dev/urandom'
 SELECT * STREAM min10 FROM MIN(src@(1,10))
 SELECT * STREAM max10 FROM MAX(src@(1,10))
@@ -254,7 +254,7 @@ The `width` parameter (a natural number after the colon `:`) specifies the outpu
 
 ### Example
 
-```
+```rql
 DECLARE v INTEGER STREAM src, 1 FILE 'data.txt'
 
 SELECT to_string(src[0]:10) STREAM labels FROM src
@@ -266,7 +266,7 @@ The `labels` stream contains the values of `src` formatted as text in a 10-byte 
 
 The resulting string can be joined with a string literal using the `+` operator:
 
-```
+```rql
 SELECT to_string(src[0]:8) + '_ok' STREAM tagged FROM src
 ```
 

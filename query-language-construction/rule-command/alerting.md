@@ -8,7 +8,7 @@ The presentation of the RULE command's syntax on page 24 already touches on this
 
 To build an example demonstrating how alerting works, let's create the following query file — query.rql:
 
-```
+```rql
 DECLARE a UINT STREAM core0, 1 FILE 'datafile1.txt'
 SELECT str4[0] STREAM str4 FROM core0>1
 
