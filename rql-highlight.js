@@ -21,11 +21,11 @@
                     "SELECT select STREAM stream FROM from DECLARE declare RETENTION retention " +
                     "FILE file STORAGE storage ROTATION rotation SUBSTRAT substrat RULE rule " +
                     "DISPOSABLE disposable ONESHOT oneshot HOLD hold VOLATILE volatile " +
-                    "PERSISTENT persistent ON on WHEN when DUMP dump SYSTEM system DO do TO to " +
+                    "PERSISTENT persistent DEFAULT default ON on WHEN when DUMP dump SYSTEM system DO do TO to " +
                     "AND and OR or NOT not",
                 type: "BYTE Byte CHAR Char STRING String UINT Uint INTEGER Integer FLOAT Float DOUBLE Double",
                 literal:
-                    "MEMORY memory DEFAULT default DIRECT direct POSIX posix POSIXSHD posixshd " +
+                    "MEMORY memory DIRECT direct POSIX posix POSIXSHD posixshd " +
                     "GENERIC generic DEVICE device TEXTSOURCE textsource",
                 built_in: "MIN min MAX max AVG avg SUMC sumc",
             },
