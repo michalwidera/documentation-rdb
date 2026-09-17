@@ -172,16 +172,16 @@ After every `processRows()`, `broadcast(inSet)` is called (`executorsm.cpp`, lin
 
 ```mermaid
 %% pdf-width: 85%
-%% pdf-height: 45%
-%%{init: {"markdownAutoWrap": false}}%%
-flowchart LR
-    A([inSet]) --> B["printRowValue()<br/>serialize into a Boost property_tree"]
-    B --> C{clients<br/>subscribed to<br/>the stream?}
-    C -->|yes| D["queue brcdbr&lt;id&gt;<br/>try_send(data)"]
-    D --> E{queue<br/>full?}
-    E -->|no| F([sent])
-    E -->|yes - no receiver| G["remove the queue<br/>remove id2StreamName_"]
+%% pdf-height: 60%
+%%{init: {"markdownAutoWrap": false, "flowchart": {"nodeSpacing": 25, "rankSpacing": 30, "padding": 6}}}%%
+flowchart TB
+    A([inSet]) --> B["printRowValue()<br/>serialize into a<br/>Boost property_tree"]
+    B --> C{{"clients subscribed<br/>to the stream?"}}
     C -->|none| H([skip])
+    C -->|yes| D["queue brcdbr&lt;id&gt;<br/>try_send(data)"]
+    D --> E{{"queue full?"}}
+    E -->|no| F([sent])
+    E -->|"yes - no<br/>receiver"| G["remove the queue<br/>remove id2StreamName_"]
 ```
 
 _Fig. 46. The broadcast algorithm – distributing results via Boost IPC_
