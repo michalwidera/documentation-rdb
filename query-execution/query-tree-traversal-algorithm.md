@@ -5,6 +5,7 @@
 The query-tree traversal algorithm is carried out by two cooperating components: `dataModel` (processing logic) and `executorsm` (the time loop and IPC). Before entering the main loop, the system performs a **zero step**, after which it iterates cyclically over the minimal set of time intervals (Fig. 42).
 
 ```mermaid
+%% pdf-height: 55%
 %%{init: {"markdownAutoWrap": false}}%%
 flowchart TD
     A([Initialization]) --> B
@@ -195,16 +196,41 @@ Fig. 47 shows the complete call sequence for four queries A, B, C, D laid out on
 
 ```mermaid
 %% pdf-width: 85%
-%% pdf-height: 45%
-%%{init: {"markdownAutoWrap": false}}%%
-block-beta
-    columns 3
-    Z["1. t = 0<br/>ES → DM: processZeroStep()<br/>DM: A → revRead(0) → fire() [armed]<br/>ES → IPC: broadcast({A})"]
-    T13["2. t = 1/3<br/>ES → DM: processRows({B})<br/>Pass 1: B → input(A) → windows → output → write()<br/>Pass 2: A → flux → revRead(0) → fire()<br/>ES → IPC: broadcast({B})"]
-    T12["3. t = 1/2<br/>ES → DM: processRows({C})<br/>Pass 1: C → input(B) → windows → output → write()<br/>Pass 2: A → flux → revRead(0) → fire()<br/>ES → IPC: broadcast({C})"]
-    T23["4. t = 2/3<br/>ES → DM: processRows({B})<br/>Pass 1: B → input(A) → output → write()<br/>Pass 2: A → flux → revRead(0) → fire()<br/>ES → IPC: broadcast({B})"]
-    T1["5. t = 1<br/>ES → DM: processRows({B, C, D})<br/>Pass 1 (topologically): B → C → D<br/>Pass 2: A → flux → revRead(0) → fire()<br/>ES → IPC: broadcast({B, C, D})"]
-    space:1
+%% pdf-height: 65%
+%%{init: {"markdownAutoWrap": false, "sequence": {"mirrorActors": false, "messageMargin": 22, "boxMargin": 6}}}%%
+sequenceDiagram
+    participant TL as TimeLine
+    participant ES as executorsm
+    participant DM as dataModel
+    participant IPC as Boost IPC
+
+    ES->>DM: processZeroStep()
+    DM->>DM: A: revRead(0) → fire() [armed]
+    ES->>IPC: broadcast({A})
+
+    TL-->>ES: nextSlot = 1/3
+    ES->>DM: processRows({B})
+    DM->>DM: Pass 1: B → input(A) → windows → output → write()
+    DM->>DM: Pass 2: A → flux → revRead(0) → fire()
+    ES->>IPC: broadcast({B})
+
+    TL-->>ES: nextSlot = 1/2
+    ES->>DM: processRows({C})
+    DM->>DM: Pass 1: C → input(B) → windows → output → write()
+    DM->>DM: Pass 2: A → flux → revRead(0) → fire()
+    ES->>IPC: broadcast({C})
+
+    TL-->>ES: nextSlot = 2/3
+    ES->>DM: processRows({B})
+    DM->>DM: Pass 1: B → input(A) → output → write()
+    DM->>DM: Pass 2: A → flux → revRead(0) → fire()
+    ES->>IPC: broadcast({B})
+
+    TL-->>ES: nextSlot = 1
+    ES->>DM: processRows({B, C, D})
+    DM->>DM: Pass 1 (topologically): B → C → D
+    DM->>DM: Pass 2: A → flux → revRead(0) → fire()
+    ES->>IPC: broadcast({B, C, D})
 ```
 
 _Fig. 47. Full execution example for queries A, B, C, D with deltas {1/2, 1/3}_

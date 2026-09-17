@@ -70,6 +70,8 @@ Substitute `git ls-files` for the staged-file listing to audit the whole tracked
 
 **Known-good baseline — do not "fix" it.** The callout convention in *Authoring Rules* writes the information and warning symbols (`U+2139`, `U+26A0`) followed by `U+FE0F VARIATION SELECTOR-16`. The scanner reports that selector because those two symbols are text-default, not emoji-default. It is the documented convention, not a watermark. It currently occurs once or twice in about a dozen `.md` files and in `migrate_to_mdbook.py`; leave it alone. A `U+FE0F` in any other position, and every other reported codepoint, is a real finding.
 
+**Accepted exception — doubled selector in the information callout.** Some information callouts write `U+2139` followed by **two** `U+FE0F` (`U+2139 U+FE0F U+FE0F`). The scanner reports it as a `variation_selector` hit. This form is accepted as it stands: do not clean it, do not normalise it to a single selector, and do not report it as a finding. It appears in `README.md`, `migrate_to_mdbook.py` and a number of `.md` pages; `grep -rnP '\x{2139}\x{FE0F}\x{FE0F}'` lists them. The exception covers only this exact sequence after `U+2139`; a doubled selector after any other character is a real finding.
+
 **Scripts are code, not prose — zero tolerance, strict mode.** `migrate_to_mdbook.py` and the `.sh` files get checked immediately after every edit, not at commit time:
 
 ```bash

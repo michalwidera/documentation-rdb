@@ -395,6 +395,7 @@ flushCurrentEntry() → seek to the last entry, overwrite [pattern, count=3]
 The sequence diagram for `storage`'s typical pattern (append + flush after every record) is shown in Fig. 18:
 
 ```mermaid
+%% pdf-height: 55%
 sequenceDiagram
     participant S as storage
     participant M as metaData

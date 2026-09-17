@@ -116,7 +116,7 @@ every `xqry --server` invocation. Several plotting targets can therefore run con
 without taking over another instance. An optional fifth argument supplies a different
 name; if that name is already in use, the script exits before removing the output directory.
 
-<figure><img src="../assets/ecg_in_retractor.png" alt="View of the gnuplot window with the ECG signal being played back in RetractorDB"><figcaption><p>Fig. 60. View of the gnuplot window with the ECG signal being played back (record 205)</p></figcaption></figure>
+<figure><img src="../assets/ecg_in_retractor.png" data-pdf-width="58%" alt="View of the gnuplot window with the ECG signal being played back in RetractorDB"><figcaption><p>Fig. 60. View of the gnuplot window with the ECG signal being played back (record 205)</p></figcaption></figure>
 
 The window shown in Fig. 60 displays 720 samples, i.e. exactly 2 seconds of signal at 360 Hz, matching the typical width of a single ECG strip used in diagnostics.
 
@@ -285,7 +285,7 @@ The `xplot.sh` script starts `xretractor` in the background (compiling and execu
 
 ### Figure description — the gnuplot window
 
-<figure><img src="../assets/ninja-ecg-detect-qrs.png" alt="gnuplot QRS-detection window: MLII, V1, and the detection signal on record 205"><figcaption><p>Fig. 61. The gnuplot window from running <code>ninja ecg-detect-qrs</code> — MIT-BIH record 205, 720 samples (2 s), RTL</p></figcaption></figure>
+<figure><img src="../assets/ninja-ecg-detect-qrs.png" data-pdf-width="58%" alt="gnuplot QRS-detection window: MLII, V1, and the detection signal on record 205"><figcaption><p>Fig. 61. The gnuplot window from running <code>ninja ecg-detect-qrs</code> — MIT-BIH record 205, 720 samples (2 s), RTL</p></figcaption></figure>
 
 In Fig. 61, three signals are visible, corresponding to the three fields of the `detect_out` stream:
 
