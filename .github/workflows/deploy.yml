@@ -411,9 +411,10 @@ jobs:
               text = demote_headings(text, level)
               parts.append(text)
           combined = '\n\n'.join(parts)
-          # Lift _Fig. N. Caption_ from after mermaid into alt text so pandoc renders proper figure caption
+          # Lift _Fig. N. Caption_ from after any image (mermaid or Markdown) into alt text so pandoc renders
+          # a proper figure caption kept on the same page as the image (float H)
           combined = re.sub(
-              r'!\[Diagram\]\(([^)]+)\)(\{[^}]*\})?\n+_(Fig\.[^_\n]+)_',
+              r'!\[[^\]]*\]\(([^)]+)\)(\{[^}]*\})?\n+_(Fig\.[^_\n]+)_',
               lambda m: f'![{m.group(3)}]({m.group(1)}){m.group(2) or ""}',
               combined
           )

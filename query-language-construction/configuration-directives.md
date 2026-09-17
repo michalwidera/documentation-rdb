@@ -20,7 +20,7 @@ ROTATION 'rotation_counter.txt'
 
 _Fig. 11. Configuration directive syntax diagram_
 
-The railroad diagram in Fig. 11 was generated from the `compiler_option` rule in the system's ANTLR4 grammar (`RQL.g4`). The three illustrated directives have an identical structure: one of the keywords STORAGE, SUBSTRAT, or ROTATION (rounded green boxes), followed by a value enclosed in single quotes — arbitrary text (a directory path for STORAGE, a counter-file name for ROTATION), or the name of one of the predefined memory profiles (for SUBSTRAT).
+The railroad diagram in Fig. 11 was generated from the `compiler_option` and `default_statement` rules in the system's ANTLR4 grammar (`RQL.g4`). The three upper branches (the `compiler_option` rule) have an identical structure: one of the keywords STORAGE, SUBSTRAT, or ROTATION (rounded green boxes), followed by a value enclosed in single quotes — arbitrary text (a directory path for STORAGE, a counter-file name for ROTATION), or the name of one of the predefined memory profiles (for SUBSTRAT). The bottom branch (the `default_statement` rule) is the keyword pair DEFAULT VOLATILE with no value.
 
 Storage is used to indicate the system directory in which all output files should be created. Without this directive, files created by the system are placed, by default, in the current directory from which the main RetractorDB process was started.
 

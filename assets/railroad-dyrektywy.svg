@@ -1,15 +1,19 @@
-<svg class="railroad-diagram" height="122" viewBox="0 0 364.5 122" width="364.5" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg class="railroad-diagram" height="152" viewBox="0 0 384.5 152" width="384.5" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g transform="translate(.5 .5)">
 <g>
-<path d="M20 21v20m10 -20v20m-10 -10h20" /></g><path d="M40 31h10" /><g>
-<path d="M50 31h0.0" /><path d="M314.5 31h0.0" /><g>
-<path d="M50.0 31h0.0" /><path d="M178.0 31h0.0" /><path d="M50.0 31h20" /><g class="terminal ">
-<path d="M70.0 31h0.0" /><path d="M158.0 31h0.0" /><rect height="22" rx="10" ry="10" width="88" x="70" y="20"></rect><text x="114" y="35">ROTATION</text></g><path d="M158.0 31h20" /><path d="M50.0 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g class="terminal ">
-<path d="M70.0 61h4.25" /><path d="M153.75 61h4.25" /><rect height="22" rx="10" ry="10" width="79.5" x="74.25" y="50"></rect><text x="114" y="65">STORAGE</text></g><path d="M158.0 61a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /><path d="M50.0 31a10 10 0 0 1 10 10v40a10 10 0 0 0 10 10" /><g class="terminal ">
-<path d="M70.0 91h0.0" /><path d="M158.0 91h0.0" /><rect height="22" rx="10" ry="10" width="88" x="70" y="80"></rect><text x="114" y="95">SUBSTRAT</text></g><path d="M158.0 91a10 10 0 0 0 10 -10v-40a10 10 0 0 1 10 -10" /></g><g>
-<path d="M178.0 31h0.0" /><path d="M314.5 31h0.0" /><path d="M178.0 31h20" /><g class="non-terminal ">
-<path d="M198.0 31h0.0" /><path d="M294.5 31h0.0" /><rect height="22" width="96.5" x="198" y="20"></rect><text x="246.25" y="35">&apos;profile&apos;</text></g><path d="M294.5 31h20" /><path d="M178.0 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g class="non-terminal ">
-<path d="M198.0 61h12.75" /><path d="M281.75 61h12.75" /><rect height="22" width="71" x="210.75" y="50"></rect><text x="246.25" y="65">&apos;text&apos;</text></g><path d="M294.5 61a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /></g></g><path d="M314.5 31h10" /><path d="M 324.5 31 h 20 m -10 -10 v 20 m 10 -20 v 20"></path></g><style>/* <![CDATA[ */
+<path d="M20 21v20m10 -20v20m-10 -10h20" /></g><g>
+<path d="M40 31h0.0" /><path d="M344.5 31h0.0" /><path d="M40.0 31h20" /><g>
+<path d="M60.0 31h0.0" /><path d="M324.5 31h0.0" /><g>
+<path d="M60.0 31h0.0" /><path d="M188.0 31h0.0" /><path d="M60.0 31h20" /><g class="terminal ">
+<path d="M80.0 31h0.0" /><path d="M168.0 31h0.0" /><rect height="22" rx="10" ry="10" width="88" x="80" y="20"></rect><text x="124" y="35">ROTATION</text></g><path d="M168.0 31h20" /><path d="M60.0 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g class="terminal ">
+<path d="M80.0 61h4.25" /><path d="M163.75 61h4.25" /><rect height="22" rx="10" ry="10" width="79.5" x="84.25" y="50"></rect><text x="124" y="65">STORAGE</text></g><path d="M168.0 61a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /><path d="M60.0 31a10 10 0 0 1 10 10v40a10 10 0 0 0 10 10" /><g class="terminal ">
+<path d="M80.0 91h0.0" /><path d="M168.0 91h0.0" /><rect height="22" rx="10" ry="10" width="88" x="80" y="80"></rect><text x="124" y="95">SUBSTRAT</text></g><path d="M168.0 91a10 10 0 0 0 10 -10v-40a10 10 0 0 1 10 -10" /></g><g>
+<path d="M188.0 31h0.0" /><path d="M324.5 31h0.0" /><path d="M188.0 31h20" /><g class="non-terminal ">
+<path d="M208.0 31h0.0" /><path d="M304.5 31h0.0" /><rect height="22" width="96.5" x="208" y="20"></rect><text x="256.25" y="35">&apos;profile&apos;</text></g><path d="M304.5 31h20" /><path d="M188.0 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g class="non-terminal ">
+<path d="M208.0 61h12.75" /><path d="M291.75 61h12.75" /><rect height="22" width="71" x="220.75" y="50"></rect><text x="256.25" y="65">&apos;text&apos;</text></g><path d="M304.5 61a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /></g></g><path d="M324.5 31h20" /><path d="M40.0 31a10 10 0 0 1 10 10v70a10 10 0 0 0 10 10" /><g>
+<path d="M60.0 121h38.5" /><path d="M286.0 121h38.5" /><g class="terminal ">
+<path d="M98.5 121h0.0" /><path d="M178.0 121h0.0" /><rect height="22" rx="10" ry="10" width="79.5" x="98.5" y="110"></rect><text x="138.25" y="125">DEFAULT</text></g><path d="M178.0 121h10" /><path d="M188.0 121h10" /><g class="terminal ">
+<path d="M198.0 121h0.0" /><path d="M286.0 121h0.0" /><rect height="22" rx="10" ry="10" width="88" x="198" y="110"></rect><text x="242" y="125">VOLATILE</text></g></g><path d="M324.5 121a10 10 0 0 0 10 -10v-70a10 10 0 0 1 10 -10" /></g><path d="M 344.5 31 h 20 m -10 -10 v 20 m 10 -20 v 20"></path></g><style>/* <![CDATA[ */
 	svg.railroad-diagram {
 		background-color: transparent;
 	}
