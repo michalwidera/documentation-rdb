@@ -25,7 +25,7 @@ This chapter is a map, not a catalog. Instead of listing everything ever written
 > This system is an: Edge Signal Processing Engine. RetractorDB supports — rather than replaces — time-series databases (TSDB) and data stream management systems (DSMS): it works close to the signal source, pre-processes and filters high-frequency measurements using a declarative query language, keeps a partial, correctable record of past events and scheduled future ones in inspectable artifacts, and passes exact, deterministic results up the architecture — so that only reduced, already-processed streams reach the central architecture.
 
 
-> **ℹ️️ Info**
+> **ℹ️ Info**
 >
 > Why did I place this chapter so early? Because an honest answer to the question "is this needed?" first requires showing what already exists. Most ideas in computer science have already been thought of once — reinventing the wheel wastes someone else's effort. This chapter is my attempt to prove that this particular wheel has not, in fact, been invented yet.
 

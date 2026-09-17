@@ -72,7 +72,7 @@ build/Release/src/retractor/xretractor --build-info
 and compares the result with the set above. A missing binary or any different
 value causes `release` to fail.
 
-> **ℹ️️ Info**
+> **ℹ️ Info**
 >
 > The Git cleanliness check proves that the build does not use local,
 > uncommitted changes. It does not prove that the contents of a committed

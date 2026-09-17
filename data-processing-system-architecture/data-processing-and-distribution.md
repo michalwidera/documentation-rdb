@@ -100,7 +100,7 @@ on the second computer, you need to write:
 $ nc server_name_or_ip 8888
 ```
 
-> **ℹ️️ Info**
+> **ℹ️ Info**
 >
 > The `-p` flag in netcat (BSD syntax) is not supported by the GNU netcat available on modern Ubuntu/Debian systems. The correct syntax is `nc -l 8888` (without `-p`).
 

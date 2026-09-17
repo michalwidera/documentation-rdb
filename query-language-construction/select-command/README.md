@@ -132,7 +132,7 @@ This means `v*(w^2)` and `v^(w^2)`. Writing `(v*w)^2` requires explicit parenthe
 
 For integer and rational types, a non-negative integral power has exactly the semantics of repeated multiplication, including type promotion and overflow. Other cases use floating-point computation; an infinite or `NaN` result becomes `NULL`. Text operands are not allowed.
 
-> **ℹ️️ Info** A negative literal is one grammar atom: `-2^2` means `(-2)^2`. For a field, `-v^2` means `-(v^2)`. Use parentheses whenever the intended grouping might be unclear.
+> **ℹ️ Info** A negative literal is one grammar atom: `-2^2` means `(-2)^2`. For a field, `-v^2` means `-(v^2)`. Use parentheses whenever the intended grouping might be unclear.
 
 > **⚠️ Warning** After an interleave `A#B`, do not refer to its components as `A[0]`, `A.field`, `A[_]`, or `A.*`. An interleave has one shared schema; use the output stream name or recover a component with `&`/`%`. See [Aliasing](../../query-compilation/aliasing.md) for details.
 

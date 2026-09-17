@@ -36,7 +36,7 @@ mdbook build               # output → book/
   - **Subscript after command:** write `\Delta_{a}` (no space before `_`), NOT `\Delta _{a}`. Space before `_` followed by `{` makes it a left-flanking emphasis opener; if a matching right-flanking `_` (e.g. `a_{`) appears later, Markdown consumes both as `<em>`, destroying the MathJax block. Rule: `_` must be immediately preceded by an alphanumeric character.
   - **No line may start with `:`** inside `\\[...\\]`: a line like `:= ...` is parsed as a definition list (`<dl>/<dt>/<dd>`), which splits the math across HTML elements and MathJax leaves it unrendered. Put `:=` at the end of the previous line instead.
 - **Diagrams:** use standard ` ```mermaid ``` ` fenced blocks — rendered by `mdbook-mermaid` plugin.
-- **Callouts:** use blockquotes with bold prefix: `> **ℹ️️ Info**` / `> **⚠️ Warning**` / `> **✅ Note**`.
+- **Callouts:** use blockquotes with bold prefix: `> **ℹ️ Info**` / `> **⚠️ Warning**` / `> **✅ Note**`.
 - **Images:** paths relative to each `.md` file pointing to `assets/` (e.g. `../assets/foo.png` from a subdirectory).
 - No GitBook-specific shortcodes (hint/tabs/embed blocks), no YAML frontmatter. Never write a literal curly-brace-percent tag anywhere in this repo, even inside backticks or code fences — Jekyll's Liquid engine parses it before Markdown rendering and ignores code-span escaping, which breaks the GitHub Pages fallback build if the mdBook Actions workflow ever fails to run.
 
@@ -70,7 +70,7 @@ Substitute `git ls-files` for the staged-file listing to audit the whole tracked
 
 **Known-good baseline — do not "fix" it.** The callout convention in *Authoring Rules* writes the information and warning symbols (`U+2139`, `U+26A0`) followed by `U+FE0F VARIATION SELECTOR-16`. The scanner reports that selector because those two symbols are text-default, not emoji-default. It is the documented convention, not a watermark. It currently occurs once or twice in about a dozen `.md` files and in `migrate_to_mdbook.py`; leave it alone. A `U+FE0F` in any other position, and every other reported codepoint, is a real finding.
 
-**Accepted exception — doubled selector in the information callout.** Some information callouts write `U+2139` followed by **two** `U+FE0F` (`U+2139 U+FE0F U+FE0F`). The scanner reports it as a `variation_selector` hit. This form is accepted as it stands: do not clean it, do not normalise it to a single selector, and do not report it as a finding. It appears in `README.md`, `migrate_to_mdbook.py` and a number of `.md` pages; `grep -rnP '\x{2139}\x{FE0F}\x{FE0F}'` lists them. The exception covers only this exact sequence after `U+2139`; a doubled selector after any other character is a real finding.
+**Information callout — single selector only.** The accepted information icon is exactly `U+2139 U+FE0F`: the symbol followed by **one** variation selector. A doubled selector (`U+2139 U+FE0F U+FE0F`) is a watermark, not the icon: remove the extra `U+FE0F` so exactly one remains, and never strip the last one. `grep -rnP '\x{2139}\x{FE0F}\x{FE0F}'` lists the remaining cases; its output must be empty. The same holds after `U+26A0`: one selector is the icon, two are a finding.
 
 **Scripts are code, not prose — zero tolerance, strict mode.** `migrate_to_mdbook.py` and the `.sh` files get checked immediately after every edit, not at commit time:
 

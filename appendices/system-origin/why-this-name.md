@@ -4,7 +4,7 @@ Retractors, in medicine, are an entire group of surgical instruments. Retractors
 
 By analogy, I decided to name my tool a retractor. **RetractorDB**'s job is to separate, join, and enable real-time computation on time series, operating on the fly on ephemeral data, artifacts, or substrates (see the subchapter [Artifacts, Substrates, Ephemerides](../../data-processing-system-architecture/artifacts-substrates-ephemerides.md)).
 
-> **ℹ️️ Info**
+> **ℹ️ Info**
 >
 > Definition (Data Retraction and Retractor): Using a numerical apparatus to extract, process, and then return data contained in time series or digital signals is called data retraction. The tool used to carry out this process is called a Data Retractor.
 

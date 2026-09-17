@@ -74,7 +74,7 @@ If the input data file has the .dat extension, it will be treated as a binary fi
 
 The three optional directives (`ONESHOT`, `DISPOSABLE`, `HOLD`) control the data source's lifecycle — a detailed description and comparison table can be found in the chapter [Read Options](declare-command-read-options.md).
 
-> **ℹ️️ Info**
+> **ℹ️ Info**
 >
 > Support for NULL values (per field) is implemented in RetractorDB. Null metadata is stored in the `.meta` file alongside the binary data, managed by the `metaData` class.
 
