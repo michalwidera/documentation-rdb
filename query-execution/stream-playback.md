@@ -61,4 +61,4 @@ $ xqry -s core
 
 A recorded example below (Fig. 55):
 
-<figure><img src="../assets/adhoc-example.svg" alt=""><figcaption><p>Fig. 55. Recorded example of stream playback</p></figcaption></figure>
+<figure><img src="../assets/adhoc-example.svg" data-pdf-link="https://documentation.retractordb.com/query-execution/stream-playback.html" alt=""><figcaption><p>Fig. 55. Recorded example of stream playback</p></figcaption></figure>

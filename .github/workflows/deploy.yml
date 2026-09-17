@@ -359,6 +359,9 @@ jobs:
               src = src_m.group(1)
               cap_m = re.search(r'<figcaption[^>]*>(.*?)</figcaption>', m.group(0), re.DOTALL)
               cap = re.sub(r'<[^>]+>', '', cap_m.group(1)).strip() if cap_m else ''
+              link_m = re.search(r'<img[^>]+data-pdf-link="([^"]+)"', m.group(0))
+              if link_m:
+                  return f'Animation available in the HTML version: <{link_m.group(1)}>\n\n*{cap}*\n'
               if not src.startswith(('http://', 'https://', '/')):
                   src = str((d / src).resolve())
               if src.lower().endswith('.gif'):

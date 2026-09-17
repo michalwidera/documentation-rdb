@@ -144,6 +144,6 @@ Keep in mind that, on screen, this chart scrolls to the right very quickly, show
 
 A screen recording during the processing run is shown in Fig. 59:
 
-<figure><img src="../assets/dsp-record (1).gif" width="75%" alt=""><figcaption><p>Fig. 59. Animation of the real-time signal-filtering process</p></figcaption></figure>
+<figure><img src="../assets/dsp-record (1).gif" width="75%" data-pdf-link="https://documentation.retractordb.com/usage-examples/signal-filter-implementation.html" alt=""><figcaption><p>Fig. 59. Animation of the real-time signal-filtering process</p></figcaption></figure>
 
 > **_NOTE:_** The functionality described here is covered by the test: `dsp`, described in the appendix [Integration Tests](../appendices/integration-tests.md).
