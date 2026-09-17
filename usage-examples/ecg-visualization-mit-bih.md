@@ -219,25 +219,25 @@ DECLARE bp_coef INTEGER[25] STREAM bpf, 1 FILE 'bp_coef.txt'
 DECLARE d_coef INTEGER[5]   STREAM df,  1 FILE 'd_coef.txt'
 
 # Extracting the channels
-SELECT ecg.MLII STREAM mlii FROM ecg VOLATILE
-SELECT ecg.V1   STREAM v1   FROM ecg VOLATILE
+SELECT ecg.MLII            STREAM mlii    FROM ecg VOLATILE
+SELECT ecg.V1              STREAM v1      FROM ecg VOLATILE
 
 # 1. Band-pass filter (5-15 Hz) — 25-tap FIR convolution
-SELECT mlii[_]*bpf[_] STREAM bp_acc FROM mlii@(1,25)+bpf VOLATILE
-SELECT int(bp_acc[0]/1000) STREAM bp_out FROM SUMC(bp_acc) VOLATILE
+SELECT mlii[_]*bpf[_]      STREAM bp_acc  FROM mlii@(1,25)+bpf VOLATILE
+SELECT int(bp_acc[0]/1000) STREAM bp_out  FROM SUMC(bp_acc) VOLATILE
 
 # 2. Differentiation — 5-tap FIR convolution
-SELECT bp_out[_]*df[_] STREAM d_acc FROM bp_out@(1,5)+df VOLATILE
-SELECT int(d_acc[0]) STREAM d_out FROM SUMC(d_acc) VOLATILE
+SELECT bp_out[_]*df[_]     STREAM d_acc   FROM bp_out@(1,5)+df VOLATILE
+SELECT int(d_acc[0])       STREAM d_out   FROM SUMC(d_acc) VOLATILE
 
 # 3. Squaring (/1000 prevents int32 overflow)
-SELECT d_out[0]^2/1000 STREAM sq_out FROM d_out VOLATILE
+SELECT d_out[0]^2/1000     STREAM sq_out  FROM d_out VOLATILE
 
 # 4. Moving-window integration over 30 samples (~83 ms)
-SELECT int(sq_out[0]) STREAM mwi FROM AVG(sq_out@(1,30)) VOLATILE
+SELECT int(sq_out[0])      STREAM mwi     FROM AVG(sq_out@(1,30)) VOLATILE
 
 # 5. Adaptive threshold — 2x moving average over 180 samples (0.5 s)
-SELECT int(mwi[0]) STREAM mwi_thr FROM AVG(mwi@(1,180)) VOLATILE
+SELECT int(mwi[0])         STREAM mwi_thr FROM AVG(mwi@(1,180)) VOLATILE
 
 # Output: MLII centered, V1 centered, detection signal ×5
 SELECT mlii[0]-900, v1[0]-900, (mwi[0]-mwi_thr[0]*2)*5 \

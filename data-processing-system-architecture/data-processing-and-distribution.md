@@ -9,17 +9,11 @@ To carry out the processing, we'll need to prepare data and build a data-process
 We'll change the source query.rql file to the following:
 
 ```rql
-DECLARE a INTEGER \
-STREAM core0, 0.1 \
-FILE 'datafile1.txt'
+DECLARE a INTEGER STREAM core0, 0.1 FILE 'datafile1.txt'
 
-DECLARE a BYTE \
-STREAM core1, 0.2 \
-FILE '/dev/urandom'
+DECLARE a BYTE STREAM core1, 0.2 FILE '/dev/urandom'
 
-SELECT str1[0], str1[0] + str1[1]/20 \
-STREAM str1 \
-FROM core0 + core1
+SELECT str1[0], str1[0] + str1[1]/20 STREAM str1 FROM core0 + core1
 ```
 
 In this example we declare the existence of a text file containing text data. I suggest filling the file datafile1.txt with the following content:

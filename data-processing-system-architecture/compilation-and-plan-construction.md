@@ -7,13 +7,9 @@ The compilation process happens before every run of the xretractor process, prov
 As an example file for compilation, we'll use a file query.rql with the following content:
 
 ```rql
-DECLARE a INTEGER \
-STREAM core0, 0.1 \
-FILE 'datafile1.dat'
+DECLARE a INTEGER STREAM core0, 0.1 FILE 'datafile1.dat'
 
-SELECT str1[0]+1 \
-STREAM str1 \
-FROM core0>2
+SELECT str1[0]+1 STREAM str1 FROM core0>2
 ```
 
 This is a very simple example of a file containing two directives. The first declares the existence of an ephemeris in the form of a binary data source containing 4-byte INTEGER values. Data from this file will be read at a rate of 10 times per second. And the name of this object is core0.

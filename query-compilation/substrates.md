@@ -11,21 +11,13 @@ The parser accepts both the parenthesized form and unparenthesized chains, e.g. 
 The example uses the canonical declarations from the whole chapter — three streams with different types and intervals:
 
 ```rql
-DECLARE a BYTE, b INTEGER \
-STREAM core0, 0.1 \
-FILE 'sensor_a.txt'
+DECLARE a BYTE, b INTEGER STREAM core0, 0.1 FILE 'sensor_a.txt'
 
-DECLARE c INTEGER, d FLOAT \
-STREAM core1, 0.2 \
-FILE 'sensor_b.txt'
+DECLARE c INTEGER, d FLOAT STREAM core1, 0.2 FILE 'sensor_b.txt'
 
-DECLARE e INTEGER \
-STREAM core2, 0.3 \
-FILE 'sensor_c.txt'
+DECLARE e INTEGER STREAM core2, 0.3 FILE 'sensor_c.txt'
 
-SELECT merged[0] \
-STREAM merged \
-FROM (core0 # core1) + core2
+SELECT merged[0] STREAM merged FROM (core0 # core1) + core2
 ```
 
 Compilation:
@@ -76,7 +68,7 @@ Consider a query with the canonical declarations:
 DECLARE a BYTE, b INTEGER   STREAM core0, 0.1 FILE 'sensor_a.txt'
 DECLARE c INTEGER, d FLOAT  STREAM core1, 0.2 FILE 'sensor_b.txt'
 
-SELECT merged[0] STREAM merged FROM (core0 > 2) + core1
+SELECT merged[0]  STREAM merged  FROM (core0 > 2) + core1
 SELECT shifted[0] STREAM shifted FROM core0 > 2
 ```
 
@@ -155,8 +147,8 @@ Queries `x1` and `x2` may share their computation because they swap only the chi
 Input order is also observable through a full scan and through projection order. The following pairs must not be merged:
 
 ```rql
-SELECT * STREAM d1 FROM a+b
-SELECT * STREAM d2 FROM b+a
+SELECT *          STREAM d1 FROM a+b
+SELECT *          STREAM d2 FROM b+a
 
 SELECT a[0], b[1] STREAM n1 FROM a+b
 SELECT b[1], a[0] STREAM n2 FROM b+a

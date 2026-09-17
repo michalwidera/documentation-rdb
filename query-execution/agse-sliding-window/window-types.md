@@ -13,9 +13,7 @@ $ seq 1 12 > data.txt
 The source declaration — one record per second, one field:
 
 ```rql
-DECLARE val INTEGER \
-STREAM src, 1 \
-FILE 'data.txt'
+DECLARE val INTEGER STREAM src, 1 FILE 'data.txt'
 ```
 
 ## Tumbling window — non-overlapping windows
@@ -23,9 +21,7 @@ FILE 'data.txt'
 Hop equal to window size: `k = w`. Every input element belongs to exactly one output window.
 
 ```rql
-SELECT * \
-STREAM tumbling \
-FROM src@(4,4)
+SELECT * STREAM tumbling FROM src@(4,4)
 ```
 
 Output interval: `1s × 4 / 1 = 4s`. Output records:
@@ -44,9 +40,7 @@ Use cases: aggregating samples over fixed time intervals (e.g. per-minute, per-h
 Hop smaller than window size: `k < w`. Every input element appears in several successive windows.
 
 ```rql
-SELECT * \
-STREAM sliding \
-FROM src@(1,4)
+SELECT * STREAM sliding FROM src@(1,4)
 ```
 
 Output interval: `1s × 1 / 1 = 1s`. Output records:
@@ -67,9 +61,7 @@ Use cases: moving averages, trend detection, FIR filters (as in the [signal filt
 Hop larger than window size: `k > w`. Some input elements are skipped.
 
 ```rql
-SELECT * \
-STREAM sampled \
-FROM src@(3,1)
+SELECT * STREAM sampled FROM src@(3,1)
 ```
 
 Output interval: `1s × 3 / 1 = 3s`. Output records:
@@ -89,9 +81,7 @@ Use cases: signal decimation, sample-rate reduction, diagnostics on every Nth me
 A negative `w` value reverses the order of fields in the output record, while keeping the same window size.
 
 ```rql
-SELECT * \
-STREAM mirrored \
-FROM src@(2,-2)
+SELECT * STREAM mirrored FROM src@(2,-2)
 ```
 
 Output interval: `1s × 2 / 1 = 2s`. Output records (fields in reversed order):

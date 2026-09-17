@@ -45,7 +45,7 @@ reduction result with `SELECT *`, or — when further computation is needed — 
 reducer as a separate stream:
 
 ```rql
-SELECT * STREAM m FROM AVG(src)
+SELECT *      STREAM m FROM AVG(src)
 SELECT m[0]*2 STREAM o FROM m
 ```
 
@@ -111,7 +111,7 @@ An excerpt from the signal-filter implementation example:
 
 ```rql
 SELECT source[_] * filter[_] STREAM accRow FROM source@(1,25)+filter
-SELECT accRow[0] STREAM output FROM SUMC(accRow)
+SELECT accRow[0]             STREAM output FROM SUMC(accRow)
 ```
 
 The window appears directly in `FROM`, so it does not require a separate query. `source[_]` expands according to the 25 slots contributed to the input record by `source@(1,25)`. `SUMC(accRow)` sums all fields of the `accRow` record — the products of signal samples and filter coefficients — producing the output of an FIR filter.
@@ -144,7 +144,8 @@ It may be combined with literals, other fields, arithmetic operators, and scalar
 
 ```rql
 SELECT 2*MIN(a : 5)+1, null2zero(AVG(a+b : 5))-10 \
-STREAM transformed FROM src
+STREAM transformed \
+FROM src
 ```
 
 Only nesting a history aggregate inside another history aggregate is forbidden. `width` is
@@ -158,7 +159,8 @@ startup tail is inherited from the source.
 DECLARE a INTEGER, b INTEGER STREAM src, 1 FILE 'data.txt'
 
 SELECT MIN(a : 5), MAX(a : 5), AVG(a+b : 5), SUMC(a : 5) \
-STREAM stats FROM src
+STREAM stats \
+FROM src
 ```
 
 Several aggregates over the same expression, source, and width share one history scan.
@@ -191,7 +193,7 @@ separate stream for every channel:
 ```rql
 DECLARE value INTEGER[24] STREAM sensors, 1/10 FILE 'sensors.txt'
 
-SELECT * STREAM row_min FROM MIN(sensors)
+SELECT *                    STREAM row_min      FROM MIN(sensors)
 SELECT MIN(row_min[0] : 10) STREAM interval_min FROM row_min
 ```
 
@@ -207,7 +209,7 @@ completed window stream with `-` in a second node:
 
 ```rql
 SELECT MIN(a : 5) STREAM sliding FROM src
-SELECT * STREAM hopping FROM sliding - 2
+SELECT *          STREAM hopping FROM sliding - 2
 ```
 
 The argument of `-` is the target output interval. For hop H over a source interval

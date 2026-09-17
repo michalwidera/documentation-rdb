@@ -19,9 +19,7 @@ At present, RetractorDB supports the following data types:
 An example of type promotion in practice — the `scaled` query from the chapter [Underscore Symbol Processing](underscore-symbol-processing.md):
 
 ```rql
-SELECT core0[_] * core1[_] \
-STREAM scaled \
-FROM core0 + core1
+SELECT core0[_] * core1[_] STREAM scaled FROM core0 + core1
 ```
 
 `core0` has fields BYTE and INTEGER, `core1` has fields INTEGER and FLOAT. After expanding `_`, the compiler determines the output fields' types:

@@ -48,10 +48,7 @@ STORAGE 'temp'
 DECLARE a INTEGER STREAM core0, 1 FILE 'datafile1.txt'
 SELECT str1[0] STREAM str1 FROM core0
 
-RULE anomaly_log \
-ON str1 \
-WHEN str1[0] > 24 \
-DO DUMP -3 TO 3
+RULE anomaly_log ON str1 WHEN str1[0] > 24 DO DUMP -3 TO 3
 ```
 
 Input data — numbers from 20 to 28:
@@ -91,10 +88,7 @@ STORAGE 'temp'
 DECLARE a INTEGER STREAM core0, 1 FILE 'datafile1.txt'
 SELECT str1[0] STREAM str1 FROM core0
 
-RULE anomaly_log \
-ON str1 \
-WHEN str1[0] > 24 \
-DO DUMP -3 TO 3 RETENTION 5
+RULE anomaly_log ON str1 WHEN str1[0] > 24 DO DUMP -3 TO 3 RETENTION 5
 ```
 
 Each trigger creates the next file (circular rotation):
@@ -129,10 +123,7 @@ ON str1 \
 WHEN str1[0] > 26 \
 DO SYSTEM 'echo "ALARM: value above upper threshold" >> alarm.log'
 
-RULE context_log \
-ON str1 \
-WHEN str1[0] > 26 \
-DO DUMP -5 TO 5 RETENTION 10
+RULE context_log ON str1 WHEN str1[0] > 26 DO DUMP -5 TO 5 RETENTION 10
 ```
 
 The `upper_threshold` and `context_log` rules react to the same condition independently — crossing the upper threshold both writes a log entry and captures the data window at the same time. The `lower_threshold` rule handles the lower threshold separately.

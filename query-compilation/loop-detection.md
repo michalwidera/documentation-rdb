@@ -7,17 +7,13 @@ The query dependency graph must be a directed acyclic graph (DAG). If a query re
 ## Example of a loop
 
 ```rql
-DECLARE a BYTE, b INTEGER \
-STREAM core0, 0.1 \
-FILE 'sensor_a.txt'
+DECLARE a BYTE, b INTEGER STREAM core0, 0.1 FILE 'sensor_a.txt'
 
-DECLARE c INTEGER, d FLOAT \
-STREAM core1, 0.2 \
-FILE 'sensor_b.txt'
+DECLARE c INTEGER, d FLOAT STREAM core1, 0.2 FILE 'sensor_b.txt'
 
 SELECT merged[0]*10, merged[2]+10 STREAM merged FROM core0 + core1
-SELECT * STREAM agg FROM MAX(merged)
-SELECT * STREAM broken FROM merged + broken
+SELECT *                          STREAM agg    FROM MAX(merged)
+SELECT *                          STREAM broken FROM merged + broken
 ```
 
 The last query defines `broken` as the result of the operation `merged + broken` — the stream depends on itself. The dependency graph contains a cycle (Fig. 41):

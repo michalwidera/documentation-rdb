@@ -10,9 +10,7 @@ The example uses the canonical declarations used throughout the chapter — `cor
 DECLARE a BYTE, b INTEGER   STREAM core0, 0.1 FILE 'sensor_a.txt'
 DECLARE c INTEGER, d FLOAT  STREAM core1, 0.2 FILE 'sensor_b.txt'
 
-SELECT core0[_] * core1[_] \
-STREAM scaled \
-FROM core0 + core1
+SELECT core0[_] * core1[_] STREAM scaled FROM core0 + core1
 ```
 
 After compiling:
@@ -32,15 +30,15 @@ DECLARE value INTEGER STREAM src, 1/500 FILE 'data.txt'
 DECLARE coef INTEGER[5] STREAM filter, 1 FILE 'coef.txt'
 
 SELECT src[_] * filter[_] STREAM products FROM src@(1,5)+filter
-SELECT products[0] STREAM output FROM SUMC(products)
+SELECT products[0]        STREAM output   FROM SUMC(products)
 ```
 
 The first query expands into five products. It is equivalent to the longer form:
 
 ```rql
-SELECT * STREAM window FROM src@(1,5)
+SELECT *                     STREAM window   FROM src@(1,5)
 SELECT window[_] * filter[_] STREAM products FROM window+filter
-SELECT products[0] STREAM output FROM SUMC(products)
+SELECT products[0]           STREAM output   FROM SUMC(products)
 ```
 
 In the shorter form, the compiler extracts the window from `FROM` as a substrate. Such a compiler-generated substrate is transparent when determining the width contributed by `src`. A user-named stream such as `window`, however, is a schema boundary, so the longer form refers to `window[_]`, not `src[_]`.
@@ -68,8 +66,8 @@ After interleaving, positions `A[k]` and `B[k]` are the same position in the sha
 To process an interleaved record with `_`, name the interleave first and then refer to that result:
 
 ```rql
-SELECT * STREAM interleaved FROM A#B
-SELECT interleaved[_] * 2 STREAM scaled FROM interleaved
+SELECT *                  STREAM interleaved FROM A#B
+SELECT interleaved[_] * 2 STREAM scaled      FROM interleaved
 ```
 
 Recovering a particular component requires the de-interleave operator `&` or `%`.

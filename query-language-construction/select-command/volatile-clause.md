@@ -11,8 +11,8 @@ explicit policy and for compiler-generated substrates. It replaces repeated
 ```rql
 DEFAULT VOLATILE
 DECLARE a INTEGER STREAM sensor, 0.1 FILE '/dev/sensor0'
-SELECT sensor[0]*100 STREAM scaled FROM sensor
-SELECT scaled[0] STREAM history FROM scaled PERSISTENT
+SELECT sensor[0]*100 STREAM scaled  FROM sensor
+SELECT scaled[0]     STREAM history FROM scaled PERSISTENT
 ```
 
 `scaled` stays in memory, while `history` writes data to disk using the usual

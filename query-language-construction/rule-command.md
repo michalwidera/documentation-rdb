@@ -39,10 +39,7 @@ The DO SYSTEM clause allows a system event to be triggered once the logical cond
 Examples of rule declarations in RQL:
 
 ```rql
-RULE testrule1 \
-ON str1 \
-WHEN str1[0] > 11 \
-DO DUMP -5 TO 5 RETENTION 100
+RULE testrule1 ON str1 WHEN str1[0] > 11 DO DUMP -5 TO 5 RETENTION 100
 
 RULE testrule2 \
 ON str1 \
@@ -112,10 +109,7 @@ Any program available on `PATH` can be used in the command: shell scripts, Pytho
 The `DO DUMP` action writes a window of stream samples to a binary file the moment the condition is satisfied. It lets you preserve the context of an event: data before it occurred and data after it.
 
 ```rql
-RULE event \
-ON results \
-WHEN results[0] > 500 \
-DO DUMP -10 TO 5
+RULE event ON results WHEN results[0] > 500 DO DUMP -10 TO 5
 ```
 
 Range parameters:
@@ -147,10 +141,7 @@ The file format is raw binary data matching the stream descriptor (no header). T
 The `RETENTION <n>` parameter limits the number of stored dumps — the oldest file is overwritten by the new one (a circular buffer). Without `RETENTION`, every trigger overwrites a single `_dump.tmp` file.
 
 ```rql
-RULE event \
-ON results \
-WHEN results[0] > 500 \
-DO DUMP -10 TO 5 RETENTION 20
+RULE event ON results WHEN results[0] > 500 DO DUMP -10 TO 5 RETENTION 20
 ```
 
 The example above keeps the last 20 dumps in files `results_event_dump_0.tmp` … `results_event_dump_19.tmp`.

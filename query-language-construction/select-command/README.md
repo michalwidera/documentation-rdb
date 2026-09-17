@@ -27,9 +27,7 @@ The first difference, beyond syntax, is that once entered into the system, these
 An example of a query creating a new data stream might be the following RQL command.
 
 ```rql
-SELECT str1[0]*10 + str1[1]*10, str1[2] \
-STREAM str1 \
-FROM A+B
+SELECT str1[0]*10 + str1[1]*10, str1[2] STREAM str1 FROM A+B
 ```
 
 A query built this way assumes that someone has declared streams A and B. This could have been done with the DECLARE keyword or with another SELECT command. Based solely on the line containing the query, we cannot tell how fast the data of stream str1 arrives. This information is computed at compile time, based on streams A and B and the algebraic expression in the FROM clause.
@@ -42,7 +40,7 @@ An optional size after the name in the `STREAM` clause expands one template into
 DECLARE cell INTEGER[4] STREAM cells, 1/10 FILE 'cells.txt'
 
 SELECT cells[$] STREAM cell[4] FROM cells
-SELECT * STREAM grouped FROM cell[0]#cell[1]#cell[2]#cell[3]
+SELECT *        STREAM grouped FROM cell[0]#cell[1]#cell[2]#cell[3]
 ```
 
 The first `SELECT` creates the physical streams `cell$0`, `cell$1`, `cell$2`, and `cell$3`. A reference such as `cell[2]` in the `FROM` clause denotes instance `cell$2`; in a `SELECT`-list expression, `cells[2]` still denotes field index 2.
@@ -64,7 +62,7 @@ be written once and applied independently to every input channel:
 DECLARE sample INTEGER[8] STREAM samples, 1/1000 FILE 'samples.txt'
 
 SELECT sample[$]^2 STREAM square[8] FROM samples
-SELECT * STREAM energy[8] FROM SUMC(square[$]@(25,100))
+SELECT *           STREAM energy[8] FROM SUMC(square[$]@(25,100))
 ```
 
 This creates eight pairs of `square$N` and `energy$N` streams, one per channel. The `$`
