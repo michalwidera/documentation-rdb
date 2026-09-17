@@ -28,7 +28,7 @@ The whole report is framed with box-drawing characters. The top part is a three-
 ├────────────┼───────────────┼─────────────────────────────────┤
 │ ...        │ ...           │ ...                             │
 ├────────────┴───────────────┴─────────────────────────────────┤
-│   SECTION  ...                                                │
+│   SECTION  ...                                               │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -90,16 +90,16 @@ $ xtrdb -s measurement
 │   FLOAT  value                                           4 B │
 │   Record size:                                           8 B │
 ├──────────────────────────────────────────────────────────────┤
-│   DATA        measurement                               800 B │
+│   DATA        measurement                              800 B │
 │   Records: 100                                               │
 ├──────────────────────────────────────────────────────────────┤
-│   META        measurement.meta                           26 B │
+│   META        measurement.meta                          26 B │
 │   Segments: 1   Records: 100                                 │
 │   [==========================100===========================] │
 │   Legend: [====] data  [----] partial null                   │
 │           [~~~~] nullfill  [XXXX] gap                        │
 ├──────────────────────────────────────────────────────────────┤
-│   SHADOW      measurement.shadow (missing)                0 B │
+│   SHADOW      measurement.shadow (missing)               0 B │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -134,7 +134,7 @@ $ xtrdb -s sensor
 │            │               │ [XXXX] 10 records, gap          │
 │ 2 updates  │ 50-80         │ [----] 30 records, some nulls   │
 ├────────────┴───────────────┴─────────────────────────────────┤
-│   DESCRIPTOR  sensor.desc                                52 B │
+│   DESCRIPTOR  sensor.desc                               52 B │
 │   INTEGER  ts                                            4 B │
 │   FLOAT  temp                                            4 B │
 │   FLOAT  pressure                                        4 B │
@@ -143,13 +143,13 @@ $ xtrdb -s sensor
 │   DATA        sensor                                   960 B │
 │   Records: 80                                                │
 ├──────────────────────────────────────────────────────────────┤
-│   META        sensor.meta                                60 B │
+│   META        sensor.meta                               60 B │
 │   Segments: 3   Records: 80                                  │
 │   [===========50===========][XXgap:10XX][-------30---------] │
 │   Legend: [====] data  [----] partial null                   │
 │           [~~~~] nullfill  [XXXX] gap                        │
 ├──────────────────────────────────────────────────────────────┤
-│   SHADOW      sensor.shadow                              26 B │
+│   SHADOW      sensor.shadow                             26 B │
 │   Updates: 2                                                 │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -184,7 +184,7 @@ $ xtrdb -s buffer
 │ s1         │ s1 100-200    │ [====] 100 records, no nulls    │
 │ s2         │ s2 200-280    │ [====] 80 records, no nulls     │
 ├────────────┴───────────────┴─────────────────────────────────┤
-│   DESCRIPTOR  buffer.desc                                48 B │
+│   DESCRIPTOR  buffer.desc                               48 B │
 │   DOUBLE  value                                          8 B │
 │   Record size:                                           8 B │
 ├──────────────────────────────────────────────────────────────┤
@@ -192,7 +192,7 @@ $ xtrdb -s buffer
 │   Records: 280                                               │
 │   Source: buffer   Segments: buffer_segment_*                │
 │   Segmented data (RETENTION): 3                              │
-│   Policy: segments=10 capacity=100                            │
+│   Policy: segments=10 capacity=100                           │
 │   Retention cap records: 1000                                │
 │   Retention cap bytes: 8000                                  │
 │   Total records: 280                                         │
@@ -203,13 +203,13 @@ $ xtrdb -s buffer
 │     [1] buffer_segment_1 rec:100 range:100-200               │
 │     [2] buffer_segment_2 rec:80 range:200-280                │
 ├──────────────────────────────────────────────────────────────┤
-│   META        buffer.meta                                26 B │
+│   META        buffer.meta                               26 B │
 │   Segments: 1   Records: 280                                 │
 │   [=========================280===========================]  │
 │   Legend: [====] data  [----] partial null                   │
 │           [~~~~] nullfill  [XXXX] gap                        │
 ├──────────────────────────────────────────────────────────────┤
-│   SHADOW      buffer.shadow (missing)                     0 B │
+│   SHADOW      buffer.shadow (missing)                    0 B │
 └──────────────────────────────────────────────────────────────┘
 ```
 

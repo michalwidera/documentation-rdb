@@ -86,11 +86,11 @@ $ xtrdb -s measurement
 ├──────────────────────────────────────────────────────────────┤
 │  ROTATED FILES                                               │
 │  [3] measurement.meta.old3                              26 B │
-│  [2] measurement.old2                                   800 B │
-│      measurement.meta.old2                               26 B │
-│  [1] measurement.old1                                   800 B │
-│      measurement.meta.old1                               26 B │
-│  [0] measurement.old0                                   400 B │
+│  [2] measurement.old2                                  800 B │
+│      measurement.meta.old2                              26 B │
+│  [1] measurement.old1                                  800 B │
+│      measurement.meta.old1                              26 B │
+│  [0] measurement.old0                                  400 B │
 └──────────────────────────────────────────────────────────────┘
 ```
 
