@@ -17,7 +17,7 @@ FROM core0 + core1
 
 After compiling:
 
-```
+```rasm
 {{#include ../regen/out/underscore.txt}}
 ```
 

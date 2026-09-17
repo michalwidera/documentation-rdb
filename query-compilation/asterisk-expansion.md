@@ -24,7 +24,7 @@ FROM merged
 
 Let's compile it and see the effect:
 
-```
+```rasm
 {{#include ../regen/out/wildcard.txt}}
 ```
 

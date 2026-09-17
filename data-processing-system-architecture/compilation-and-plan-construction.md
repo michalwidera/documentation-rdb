@@ -28,7 +28,7 @@ $ xretractor -c query.rql
 
 The following system response will be printed on the screen:
 
-```
+```rasm
 {{#include ../regen/out/plan-basic.txt}}
 ```
 

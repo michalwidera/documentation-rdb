@@ -409,6 +409,7 @@ jobs:
             --from markdown+tex_math_double_backslash \
             --syntax-definition=syntaxes/rql.xml \
             --syntax-definition=syntaxes/desc.xml \
+            --syntax-definition=syntaxes/rasm.xml \
             --lua-filter /tmp/codeblock.lua \
             --lua-filter /tmp/callouts.lua \
             --lua-filter /tmp/fix_math.lua \

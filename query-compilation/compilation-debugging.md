@@ -23,13 +23,13 @@ Compilation can be invoked even while another `xretractor` process is already ru
 
 For the canonical `query.rql` from this chapter, the plan looks as follows:
 
-```
+```rasm
 {{#include ../regen/out/debug.txt}}
 ```
 
 Every block has a fixed format:
 
-```
+```rasm
 streamName(delta)
         :- streamOperation(arg)
         outputFieldName: TYPE

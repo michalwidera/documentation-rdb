@@ -22,7 +22,7 @@ FROM core0 + core1
 
 After compilation we get:
 
-```
+```rasm
 {{#include ../regen/out/alias.txt}}
 ```
 

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language name="RASM" version="1" kateversion="5.0" section="Sources" extensions="*.rasm" mimetype="text/x-rql-assembler">
+  <highlighting>
+    <list name="instructions">
+      <item>VOID_COMMAND</item><item>VOID_VALUE</item>
+      <item>PUSH_ID</item><item>PUSH_ID1</item><item>PUSH_ID2</item><item>PUSH_ID3</item>
+      <item>PUSH_ID4</item><item>PUSH_ID5</item><item>PUSH_IDX</item><item>PUSH_VAL</item>
+      <item>PUSH_TSCAN</item><item>TYPE</item>
+      <item>ADD</item><item>SUBTRACT</item><item>MULTIPLY</item><item>DIVIDE</item><item>NEGATE</item>
+      <item>AND</item><item>OR</item><item>NOT</item>
+      <item>CMP_EQUAL</item><item>CMP_LT</item><item>CMP_GT</item><item>CMP_LE</item><item>CMP_GE</item>
+      <item>CMP_NOT_EQUAL</item>
+      <item>STREAM_AVG</item><item>STREAM_MIN</item><item>STREAM_MAX</item><item>STREAM_SUM</item>
+      <item>CALL</item><item>CALL2</item><item>PUSH_STREAM</item><item>STREAM_HASH</item>
+      <item>STREAM_DEHASH_DIV</item><item>STREAM_DEHASH_MOD</item><item>STREAM_ADD</item>
+      <item>STREAM_SUBTRACT</item><item>STREAM_TIMEMOVE</item><item>STREAM_AGSE</item>
+      <item>COUNT</item><item>COUNT_RANGE</item><item>PUSH_GENIDX</item><item>POWER</item>
+      <item>WINDOW_MIN</item><item>WINDOW_MAX</item><item>WINDOW_AVG</item><item>WINDOW_SUM</item>
+      <item>WINDOW</item><item>RULE</item><item>DO</item><item>DUMP</item><item>TO</item>
+      <item>RETENTION</item><item>SYSTEM</item><item>rows</item>
+    </list>
+    <list name="types">
+      <item>BYTE</item><item>INTEGER</item><item>UINT</item><item>RATIONAL</item>
+      <item>FLOAT</item><item>DOUBLE</item><item>INTPAIR</item><item>IDXPAIR</item>
+      <item>STRING</item><item>NULLTYPE</item><item>REF</item><item>RETMEMORY</item><item>TYP</item>
+    </list>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Comment" context="#stay" String="\b(?:tail|origin)=[0-9]+\b"/>
+        <RegExpr attribute="String" context="#stay" String="(?:^|[\t ])[A-Za-z0-9_./$-]+\.(?:txt|dat|bin|rdb|desc|meta)\b"/>
+        <RegExpr attribute="Variable" context="#stay" String="^[A-Za-z_][A-Za-z0-9_$]*(?=\((?:[0-9]+/[0-9]+|delta)\))"/>
+        <RegExpr attribute="Keyword" context="Stream Argument" String="\b(?:PUSH_STREAM|PUSH_ID)(?=\()"/>
+        <keyword attribute="Keyword" context="#stay" String="instructions"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <RegExpr attribute="Constant" context="#stay" String="\b(?:NULL|null)\b"/>
+        <RegExpr attribute="Number" context="#stay" String="\b[0-9]+/[0-9]+\b"/>
+        <Float attribute="Number" context="#stay"/>
+        <Int attribute="Number" context="#stay"/>
+      </context>
+      <context name="Stream Argument" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="Normal Text" context="#stay" char="("/>
+        <RegExpr attribute="Variable" context="#stay" String="[A-Za-z_][A-Za-z0-9_$]*"/>
+        <Int attribute="Number" context="#stay"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=")"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Data Type" defStyleNum="dsDataType"/>
+      <itemData name="Constant" defStyleNum="dsConstant"/>
+      <itemData name="Variable" defStyleNum="dsVariable"/>
+      <itemData name="Number" defStyleNum="dsDecVal"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1"/>
+  </general>
+</language>

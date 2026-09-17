@@ -30,7 +30,7 @@ FROM (core0 # core1) + core2
 
 Compilation:
 
-```
+```rasm
 {{#include ../regen/out/substrate-hash.txt}}
 ```
 
@@ -44,7 +44,7 @@ SELECT merged2[0] STREAM merged2 FROM (core0 # core1) > 2
 
 Only one new query gets attached to the plan:
 
-```
+```rasm
 {{#include ../regen/out/substrate-hash-plus.txt}}
 ```
 
@@ -82,7 +82,7 @@ SELECT shifted[0] STREAM shifted FROM core0 > 2
 
 Without reduction, the compiler would generate three streams: the substrate `STREAM_TIMEMOVE_core0`, `merged`, and `shifted`. The substrate and `shifted` have an identical structure — the same source stream `core0` and the same `>2` operation. After reduction, the substrate is removed, and the reference `PUSH_STREAM(STREAM_TIMEMOVE_core0)` inside `merged` is replaced with `PUSH_STREAM(shifted)`:
 
-```
+```rasm
 {{#include ../regen/out/substrate-shift.txt}}
 ```
 
@@ -101,7 +101,7 @@ SELECT shifted2[0] STREAM shifted2 FROM core0 > 2
 
 The compilation result keeps both streams, with no reduction at all:
 
-```
+```rasm
 shifted1(1/10)
         :- PUSH_STREAM(core0)
         :- STREAM_TIMEMOVE(2)
@@ -399,7 +399,7 @@ SELECT * STREAM merged FROM s3+(s1+s2)
 
 The compiler creates a substrate `STREAM_ADD_s1_s2`. Stream `merged` has two sources: `s3` (offset 0) and the substrate `STREAM_ADD_s1_s2` (offset 1, because s3 occupies position 0). The `buildOutputSchema` function writes the following tokens into `merged.lSchema`:
 
-```
+```rasm
 PUSH_ID(STREAM_ADD_s1_s2, 0)   ← field a from the source at offset 1
 PUSH_ID(STREAM_ADD_s1_s2, 1)   ← field b from the source at offset 1
 ```
@@ -415,7 +415,7 @@ To avoid this discrepancy, after updating the `PUSH_STREAM` tokens, `deduplicate
 
 After the fix, the compiler's output for the example above looks correct:
 
-```
+```rasm
 merged(1/1)
         :- PUSH_STREAM(mysum)
         :- PUSH_STREAM(s3)
