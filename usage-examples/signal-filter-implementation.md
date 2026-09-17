@@ -91,7 +91,6 @@ The initial part of the query.rql file, containing the source declarations for R
 
 ```rql
 DECLARE coef INTEGER[25] STREAM filter, 1 FILE 'filterremez.txt'
-
 DECLARE data BYTE STREAM source, 0.02 FILE '/dev/urandom'
 ```
 
@@ -99,9 +98,7 @@ The next part contains the commands that build the signal-processing pipeline.
 
 ```rql
 SELECT source[_] * filter[_] STREAM accRow FROM source@(1,25)+filter
-
 SELECT accRow[0] STREAM output FROM SUMC(accRow)
-
 SELECT int(output[0]/25/1000),source[0] \
 STREAM outputAll \
 FROM output+source

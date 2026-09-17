@@ -170,9 +170,10 @@ scan. Their results go to `streamInstance::windowValues` and become ordinary ope
 After every `processRows()`, `broadcast(inSet)` is called (`executorsm.cpp`, line \~449) — the algorithm is shown in Fig. 46:
 
 ```mermaid
-%% pdf-width: 50%
+%% pdf-width: 85%
+%% pdf-height: 45%
 %%{init: {"markdownAutoWrap": false}}%%
-flowchart TB
+flowchart LR
     A([inSet]) --> B["printRowValue()<br/>serialize into a Boost property_tree"]
     B --> C{clients<br/>subscribed to<br/>the stream?}
     C -->|yes| D["queue brcdbr&lt;id&gt;<br/>try_send(data)"]
@@ -193,39 +194,17 @@ _Fig. 46. The broadcast algorithm – distributing results via Boost IPC_
 Fig. 47 shows the complete call sequence for four queries A, B, C, D laid out on a time grid with deltas {1/2, 1/3}.
 
 ```mermaid
-sequenceDiagram
-    participant TL as TimeLine
-    participant ES as executorsm
-    participant DM as dataModel
-    participant IPC as Boost IPC
-
-    ES->>DM: processZeroStep()
-    DM->>DM: A: revRead(0) → fire() [armed]
-    ES->>IPC: broadcast({A})
-
-    TL-->>ES: nextSlot = 1/3
-    ES->>DM: processRows({B})
-    DM->>DM: Pass 1: B → input(A) → windows → output → write()
-    DM->>DM: Pass 2: A → flux → revRead(0) → fire()
-    ES->>IPC: broadcast({B})
-
-    TL-->>ES: nextSlot = 1/2
-    ES->>DM: processRows({C})
-    DM->>DM: Pass 1: C → input(B) → windows → output → write()
-    DM->>DM: Pass 2: A → flux → revRead(0) → fire()
-    ES->>IPC: broadcast({C})
-
-    TL-->>ES: nextSlot = 2/3
-    ES->>DM: processRows({B})
-    DM->>DM: Pass 1: B → input(A) → output → write()
-    DM->>DM: Pass 2: A → flux → revRead(0) → fire()
-    ES->>IPC: broadcast({B})
-
-    TL-->>ES: nextSlot = 1
-    ES->>DM: processRows({B, C, D})
-    DM->>DM: Pass 1 (topologically): B → C → D
-    DM->>DM: Pass 2: A → flux → revRead(0) → fire()
-    ES->>IPC: broadcast({B, C, D})
+%% pdf-width: 85%
+%% pdf-height: 45%
+%%{init: {"markdownAutoWrap": false}}%%
+block-beta
+    columns 3
+    Z["1. t = 0<br/>ES → DM: processZeroStep()<br/>DM: A → revRead(0) → fire() [armed]<br/>ES → IPC: broadcast({A})"]
+    T13["2. t = 1/3<br/>ES → DM: processRows({B})<br/>Pass 1: B → input(A) → windows → output → write()<br/>Pass 2: A → flux → revRead(0) → fire()<br/>ES → IPC: broadcast({B})"]
+    T12["3. t = 1/2<br/>ES → DM: processRows({C})<br/>Pass 1: C → input(B) → windows → output → write()<br/>Pass 2: A → flux → revRead(0) → fire()<br/>ES → IPC: broadcast({C})"]
+    T23["4. t = 2/3<br/>ES → DM: processRows({B})<br/>Pass 1: B → input(A) → output → write()<br/>Pass 2: A → flux → revRead(0) → fire()<br/>ES → IPC: broadcast({B})"]
+    T1["5. t = 1<br/>ES → DM: processRows({B, C, D})<br/>Pass 1 (topologically): B → C → D<br/>Pass 2: A → flux → revRead(0) → fire()<br/>ES → IPC: broadcast({B, C, D})"]
+    space:1
 ```
 
 _Fig. 47. Full execution example for queries A, B, C, D with deltas {1/2, 1/3}_

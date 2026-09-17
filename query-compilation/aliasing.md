@@ -8,7 +8,6 @@ The example uses the canonical declarations used throughout the chapter:
 
 ```rql
 DECLARE a BYTE, b INTEGER STREAM core0, 0.1 FILE 'sensor_a.txt'
-
 DECLARE c INTEGER, d FLOAT STREAM core1, 0.2 FILE 'sensor_b.txt'
 
 SELECT merged[0], merged[2], core0[0], core1[0] \
@@ -63,9 +62,12 @@ Windows and reducers change the slot count: `core0@(1,3)` contributes three slot
 Example messages:
 
 ```
-Check result:Stream 'merged': stream 'core1' has 2 element(s) in its FROM clause, so 'core1[2]' is out of range
-Check result:Stream 'merged': the FROM record of 'merged' has 4 element(s), so 'merged[4]' is out of range
-Check result:Stream 'merged': rule 'alarm' reads the record of 'merged', which has 4 element(s), so 'merged[4]' is out of range
+Check result:Stream 'merged': stream 'core1' has 2 element(s)
+  in its FROM clause, so 'core1[2]' is out of range
+Check result:Stream 'merged': the FROM record of 'merged'
+  has 4 element(s), so 'merged[4]' is out of range
+Check result:Stream 'merged': rule 'alarm' reads the record of 'merged',
+  which has 4 element(s), so 'merged[4]' is out of range
 ```
 
 An index folded from `$` in a stream generator goes through the same check and produces the same message as a hand-written index.

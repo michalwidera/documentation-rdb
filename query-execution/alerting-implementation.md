@@ -108,23 +108,13 @@ After registration, the task goes into the `bookOfTasks[streamName]` queue. On e
 The full sequence for `DUMP -3 TO 2` is shown in Fig. 51.
 
 ```mermaid
+%% pdf-width: 85%
+%% pdf-height: 45%
 %%{init: {"markdownAutoWrap": false}}%%
-sequenceDiagram
-    participant SI as streamInstance
-    participant DM as dumpManager
-
-    note over SI: Sample t — condition TRUE
-    SI->>DM: registerTask(stream, {-3, 2, retention=0})
-    DM->>DM: Open file dump.tmp
-    DM->>DM: Write t-3, t-2, t-1 (history)
-    DM->>DM: dumpedRecordsToGo = 2
-    SI->>DM: processStreamChunk(stream)
-    DM->>DM: Write t → dumpedRecordsToGo = 1
-
-    note over SI: Sample t+1
-    SI->>DM: processStreamChunk(stream)
-    DM->>DM: Write t+1 → dumpedRecordsToGo = 0
-    DM->>DM: Close the file — task complete
+block-beta
+    columns 2
+    T["1. Sample t — condition TRUE<br/>streamInstance → dumpManager: registerTask(stream, {-3, 2, retention=0})<br/>dumpManager: open file dump.tmp<br/>dumpManager: write t-3, t-2, t-1 (history)<br/>dumpedRecordsToGo = 2<br/>streamInstance → dumpManager: processStreamChunk(stream)<br/>dumpManager: write t → dumpedRecordsToGo = 1"]
+    T1["2. Sample t+1<br/>streamInstance → dumpManager: processStreamChunk(stream)<br/>dumpManager: write t+1 → dumpedRecordsToGo = 0<br/>dumpManager: close the file — task complete"]
 ```
 
 _Fig. 51. Data-collection sequence for DO DUMP –3 TO 2_

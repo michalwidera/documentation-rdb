@@ -32,11 +32,9 @@ The file `avg.rql`:
 DECLARE temp INTEGER STREAM sensor, 1 FILE 'temp.txt'
 
 SELECT *           STREAM window5 FROM sensor@(1,5)
-
 SELECT window5[0]+window5[1]+window5[2]+window5[3]+window5[4] \
 STREAM sumRow \
 FROM window5
-
 SELECT sumRow[0]/5 STREAM avg5    FROM sumRow
 ```
 

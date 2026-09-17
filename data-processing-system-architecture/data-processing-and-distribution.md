@@ -10,7 +10,6 @@ We'll change the source query.rql file to the following:
 
 ```rql
 DECLARE a INTEGER STREAM core0, 0.1 FILE 'datafile1.txt'
-
 DECLARE a BYTE STREAM core1, 0.2 FILE '/dev/urandom'
 
 SELECT str1[0], str1[0] + str1[1]/20 STREAM str1 FROM core0 + core1
@@ -118,4 +117,4 @@ After issuing this command, the xretractor process will shut down and interrupt 
 
 A recording of the process shown on screen (Fig. 31) looks as follows:
 
-<figure><img src="../assets/simple-record.gif" width="100%" alt=""><figcaption><p>Fig. 31. Recording of real-time data processing</p></figcaption></figure>
+<figure><img src="../assets/simple-record.gif" width="100%" data-pdf-width="58%" alt=""><figcaption><p>Fig. 31. Recording of real-time data processing</p></figcaption></figure>

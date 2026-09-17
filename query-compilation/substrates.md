@@ -12,9 +12,7 @@ The example uses the canonical declarations from the whole chapter — three str
 
 ```rql
 DECLARE a BYTE, b INTEGER STREAM core0, 0.1 FILE 'sensor_a.txt'
-
 DECLARE c INTEGER, d FLOAT STREAM core1, 0.2 FILE 'sensor_b.txt'
-
 DECLARE e INTEGER STREAM core2, 0.3 FILE 'sensor_c.txt'
 
 SELECT merged[0] STREAM merged FROM (core0 # core1) + core2
@@ -149,7 +147,6 @@ Input order is also observable through a full scan and through projection order.
 ```rql
 SELECT *          STREAM d1 FROM a+b
 SELECT *          STREAM d2 FROM b+a
-
 SELECT a[0], b[1] STREAM n1 FROM a+b
 SELECT b[1], a[0] STREAM n2 FROM b+a
 ```

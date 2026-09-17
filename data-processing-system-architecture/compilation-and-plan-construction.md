@@ -38,7 +38,7 @@ $ xretractor -c -d -f -t -s query.rql > out.dot && dot -Tsvg out.dot -o out.svg
 
 Assuming you have the dot program from the graphviz package installed in your runtime environment, this command will generate an image file showing the system's response in the form of a graph.
 
-<figure><img src="../assets/graf_plan_zapytania.svg" alt=""><figcaption><p>Fig. 27. Graphical representation of a query plan</p></figcaption></figure>
+<figure><img src="../assets/graf_plan_zapytania.svg" data-pdf-width="60%" alt=""><figcaption><p>Fig. 27. Graphical representation of a query plan</p></figcaption></figure>
 
 RetractorDB can generate an image in response to one of the requested data-processing chains. The graphical presentation is most suitable for creating and presenting data-processing graphs. Unfortunately, readability suffers for very complex schemas.
 
