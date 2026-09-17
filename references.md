@@ -26,9 +26,9 @@
 
 13\. M. A. Berger, A. Felzenbaum and A. S. Fraenkel, "Disjoint covering systems of rational Beatty sequences" Journal of Combinatorial Theory, Series A, vol. 42, no. 1, pp. 150-153, 1986.
 
-14\. D. Eppstein et al., "Aperiodic pinwheel scheduling using Beatty sequences" — a discussion of the periodic-scheduling problem based on complementary Beatty sequences, 2023. ([link](https://11011110.github.io/blog/2023/11/19/aperiodic-pinwheel-scheduling.html))
+14\. D. Eppstein et al., "Aperiodic pinwheel scheduling using Beatty sequences" - a discussion of the periodic-scheduling problem based on complementary Beatty sequences, 2023. ([link](https://11011110.github.io/blog/2023/11/19/aperiodic-pinwheel-scheduling.html))
 
-15\. H. Fujiwara, K. Miyagi and K. Ouchi, "Pinwheel Scheduling with Real Periods" arXiv:2510.24068, 2025 — proofs based on the Rayleigh/Beatty partition, with identities on floor and ceiling functions. ([html](https://arxiv.org/html/2510.24068))
+15\. H. Fujiwara, K. Miyagi and K. Ouchi, "Pinwheel Scheduling with Real Periods" arXiv:2510.24068, 2025 - proofs based on the Rayleigh/Beatty partition, with identities on floor and ceiling functions. ([html](https://arxiv.org/html/2510.24068))
 
 16\. S. Samadi, M. O. Ahmad and M. N. S. Swamy, "Characterization of nonuniform perfect-reconstruction filterbanks using unit-step signal" IEEE Transactions on Signal Processing, vol. 52, no. 9, pp. 2490-2499, 2004. ([link](https://ieeexplore.ieee.org/document/1323257/))
 

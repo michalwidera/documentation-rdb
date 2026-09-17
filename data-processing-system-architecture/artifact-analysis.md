@@ -12,7 +12,7 @@ To present the artifact-analysis process, the entire processing chain needs to b
 $ xretractor -m 10 query.rql
 ```
 
-A query-processing run invoked this way will finish after 10 processing cycles. The `-m` parameter specifies the number of iterations of the main loop, not the number of seconds — the running time depends on the interval of the source streams. For streams with a 0.1 s interval (10 Hz), this means \~1 second of runtime. After it finishes, and we look at the directory in which we ran the query, we should see the following files:
+A query-processing run invoked this way will finish after 10 processing cycles. The `-m` parameter specifies the number of iterations of the main loop, not the number of seconds - the running time depends on the interval of the source streams. For streams with a 0.1 s interval (10 Hz), this means \~1 second of runtime. After it finishes, and we look at the directory in which we ran the query, we should see the following files:
 
 ```
 $ ls -al
@@ -77,7 +77,7 @@ $ cat core1.desc
 
 Metadata description files are created automatically the moment an object is registered in RetractorDB. Remember to delete these descriptors if you modify the query.rql file.
 
-Once the xtrdb program is started in a terminal, the tool displays a dot (`.`) as its prompt. This character is just a prompt — it is not part of the command. You can start interacting with the tool right away. Example session:
+Once the xtrdb program is started in a terminal, the tool displays a dot (`.`) as its prompt. This character is just a prompt - it is not part of the command. You can start interacting with the tool right away. Example session:
 
 ```
 $ xtrdb
@@ -92,13 +92,13 @@ ok
 .quit
 ```
 
-Working with this tool feels like working with a classic, old-school dbase database. There's no state machine here, no loops or conditions — just reading and modifying binary files described by metadata.
+Working with this tool feels like working with a classic, old-school dbase database. There's no state machine here, no loops or conditions - just reading and modifying binary files described by metadata.
 
-The main goal of this tool was to support the creation of test scripts. RetractorDB is deterministic. The system has no race conditions — data that arrives on the input should always produce the same results on the output. Unless, of course, we mix in random data, as in the example shown here.
+The main goal of this tool was to support the creation of test scripts. RetractorDB is deterministic. The system has no race conditions - data that arrives on the input should always produce the same results on the output. Unless, of course, we mix in random data, as in the example shown here.
 
 > **_NOTE:_** The functionality described here is covered by the tests: `issue113_meta_xtrdb`, `issue113_meta`, `issue113_null_txtsrc`, `Pattern5`, described in the appendix [Integration Tests](../appendices/integration-tests.md).
 
-A very useful feature of this tool is the `list` and `rlist` functions — listing the initial elements of a file, or the final elements of a file, respecting the structure described in the metadata.
+A very useful feature of this tool is the `list` and `rlist` functions - listing the initial elements of a file, or the final elements of a file, respecting the structure described in the metadata.
 
 ```
 .list 4

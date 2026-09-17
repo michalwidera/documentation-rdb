@@ -40,9 +40,9 @@ SELECT sumRow[0]/5 STREAM avg5    FROM sumRow
 
 ### What each query does
 
-1. `sensor@(1,5)` — creates a sliding 5-element window. Every `window5` record contains the 5 most recent temperature readings. Output interval: `1s / 1 × 1 = 1s` (hop=1, W=1 field).
-2. Sum of the five fields — a classic `SELECT` over the fields `window5[0]`..`window5[4]`.
-3. Dividing the sum by 5 — the result is the moving average.
+1. `sensor@(1,5)` - creates a sliding 5-element window. Every `window5` record contains the 5 most recent temperature readings. Output interval: `1s / 1 × 1 = 1s` (hop=1, W=1 field).
+2. Sum of the five fields - a classic `SELECT` over the fields `window5[0]`..`window5[4]`.
+3. Dividing the sum by 5 - the result is the moving average.
 
 ## Running it
 
@@ -61,7 +61,7 @@ Example output (the window fills up after the first 5 samples):
 50
 ```
 
-The value `30` corresponds to the average of the first full window: `(10+15+20+25+30)/5 = 20`... note — RetractorDB does not show partial windows, so the first result to appear corresponds to the moment the window is fully saturated with data.
+The value `30` corresponds to the average of the first full window: `(10+15+20+25+30)/5 = 20`... note - RetractorDB does not show partial windows, so the first result to appear corresponds to the moment the window is fully saturated with data.
 
 ## Verifying the query plan
 
@@ -69,7 +69,7 @@ The value `30` corresponds to the average of the first full window: `(10+15+20+2
 $ xretractor -c avg.rql -f -p -d > out.dot && dot -Tsvg out.dot -o out.svg
 ```
 
-In the generated plan you can see the chain: `sensor → window5 → sumRow → avg5`. The key node is `sensor@(1,5)` — from a single-element stream arriving every second, a five-element stream is produced, continuously sliding.
+In the generated plan you can see the chain: `sensor → window5 → sumRow → avg5`. The key node is `sensor@(1,5)` - from a single-element stream arriving every second, a five-element stream is produced, continuously sliding.
 
 ## The relationship between window parameters and delay
 

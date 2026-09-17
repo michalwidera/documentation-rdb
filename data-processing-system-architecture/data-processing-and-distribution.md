@@ -1,6 +1,6 @@
 # Data Processing and Distribution
 
-Starting the data-processing process and analyzing the diagram shown in Fig. 14, we can identify the following flow — Fig. 28:
+Starting the data-processing process and analyzing the diagram shown in Fig. 14, we can identify the following flow - Fig. 28:
 
 <figure><img src="../assets/schemat_przeplywu_przetwarzanie.svg" width="100%" alt=""><figcaption><p>Fig. 28. Control-flow diagram of the processing workflow</p></figcaption></figure>
 
@@ -74,7 +74,7 @@ $ xqry -s str1
 27 28
 ```
 
-The first column contains the sequence of numbers — exactly as we entered them into the datafile1.txt file. The second column contains the result of processing. A value taken from the pseudo-random number generator, divided by 20, is added — the second column flows along beneath the first.
+The first column contains the sequence of numbers - exactly as we entered them into the datafile1.txt file. The second column contains the result of processing. A value taken from the pseudo-random number generator, divided by 20, is added - the second column flows along beneath the first.
 
 How can we see this graphically? I suggest running the following command:
 
@@ -86,7 +86,7 @@ The following window will appear on screen, with data streaming in live:
 
 <figure><img src="../assets/gnuplot_dane_realtime.png" alt=""><figcaption><p>Fig. 30. Snapshot of the gnuplot window showing incoming data</p></figcaption></figure>
 
-In Fig. 30 we see what the data represented numerically looks like. The sawtooth shape is the first column; the irregular shape wrapping around the sawtooth is the second column. The figure shows a static snapshot — but in the actual window, this data streams in and the picture updates continuously.
+In Fig. 30 we see what the data represented numerically looks like. The sawtooth shape is the first column; the irregular shape wrapping around the sawtooth is the second column. The figure shows a static snapshot - but in the actual window, this data streams in and the picture updates continuously.
 
 A typical way to send data outside the machine on which xretractor and xqry are running is to use the command:
 

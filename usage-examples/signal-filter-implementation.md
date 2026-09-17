@@ -138,7 +138,7 @@ On screen we should see the following chart, running from left to right, continu
 
 <figure><img src="../assets/gnuplot_filtracja_sygnalu.png" alt=""><figcaption><p>Fig. 58. Signal filtering carried out inside RetractorDB</p></figcaption></figure>
 
-In Fig. 58 we see two charts overlaid on each other. The more erratic one — shown on screen as a blue line with a lot of variability — is the visualization of the input signal. Data taken from the pseudo-random number generator at a rate of 50 samples per second. And the second chart, wrapping around the input data — shown on screen in red, smoother, flowing around it — is exactly the data filtered by the signal filter we built. A signal whose passband has been restricted to 0–2Hz (low frequencies) and stopped in the region of 5–25Hz (high frequencies). Figuratively speaking, we've isolated the bass line.
+In Fig. 58 we see two charts overlaid on each other. The more erratic one - shown on screen as a blue line with a lot of variability - is the visualization of the input signal. Data taken from the pseudo-random number generator at a rate of 50 samples per second. And the second chart, wrapping around the input data - shown on screen in red, smoother, flowing around it - is exactly the data filtered by the signal filter we built. A signal whose passband has been restricted to 0–2Hz (low frequencies) and stopped in the region of 5–25Hz (high frequencies). Figuratively speaking, we've isolated the bass line.
 
 Keep in mind that, on screen, this chart scrolls to the right very quickly, showcasing the current data-processing capabilities carried out in RetractorDB.
 

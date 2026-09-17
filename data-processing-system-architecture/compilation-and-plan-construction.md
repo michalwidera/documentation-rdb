@@ -1,6 +1,6 @@
 # Compilation and Plan Construction
 
-The compilation process happens before every run of the xretractor process, provided a file with a sequence of commands and queries was given. That argument is required in `-c` mode (compile only) — without it there is nothing to compile; in processing mode, omitting it starts [idle mode](architecture-overview.md), where the compilation stage is skipped entirely. Based on the flow shown in Fig. 14, I prepared a description of the process in Fig. 26, showing the compilation process in development mode. Compilation itself can run independently of live instances. In execution mode, reusing the same instance name is rejected, while another name starts a separate plan unless the bus detects a collision in its streams, storage files, or rotation counter.
+The compilation process happens before every run of the xretractor process, provided a file with a sequence of commands and queries was given. That argument is required in `-c` mode (compile only) - without it there is nothing to compile; in processing mode, omitting it starts [idle mode](architecture-overview.md), where the compilation stage is skipped entirely. Based on the flow shown in Fig. 14, I prepared a description of the process in Fig. 26, showing the compilation process in development mode. Compilation itself can run independently of live instances. In execution mode, reusing the same instance name is rejected, while another name starts a separate plan unless the bus detects a collision in its streams, storage files, or rotation counter.
 
 <figure><img src="../assets/schemat_procesu_kompilacji.png" width="100%" alt=""><figcaption><p>Fig. 26. The compilation process</p></figcaption></figure>
 
@@ -42,9 +42,9 @@ Assuming you have the dot program from the graphviz package installed in your ru
 
 RetractorDB can generate an image in response to one of the requested data-processing chains. The graphical presentation is most suitable for creating and presenting data-processing graphs. Unfortunately, readability suffers for very complex schemas.
 
-Fig. 27 shows the trivial query execution plan produced by compiling the two-line query.rql file. At the very top we see the object str1, producing artifacts at a rate of 10 records per second. Information about the artifact-creation rate does not appear in the query; it is computed based on the algebraic expression in the FROM clause of the SELECT query. We can also see how successive records of the str1 stream are produced. Here we have a typical stack-based data-processing algorithm. First, the ephemeral value produced by the algebraic expression is pushed onto the stack, then the value 1 is placed on the stack. The ADD instruction pops both values off the stack, leaving the sum on the stack. What remains on the stack — i.e. the result of the addition — is placed into the field of the record being created.
+Fig. 27 shows the trivial query execution plan produced by compiling the two-line query.rql file. At the very top we see the object str1, producing artifacts at a rate of 10 records per second. Information about the artifact-creation rate does not appear in the query; it is computed based on the algebraic expression in the FROM clause of the SELECT query. We can also see how successive records of the str1 stream are produced. Here we have a typical stack-based data-processing algorithm. First, the ephemeral value produced by the algebraic expression is pushed onto the stack, then the value 1 is placed on the stack. The ADD instruction pops both values off the stack, leaving the sum on the stack. What remains on the stack - i.e. the result of the addition - is placed into the field of the record being created.
 
-On the other side we see stream operations. Stream operations are carried out in a different domain. There, we process objects of one or two values. Operations act either on two streams, or on a single stream with an argument. The classic stack has no application for algebraic stream operations. For simplicity, the notation resembles stack operations somewhat. We see, in the attached example, that operations on current data are carried out by shifting the data in time by 2. I deliberately do not say that this is 2 seconds — here 2 denotes a relative value with respect to the arrival rate. For an arrival rate of 10 samples per second, the value 2 means a time shift of 0.2 seconds.
+On the other side we see stream operations. Stream operations are carried out in a different domain. There, we process objects of one or two values. Operations act either on two streams, or on a single stream with an argument. The classic stack has no application for algebraic stream operations. For simplicity, the notation resembles stack operations somewhat. We see, in the attached example, that operations on current data are carried out by shifting the data in time by 2. I deliberately do not say that this is 2 seconds - here 2 denotes a relative value with respect to the arrival rate. For an arrival rate of 10 samples per second, the value 2 means a time shift of 0.2 seconds.
 
 Complex algebraic expressions involving at least two stream operators give rise to the substrates mentioned in previous chapters. Every query whose FROM-clause algebraic expression contains more than one operator is broken down into interdependent two-argument operations. The substrate's argument list is, by default, the full expansion of the schema.
 
@@ -54,7 +54,7 @@ Different sets of flags are available in compile mode (`-c`) and in execution mo
 
 | Flag  | Full name         | Meaning                                            |
 | ----- | ------------------ | --------------------------------------------------- |
-| `-c`  | `--onlycompile`    | compile only — does not start processing            |
+| `-c`  | `--onlycompile`    | compile only - does not start processing            |
 | `-d`  | `--dot`            | generate output in DOT (graphviz) format             |
 | `-f`  | `--fields`         | show stream fields in the DOT graph                  |
 | `-t`  | `--tags`           | show individual field programs (requires `-f`)       |
@@ -69,12 +69,12 @@ Execution-mode flags (without `-c`):
 | Flag   | Full name        | Meaning                                             |
 | ------ | ----------------- | ----------------------------------------------------- |
 | `-m N` | `--llimitqry N`   | run N processing cycles, then exit                    |
-| `-k`   | `--noanykey`      | don't wait for a keypress — daemon/script mode         |
+| `-k`   | `--noanykey`      | don't wait for a keypress - daemon/script mode         |
 | `-t`   | `--realtime`      | real-time mode (SCHED\_FIFO, mlockall)                 |
 | `-x`   | `--xqrywait`      | wait for the first xqry connection before starting     |
 | `-s`   | `--status`        | check whether an xretractor instance is already running |
 | `-v`   | `--verbose`       | print stream parameters at startup                      |
-| `-j`   | `--service`       | service mode — log to stderr (journald)                 |
+| `-j`   | `--service`       | service mode - log to stderr (journald)                 |
 | `-g F` | `--config F`      | TOML configuration file instead of the search order     |
 | `-b`   | `--build-info`    | print the optimizer configuration and exit              |
 
@@ -85,7 +85,7 @@ Execution-mode flags (without `-c`):
 
 > **⚠️ Warning**
 >
-> When using `-m N` in scripts and tests, always add `-x` (`--xqrywait`). Without this flag, the server may process all N cycles before the client (`xqry`) manages to connect — the client will receive no data and will wait until it times out. The `-x` flag holds off processing until the first command arrives from `xqry`.
+> When using `-m N` in scripts and tests, always add `-x` (`--xqrywait`). Without this flag, the server may process all N cycles before the client (`xqry`) manages to connect - the client will receive no data and will wait until it times out. The `-x` flag holds off processing until the first command arrives from `xqry`.
 
 
-A full list of all options with a description of each — including the `--realtime` option, which requires system privileges — can be found in [Appendix A](../appendices/command-line-options/xretractor.md).
+A full list of all options with a description of each - including the `--realtime` option, which requires system privileges - can be found in [Appendix A](../appendices/command-line-options/xretractor.md).

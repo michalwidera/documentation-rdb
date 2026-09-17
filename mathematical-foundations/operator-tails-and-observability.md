@@ -11,7 +11,7 @@ questions and behave differently under plan rewrites.
 
 Neither is a prefix of zeros or of all-null records. The boundary principle
 holds unchanged: `NULL` is a data value, never a placeholder. The number of
-initial slots in which the stream stays silent is \\(O_S+W_S\\) — and only that
+initial slots in which the stream stays silent is \\(O_S+W_S\\) - and only that
 sum was visible before the two quantities were separated.
 
 The logical index is the currency of every mapping between streams. A stream
@@ -40,8 +40,8 @@ availability. Producer tails are converted to result slots beforehand.
 record maps onto existing component records. It is not "the first index with
 complete dependencies": with an interleave of components having different
 origins, record 0 may be complete while record 1 is not. A stream is a sequence
-of records, not a set with holes — the boundary principle forbids filling a hole
-with `NULL` — so the logical origin is the first index with no remaining gap.
+of records, not a set with holes - the boundary principle forbids filling a hole
+with `NULL` - so the logical origin is the first index with no remaining gap.
 All record-to-record mappings are non-decreasing, so such an index exists and is
 unique.
 
@@ -73,8 +73,8 @@ ratio, its own tail can be zero.
 
 The interleave is the only operator whose tail does not decompose into
 "converted producer tails plus an own constant". Record \\(i\\) carries the
-content of record \\(j(i)\\) of just one component — the one the operator
-definition selects in slot \\(i\\) — so the required latency depends on which
+content of record \\(j(i)\\) of just one component - the one the operator
+definition selects in slot \\(i\\) - so the required latency depends on which
 component, and which of its phases, a given slot falls on:
 
 \\[
@@ -121,7 +121,7 @@ instead of a relative offset.
 The window is stamped by the interval **end**: record \\(n\\) spans flattened
 source positions from \\(nk-(\lvert L\rvert-1)\\) to \\(nk\\). Its newest field
 therefore lies exactly at position \\(nk\\), and the window's logical index
-denotes the same instant as the source's logical index — joining a window with
+denotes the same instant as the source's logical index - joining a window with
 its own source (a FIR pipeline) does not lead the signal.
 
 The price of the convention is that for small \\(n\\) the window would reach
@@ -151,7 +151,7 @@ the form used before the re-stamping, **disappeared from the tail**: the window
 span is not waiting but undefinedness, and moved wholly into the logical origin.
 The sum \\(O+W\\) describes the same silence as before.
 
-A positive width preserves the historical RetractorDB convention — the newest
+A positive width preserves the historical RetractorDB convention - the newest
 field comes first; a negative width mirrors it, giving arrival order.
 
 Source history capacity has no closed form here. The backward distance at the
@@ -176,7 +176,7 @@ property of execution, not part of the result.
 Stream observation splits into two parts, because plan rewrites preserve them
 to different degrees.
 
-**Value part** — preserved by rewrites exactly:
+**Value part** - preserved by rewrites exactly:
 
 \\[
 \operatorname{Obs}(S)
@@ -187,14 +187,14 @@ where:
 
 * \\(O_S\\) is the logical origin, the index of the first record;
 * \\(D_S\\) is the public descriptor and field-name order;
-* \\(N_n\\) is the record's `NULL` map — a true `NULL` remains a data value and
+* \\(N_n\\) is the record's `NULL` map - a true `NULL` remains a data value and
   is carried through AGSE;
 * \\(G_S\\) is the gap trace; detection currently works for declarations, while
   computed streams have \\(G_S=\varnothing\\);
 * \\(M_S\\) describes the materialization policy (`DEFAULT`, `MEMORY`,
   `VOLATILE` and the remaining storage kinds).
 
-**Latency part** — the tail \\(W_S\\) — carries a weaker guarantee:
+**Latency part** - the tail \\(W_S\\) - carries a weaker guarantee:
 
 > a plan rewrite never **increases** \\(W_S\\) and never emits a record before
 > its dependencies are determined; it may, however, **decrease** \\(W_S\\).

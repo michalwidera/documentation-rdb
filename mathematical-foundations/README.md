@@ -4,7 +4,7 @@
 
 > **ℹ️ Info**
 >
-> Do you know what the Fields Medal is? It is an award given exclusively to outstanding mathematicians under the age of 40. It is called the mathematical Nobel Prize. Interestingly, no mathematician will ever receive the actual Nobel Prize — as per the founder's wishes. John Charles Fields himself (1863-1932) was a Canadian mathematician. John Charles Fields had one doctoral student — Samuel Beatty (1881-1970).
+> Do you know what the Fields Medal is? It is an award given exclusively to outstanding mathematicians under the age of 40. It is called the mathematical Nobel Prize. Interestingly, no mathematician will ever receive the actual Nobel Prize - as per the founder's wishes. John Charles Fields himself (1863-1932) was a Canadian mathematician. John Charles Fields had one doctoral student - Samuel Beatty (1881-1970).
 
 
 In 1926, Samuel Beatty published the following theorem [\[1\]](../references.md#1):
@@ -38,9 +38,9 @@ partition the set of positive integers.
 
 These two sequences partition the set of natural numbers. This means that given two irrational numbers satisfying the relation stated in the theorem, we can split the entire set of natural numbers into two disjoint sets (Fig. 1).
 
-The Beatty theorem is a fascinating observation in its own right — but in computer systems we run into a problem with irrational numbers. Real numbers — despite the fact that some programming languages use the words Real or Float for the real-number type — have little in common with actual real numbers. The fundamental problem is that we don't have them, and presumably never will.
+The Beatty theorem is a fascinating observation in its own right - but in computer systems we run into a problem with irrational numbers. Real numbers - despite the fact that some programming languages use the words Real or Float for the real-number type - have little in common with actual real numbers. The fundamental problem is that we don't have them, and presumably never will.
 
-And here our journey would have abruptly ended, were it not for another theorem. The situation changed dramatically thanks to a mathematician — Aviezri Siegmund Fraenkel (1926), who specializes in combinatorial aspects of game theory.
+And here our journey would have abruptly ended, were it not for another theorem. The situation changed dramatically thanks to a mathematician - Aviezri Siegmund Fraenkel (1926), who specializes in combinatorial aspects of game theory.
 
 In 1969 he presented the following theorem [\[2\]](../references.md#2). The starting point is a parameterized Beatty sequence:
 

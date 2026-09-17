@@ -16,7 +16,7 @@ At present, RetractorDB supports the following data types:
 
 `STRING` and `RATIONAL` are used in descriptors, conversions, and expressions; their representation and behavior are checked by `ut_payload`, `ut_convertTypes`, and integration scenarios. Complex numbers and rational Eisenstein complex numbers remain outside the current set of types.
 
-An example of type promotion in practice — the `scaled` query from the chapter [Underscore Symbol Processing](underscore-symbol-processing.md):
+An example of type promotion in practice - the `scaled` query from the chapter [Underscore Symbol Processing](underscore-symbol-processing.md):
 
 ```rql
 SELECT core0[_] * core1[_] STREAM scaled FROM core0 + core1
@@ -31,8 +31,8 @@ SELECT core0[_] * core1[_] STREAM scaled FROM core0 + core1
 
 ## Where the result field type comes from
 
-The type, length, and multiplicity of a field are determined by a **single compiler pass** —
-`compiler::inferFieldShapes()` — which executes the field's reverse-Polish program on a stack of
+The type, length, and multiplicity of a field are determined by a **single compiler pass** -
+`compiler::inferFieldShapes()` - which executes the field's reverse-Polish program on a stack of
 *types*, exactly the way `expressionEvaluator` executes it on a stack of *values*. The pass runs
 after field references and window aggregates have been resolved, and **before** expression
 simplification, so the descriptor does not depend on any optimizer switch.
@@ -52,13 +52,13 @@ array yields a single value, so multiplicity drops to one; `STRING[N]` is a sing
 its width.
 
 A **binary operator** (`+`, `-`, `*`, `/`, `^`) yields the type that ranks higher in the order
-`BYTE < INTEGER < UINT < RATIONAL < FLOAT < DOUBLE` — with one exception: **`BYTE` with `BYTE`
+`BYTE < INTEGER < UINT < RATIONAL < FLOAT < DOUBLE` - with one exception: **`BYTE` with `BYTE`
 yields `INTEGER`**. This is not a design decision but a reflection of the language: `uint8_t +
 uint8_t` promotes to `int` in C++, and `int` is what ends up in the result. The same promotion
 applies to exact-type exponentiation, because `a^k` is computed by the same multiplication as the
 product written out.
 
-A **unary operator** (`-x`, `NOT x`) preserves the argument's type — there is no promotion here.
+A **unary operator** (`-x`, `NOT x`) preserves the argument's type - there is no promotion here.
 
 **Comparisons** yield the operand type after normalization, without the `BYTE` promotion. They do
 not reach the `SELECT` list: they live in the `RULE` condition.
@@ -81,8 +81,8 @@ over `INTEGER` yields `INTEGER`. Explicit conversions determine the type of thei
 middle of an expression**: `to_float('2.5') * 2` is `FLOAT`, and `to_integer(AVG(x : 10)) + 1` is
 `INTEGER`.
 
-Seven functions with an irrational range — `Sqrt`, `sin`, `cos`, `exp`, `tan`, `log` and
-`log2` — **do not compile** over an argument of type `RATIONAL`: the compiler rejects the plan
+Seven functions with an irrational range - `Sqrt`, `sin`, `cos`, `exp`, `tan`, `log` and
+`log2` - **do not compile** over an argument of type `RATIONAL`: the compiler rejects the plan
 and requires an explicit `to_double`. This matters in practice, because the reducers `MIN`,
 `MAX`, `AVG` and `SUMC` yield `RATIONAL` for integer or rational inputs. The reason, the error
 message, the reach of the gate (it also covers a `RULE ... WHEN` condition), and the exception for the rounding
@@ -103,8 +103,8 @@ that very type.
 
 ## Propagation through the plan
 
-Operators that **copy** the operand schema — `SELECT *`, the shift `>N`, decimation `-r`, the
-interleave `#`, the de-interleaves `&` and `%`, and the stream sum `+` — carry the producer's
+Operators that **copy** the operand schema - `SELECT *`, the shift `>N`, decimation `-r`, the
+interleave `#`, the de-interleaves `&` and `%`, and the stream sum `+` - carry the producer's
 field shape slot by slot. The type travels through an arbitrarily long chain of intermediate
 streams.
 
@@ -113,7 +113,7 @@ Operators that **synthesize** a schema keep their own: the `MIN`/`MAX`/`AVG`/`SU
 `FLOAT`, and `DOUBLE` for `DOUBLE`. The `@(step, width)` window yields fields of the widest
 type in the source record.
 
-A `DECLARE` declaration is a contract with the source file and is **not subject to inference** —
+A `DECLARE` declaration is a contract with the source file and is **not subject to inference** -
 no compiler pass modifies it.
 
 ## Artifact format change
@@ -121,6 +121,6 @@ no compiler pass modifies it.
 Correct typing changes `.desc` and the record layout wherever `INTEGER` used to come out:
 `DOUBLE` occupies 8 bytes instead of 4, so it shifts the offsets of the following fields. A stream
 computed by an older engine version has an artifact with a different layout and will be rejected
-at startup as an incompatible schema — just as after any other change to the field list. There is
+at startup as an incompatible schema - just as after any other change to the field list. There is
 no compatibility period: the descriptor now describes what the engine actually writes, whereas
 before it described something else.

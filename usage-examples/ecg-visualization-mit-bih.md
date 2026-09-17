@@ -1,6 +1,6 @@
-# ECG Visualization and Arrhythmia Detection — the MIT-BIH Database
+# ECG Visualization and Arrhythmia Detection - the MIT-BIH Database
 
-## Data source — the PhysioNet MIT-BIH Arrhythmia Database
+## Data source - the PhysioNet MIT-BIH Arrhythmia Database
 
 The MIT-BIH Arrhythmia Database is a publicly available collection of electrocardiogram recordings published by PhysioNet at:
 
@@ -12,7 +12,7 @@ It contains 48 half-hour, two-channel recordings collected from 47 patients at B
 
 ### Record 205
 
-The example uses record **205** — a recording from a 59-year-old man treated with Digoxin and Quinaglute. The record contains episodes of ventricular tachycardia (VT) and is often cited in the literature as diagnostically challenging, due to two morphologically distinct forms of premature ventricular contractions (PVC).
+The example uses record **205** - a recording from a 59-year-old man treated with Digoxin and Quinaglute. The record contains episodes of ventricular tachycardia (VT) and is often cited in the literature as diagnostically challenging, due to two morphologically distinct forms of premature ventricular contractions (PVC).
 
 Recording parameters:
 
@@ -82,7 +82,7 @@ SELECT ecg.MLII, ecg.V1 STREAM s205out FROM ecg VOLATILE
 
 The `STREAM ecg, 1/360` clause sets the time interval of a single sample to 1/360 s, matching the actual sampling rate of 360 Hz. The `TYPE DEVICE` clause in the descriptor causes the `rec205` file to be read sequentially in a loop (after the last sample, reading returns to the beginning), enabling continuous playback of the recording.
 
-The output stream `s205out` is declared `VOLATILE`, so it is not written to disk — the data only reaches the consumer process (`xqry`).
+The output stream `s205out` is declared `VOLATILE`, so it is not written to disk - the data only reaches the consumer process (`xqry`).
 
 ## On-screen visualization
 
@@ -109,7 +109,7 @@ Meaning of the parameters:
 | `560,1360`          | The Y-axis range (ADC values matching the actual signal)              |
 | `--gnuplot-rtl`     | Newest samples on the right, chart scrolls right to left |
 
-The `--gnuplot-rtl` option is an `xqry` parameter that reverses gnuplot's X axis (`set xrange [720:0]`). The effect is that the freshest samples appear on the right side of the window, and older ones scroll to the left — similar to the classic ECG printout on paper tape.
+The `--gnuplot-rtl` option is an `xqry` parameter that reverses gnuplot's X axis (`set xrange [720:0]`). The effect is that the freshest samples appear on the right side of the window, and older ones scroll to the left - similar to the classic ECG printout on paper tape.
 
 The script gives the server a name derived from the working directory and passes it to
 every `xqry --server` invocation. Several plotting targets can therefore run concurrently
@@ -122,7 +122,7 @@ The window shown in Fig. 60 displays 720 samples, i.e. exactly 2 seconds of sign
 
 ## QRS Detection and Arrhythmia Identification
 
-### Context — the Pan-Tompkins algorithm
+### Context - the Pan-Tompkins algorithm
 
 QRS-complex detection is the foundation of automatic ECG analysis. The QRS complex represents ventricular depolarization and corresponds to every heartbeat, visible as a sharp spike in the signal. Knowing the positions of the QRS complexes in time, RR intervals can be computed, and from them, basic rhythm disturbances can be identified:
 
@@ -139,7 +139,7 @@ The Pan-Tompkins algorithm (1985) is a classic, five-stage, pipelined digital-si
 
 The algorithm requires two sets of FIR coefficients, stored as text files (`bp_coef.txt`, `d_coef.txt`). They are generated once, with Python scripts, before running detection.
 
-#### The band-pass filter — `gen_bp_coef.py`
+#### The band-pass filter - `gen_bp_coef.py`
 
 Step 1 of the algorithm requires a filter that cuts out noise and artifacts outside the QRS band. A passband of 5–15 Hz at fs = 360 Hz produces a response containing the QRS morphology, while attenuating baseline wander (< 5 Hz) and muscle noise (> 15 Hz).
 
@@ -151,9 +151,9 @@ h_bp[n] = (h_lp2[n] − h_lp1[n]) · w[n]
 
 where:
 
-* `h_lp[n] = 2·fc·sinc(2·fc·(n−M))` — the ideal low-pass filter
-* `w[n] = 0.54 − 0.46·cos(2πn/(N−1))` — the Hamming window, damping Gibbs effects
-* `M = (N−1)/2 = 12` — the filter's center point (group delay = 12 samples)
+* `h_lp[n] = 2·fc·sinc(2·fc·(n−M))` - the ideal low-pass filter
+* `w[n] = 0.54 − 0.46·cos(2πn/(N−1))` - the Hamming window, damping Gibbs effects
+* `M = (N−1)/2 = 12` - the filter's center point (group delay = 12 samples)
 
 Parameters:
 
@@ -174,9 +174,9 @@ python3 gen_bp_coef.py
 # Sum (DC gain): 5 / 1000 = 0.0050
 ```
 
-The coefficients are symmetric about the center (n=12), confirming the filter's linear phase — an essential property when analyzing ECG, since it guarantees no phase distortion of the QRS morphology.
+The coefficients are symmetric about the center (n=12), confirming the filter's linear phase - an essential property when analyzing ECG, since it guarantees no phase distortion of the QRS morphology.
 
-#### The differentiating filter — `gen_d_coef.py`
+#### The differentiating filter - `gen_d_coef.py`
 
 Step 2 of the algorithm applies a filter that emphasizes the steep edges of the QRS. Pan and Tompkins proposed a 5-point derivative estimator:
 
@@ -194,9 +194,9 @@ Filter properties:
 
 | Property           | Value                                           |
 | -------------------- | ------------------------------------------------- |
-| Sum of coefficients  | 0 (zero DC gain — eliminates offsets)     |
+| Sum of coefficients  | 0 (zero DC gain - eliminates offsets)     |
 | Maximum response | f ≈ 10–25 Hz (the QRS-edge range)                  |
-| Scale factor (1/8T) | 360/8 = 45 Hz (ignored — does not affect detection) |
+| Scale factor (1/8T) | 360/8 = 45 Hz (ignored - does not affect detection) |
 
 ```bash
 cd examples/ecg/rec205
@@ -206,7 +206,7 @@ python3 gen_d_coef.py
 # Sum (DC gain): 0  (should be 0)
 ```
 
-### Implementing the pipeline in RQL — `rec205-detect.rql`
+### Implementing the pipeline in RQL - `rec205-detect.rql`
 
 The file `rec205-detect.rql` implements the complete five-stage pipeline for both ECG channels (MLII and V1):
 
@@ -222,11 +222,11 @@ DECLARE d_coef INTEGER[5]   STREAM df,  1 FILE 'd_coef.txt'
 SELECT ecg.MLII            STREAM mlii    FROM ecg VOLATILE
 SELECT ecg.V1              STREAM v1      FROM ecg VOLATILE
 
-# 1. Band-pass filter (5-15 Hz) — 25-tap FIR convolution
+# 1. Band-pass filter (5-15 Hz) - 25-tap FIR convolution
 SELECT mlii[_]*bpf[_]      STREAM bp_acc  FROM mlii@(1,25)+bpf VOLATILE
 SELECT int(bp_acc[0]/1000) STREAM bp_out  FROM SUMC(bp_acc) VOLATILE
 
-# 2. Differentiation — 5-tap FIR convolution
+# 2. Differentiation - 5-tap FIR convolution
 SELECT bp_out[_]*df[_]     STREAM d_acc   FROM bp_out@(1,5)+df VOLATILE
 SELECT int(d_acc[0])       STREAM d_out   FROM SUMC(d_acc) VOLATILE
 
@@ -236,7 +236,7 @@ SELECT d_out[0]^2/1000     STREAM sq_out  FROM d_out VOLATILE
 # 4. Moving-window integration over 30 samples (~83 ms)
 SELECT int(sq_out[0])      STREAM mwi     FROM AVG(sq_out@(1,30)) VOLATILE
 
-# 5. Adaptive threshold — 2x moving average over 180 samples (0.5 s)
+# 5. Adaptive threshold - 2x moving average over 180 samples (0.5 s)
 SELECT int(mwi[0])         STREAM mwi_thr FROM AVG(mwi@(1,180)) VOLATILE
 
 # Output: MLII centered, V1 centered, detection signal ×5
@@ -246,7 +246,7 @@ STREAM detect_out FROM mlii+v1+mwi+mwi_thr VOLATILE
 
 #### Rationale for the parameters
 
-The `@(1,25)` operator creates a 25-sample sliding window directly in `FROM`. The `mlii[_]` index expands according to the 25 slots contributed by this window to the input record, and `SUMC` adds the products with `bpf[_]`. The discrete convolution therefore does not require a separate `mlii_win` query. The same notation creates the five-element differentiating convolution — see [Underscore Symbol Processing](../query-compilation/underscore-symbol-processing.md).
+The `@(1,25)` operator creates a 25-sample sliding window directly in `FROM`. The `mlii[_]` index expands according to the 25 slots contributed by this window to the input record, and `SUMC` adds the products with `bpf[_]`. The discrete convolution therefore does not require a separate `mlii_win` query. The same notation creates the five-element differentiating convolution - see [Underscore Symbol Processing](../query-compilation/underscore-symbol-processing.md).
 
 The compiler extracts windows and reducers from a compound `FROM` clause into compiler-generated substrates. `VOLATILE` applies to the stream named by a given `SELECT`, not to these automatic nodes. The `SUBSTRAT 'memory'` directive keeps the complete intermediate pipeline in memory; without it, the generated windows would use the default on-disk storage.
 
@@ -254,9 +254,9 @@ The `bp_acc[0]/1000` division in step 1 compensates for the integer scale of the
 
 The pipeline computes in integer arithmetic, so every reducer result returns to `INTEGER` through an explicit `int(...)` (short for `to_integer`). `SUMC` and `AVG` over an `INTEGER` field yield `RATIONAL`; without the cast the denominators grow from stage to stage (`/1000`, squaring, the 30-sample average) until `boost::rational<int>` overflows without warning.
 
-The output expression `(mwi[0]-mwi_thr[0]*2)*5` implements the adaptive threshold: the value is positive only when the MWI envelope exceeds twice the current moving average — indicating a detected QRS. The `×5` multiplier scales the detection signal to a range visually comparable to the raw ECG on the chart.
+The output expression `(mwi[0]-mwi_thr[0]*2)*5` implements the adaptive threshold: the value is positive only when the MWI envelope exceeds twice the current moving average - indicating a detected QRS. The `×5` multiplier scales the detection signal to a range visually comparable to the raw ECG on the chart.
 
-### Running it — ninja ecg-detect-qrs
+### Running it - ninja ecg-detect-qrs
 
 The process is started with a single command from the `build/Debug` directory:
 
@@ -283,23 +283,23 @@ Meaning of the parameters:
 
 The `xplot.sh` script starts `xretractor` in the background (compiling and executing the queries), then pipes the `detect_out` stream through `xqry` into `gnuplot` in continuous mode. The `gnuplot` window refreshes with every new batch of samples.
 
-### Figure description — the gnuplot window
+### Figure description - the gnuplot window
 
-<figure><img src="../assets/ninja-ecg-detect-qrs.png" data-pdf-width="58%" alt="gnuplot QRS-detection window: MLII, V1, and the detection signal on record 205"><figcaption><p>Fig. 61. The gnuplot window from running <code>ninja ecg-detect-qrs</code> — MIT-BIH record 205, 720 samples (2 s), RTL</p></figcaption></figure>
+<figure><img src="../assets/ninja-ecg-detect-qrs.png" data-pdf-width="58%" alt="gnuplot QRS-detection window: MLII, V1, and the detection signal on record 205"><figcaption><p>Fig. 61. The gnuplot window from running <code>ninja ecg-detect-qrs</code> - MIT-BIH record 205, 720 samples (2 s), RTL</p></figcaption></figure>
 
 In Fig. 61, three signals are visible, corresponding to the three fields of the `detect_out` stream:
 
-**\[detect-out-0] red line — MLII centered (mlii − 900)**
+**\[detect-out-0] red line - MLII centered (mlii − 900)**
 
-The raw ECG signal from lead MLII, shifted by the 900 ADC baseline point so that the zero axis corresponds to the isoline. Two sharp spikes (amplitude ≈ 280 ADC ≈ 1.4 mV) around samples 520 and 350 from the right edge represent two consecutive QRS complexes. The clear QRS morphology, with a dominant R peak, confirms the band-pass filter is working correctly — noise has been suppressed while the peak retained its amplitude.
+The raw ECG signal from lead MLII, shifted by the 900 ADC baseline point so that the zero axis corresponds to the isoline. Two sharp spikes (amplitude ≈ 280 ADC ≈ 1.4 mV) around samples 520 and 350 from the right edge represent two consecutive QRS complexes. The clear QRS morphology, with a dominant R peak, confirms the band-pass filter is working correctly - noise has been suppressed while the peak retained its amplitude.
 
-**\[detect-out-1] blue line — V1 centered (v1 − 900)**
+**\[detect-out-1] blue line - V1 centered (v1 − 900)**
 
-The signal from lead V1 of the same recording. QRS morphology in V1 is, as a rule, less pronounced than in MLII, which is visible in the figure — the blue signal shows a smaller R-peak amplitude at similar QRS time positions. Having both channels available at once allows distinguishing supraventricular contractions (APC) from ventricular ones (PVC), since ventricular QRS complexes show a distinct morphology in V1.
+The signal from lead V1 of the same recording. QRS morphology in V1 is, as a rule, less pronounced than in MLII, which is visible in the figure - the blue signal shows a smaller R-peak amplitude at similar QRS time positions. Having both channels available at once allows distinguishing supraventricular contractions (APC) from ventricular ones (PVC), since ventricular QRS complexes show a distinct morphology in V1.
 
-**\[detect-out-2] green line — the QRS detection signal ((mwi − 2·mwi\_thr) × 5)**
+**\[detect-out-2] green line - the QRS detection signal ((mwi − 2·mwi\_thr) × 5)**
 
-The algorithm's output signal. A **positive** value means a detected QRS complex — the moving-window-integration envelope exceeded twice the adaptive threshold. In the figure, two clear positive pulses are visible, coinciding in time with the QRS peaks on the MLII channel. Between beats, the line stays close to zero or slightly below — confirming the detector's specificity.
+The algorithm's output signal. A **positive** value means a detected QRS complex - the moving-window-integration envelope exceeded twice the adaptive threshold. In the figure, two clear positive pulses are visible, coinciding in time with the QRS peaks on the MLII channel. Between beats, the line stays close to zero or slightly below - confirming the detector's specificity.
 
 The gap between the two visible QRS complexes is approximately 170 samples, which at 360 Hz gives:
 
@@ -313,9 +313,9 @@ This value falls within the range of ventricular tachycardia (VT, 79–216 bpm) 
 
 The diagram below (Fig. 62) shows the complete data flow from the raw MIT-BIH recording to arrhythmia identification, indicating where RetractorDB carries out the Pan-Tompkins algorithm, and its relationship to classic arrhythmia-recognition methods:
 
-<figure><img src="../assets/qrs_pipeline_arytmia.svg" alt="Data-flow diagram for the QRS-detection and arrhythmia-identification process"><figcaption><p>Fig. 62. Data flow — from the MIT-BIH recording, through the Pan-Tompkins pipeline in RQL, to visualization and arrhythmia identification</p></figcaption></figure>
+<figure><img src="../assets/qrs_pipeline_arytmia.svg" alt="Data-flow diagram for the QRS-detection and arrhythmia-identification process"><figcaption><p>Fig. 62. Data flow - from the MIT-BIH recording, through the Pan-Tompkins pipeline in RQL, to visualization and arrhythmia identification</p></figcaption></figure>
 
-The right branch of the diagram — **Arrhythmia identification** — represents classic post-QRS-detection analysis methods, which can be built as further RQL queries layered on top of the `detect_out` stream:
+The right branch of the diagram - **Arrhythmia identification** - represents classic post-QRS-detection analysis methods, which can be built as further RQL queries layered on top of the `detect_out` stream:
 
 | Method           | Description                                   | Relationship to QRS                |
 | ---------------- | --------------------------------------- | ------------------------------- |

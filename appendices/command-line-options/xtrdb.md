@@ -4,7 +4,7 @@ The `xtrdb` program is an interactive tool for analyzing artifacts and substrate
 
 > **⚠️ Warning**
 >
-> Running `xtrdb` blocks a concurrently running `xretractor` — stop the server, or wait for the system to finish, before using `xtrdb`. The tool detects the lock itself and reports an error if `xretractor` is running.
+> Running `xtrdb` blocks a concurrently running `xretractor` - stop the server, or wait for the system to finish, before using `xtrdb`. The tool detects the lock itself and reports an error if `xretractor` is running.
 
 
 ---
@@ -21,7 +21,7 @@ $ xtrdb --storagemap file  # same as -s
 $ xtrdb -h                 # help and build information, then exit
 ```
 
-The `-n/--noprompt` mode removes highlighting, the `.` prompt, and the `ok` message — useful when input comes from a file or a pipe.
+The `-n/--noprompt` mode removes highlighting, the `.` prompt, and the `ok` message - useful when input comes from a file or a pipe.
 The legacy positional variant `noprompt` still works too.
 
 ```
@@ -149,7 +149,7 @@ Examples:
 | `set field value` | Set the field with the given name in the payload buffer.                                     |
 | `setpos N value` | Set the field at index N (0-based) in the payload buffer.                               |
 | `getpos N`         | Print the value of the field at index N from the current payload.                              |
-| `input`            | Interactively fill the payload — enter values in order for each field.       |
+| `input`            | Interactively fill the payload - enter values in order for each field.       |
 | `status`           | Print the payload's state: `clean`, `fetched`, `changed`, `stored`.                      |
 | `hex` / `dec`      | Toggle numeric field input/output between hexadecimal and decimal. |
 
@@ -159,8 +159,8 @@ Examples:
 
 | Command | Description                                                                                                             |
 | --------- | ------------------------------------------------------------------------------------------------------------------ |
-| `meta`    | Print the null and transmission-gap index from the `.meta` file — descriptively (segments with a record count and null pattern).  |
-| `metaraw` | Print the raw binary structure of the `.meta` file — every RLE entry with its `count`, `gap`, `bitsetHex` fields.             |
+| `meta`    | Print the null and transmission-gap index from the `.meta` file - descriptively (segments with a record count and null pattern).  |
+| `metaraw` | Print the raw binary structure of the `.meta` file - every RLE entry with its `count`, `gap`, `bitsetHex` fields.             |
 
 `meta` shows segments with information about nulls and transmission gaps (`gap`). `metaraw` shows the raw binary structure of the `.meta` file.
 
@@ -170,7 +170,7 @@ Examples:
 
 | Command            | Description                                                                                     |
 | -------------------- | ---------------------------------------------------------------------------------------------- |
-| `rox`                | Toggle the "remove on exit" flag — deletes the data, `.desc`, and `.meta` when the tool exits. |
+| `rox`                | Toggle the "remove on exit" flag - deletes the data, `.desc`, and `.meta` when the tool exits. |
 | `cap N`              | Set the backread buffer capacity for stream devices.                     |
 | `dropfile f1 f2 … }` | Delete the listed files. The list ends with the token `}`.                                     |
 | `echo text`         | Print text to the terminal (useful in scripts).                                        |
@@ -194,7 +194,7 @@ $ xtrdb
 
 ### Reading a DUMP file without a descriptor
 
-Dump files created by `DO DUMP` have no `.desc` file — the schema must be specified manually:
+Dump files created by `DO DUMP` have no `.desc` file - the schema must be specified manually:
 
 ```
 $ xtrdb

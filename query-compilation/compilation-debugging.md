@@ -4,7 +4,7 @@ The compiler transforms an `.rql` file into an execution plan through several st
 
 ## The basic tool: the `-c` flag
 
-The `-c` (`--onlycompile`) flag stops `xretractor` after compilation and prints the compiled plan to standard output — without starting processing:
+The `-c` (`--onlycompile`) flag stops `xretractor` after compilation and prints the compiled plan to standard output - without starting processing:
 
 ```bash
 xretractor -c query.rql
@@ -17,7 +17,7 @@ xretractor -c query.rql 2>errors.txt
 echo $?
 ```
 
-Compilation can be invoked even while another `xretractor` process is already running — the `-c` flag does not attempt to acquire the execution lock.
+Compilation can be invoked even while another `xretractor` process is already running - the `-c` flag does not attempt to acquire the execution lock.
 
 ## How to read the compilation plan
 
@@ -45,15 +45,15 @@ streamName(delta)
 | `:- STREAM_HASH` | The stream-synchronization operator (`#` in FROM) |
 | `:- STREAM_TIMEMOVE(n)` | Time shift (`>n` in FROM) |
 | `field: TYPE` | An output-schema field, after type promotion |
-| `PUSH_ID(s[n])` | Pushes the value of field `n` from stream `s` onto the stack — the effect of aliasing is visible here |
+| `PUSH_ID(s[n])` | Pushes the value of field `n` from stream `s` onto the stack - the effect of aliasing is visible here |
 | `PUSH_VAL(x)` | Pushes the constant `x` onto the stack |
 | `ADD`, `MULTIPLY`, ... | An arithmetic operation: pops two arguments off the stack, pushes the result |
 
-Ephemeris blocks (`DECLARE`) appear at the end of the plan — they contain the field list and the path to the data file.
+Ephemeris blocks (`DECLARE`) appear at the end of the plan - they contain the field list and the path to the data file.
 
-**Aliasing in the plan**: if two output fields point to the same `PUSH_ID`, they are aliases. In the example, `result_0` and `result_2` are both `PUSH_ID(merged[0])` — confirmation that `merged[0]` and `core0[0]` are the same position. See [Aliasing](aliasing.md).
+**Aliasing in the plan**: if two output fields point to the same `PUSH_ID`, they are aliases. In the example, `result_0` and `result_2` are both `PUSH_ID(merged[0])` - confirmation that `merged[0]` and `core0[0]` are the same position. See [Aliasing](aliasing.md).
 
-**Substrates in the plan**: an automatically generated substrate appears as a block with a name like `STREAM_HASH_core0_core1` — with no corresponding `SELECT` in the source file. See [Substrates](substrates.md).
+**Substrates in the plan**: an automatically generated substrate appears as a block with a name like `STREAM_HASH_core0_core1` - with no corresponding `SELECT` in the source file. See [Substrates](substrates.md).
 
 ## Visualizing the dependency graph
 
@@ -72,7 +72,7 @@ Available flags that modify the DOT output:
 | `-t`  | `--tags`        | show individual field programs (requires `-f`) |
 | `-s`  | `--streamprogs` | show stack-instruction sequences in the nodes |
 | `-u`  | `--rules`       | show RULE rules |
-| `-p`  | `--transparent` | transparent background — for embedding in documents |
+| `-p`  | `--transparent` | transparent background - for embedding in documents |
 
 The graph shows dependencies between streams as edges directed from sources to results. Substrates have a different color than streams explicitly defined by the user. See [Dependency Tree Construction](dependency-tree-construction.md).
 
@@ -82,10 +82,10 @@ The graph shows dependencies between streams as edges directed from sources to r
 
 If an output stream's delta is unexpected:
 
-1. Check the source streams' deltas — visible in the DECLARE blocks at the end of the plan.
-2. Check the operator in the FROM clause — every operator has a different delta equation.
+1. Check the source streams' deltas - visible in the DECLARE blocks at the end of the plan.
+2. Check the operator in the FROM clause - every operator has a different delta equation.
 
-Example: `core0(1/10) # core1(1/5)` gives a delta of `1/15` (the harmonic mean), not `1/10`. If you expected `1/10`, use `+` instead of `#`. Full equations — see [Interval Resolution](interval-resolution.md).
+Example: `core0(1/10) # core1(1/5)` gives a delta of `1/15` (the harmonic mean), not `1/10`. If you expected `1/10`, use `+` instead of `#`. Full equations - see [Interval Resolution](interval-resolution.md).
 
 ## Common compilation errors
 
@@ -96,11 +96,11 @@ Example: `core0(1/10) # core1(1/5)` gives a delta of `1/15` (the harmonic mean),
 >> unresolved streams
 ```
 
-A stream refers, directly or indirectly, to itself. Generate the graph via `-d` — the cycle will be visible as a loop. See [Loop Detection](loop-detection.md).
+A stream refers, directly or indirectly, to itself. Generate the graph via `-d` - the cycle will be visible as a loop. See [Loop Detection](loop-detection.md).
 
 ### Unknown stream
 
-A reference to a stream that hasn't been declared yet. `.rql` files are processed sequentially — a `SELECT` cannot refer to a stream defined further down in the file. Move the `DECLARE` or `SELECT` earlier.
+A reference to a stream that hasn't been declared yet. `.rql` files are processed sequentially - a `SELECT` cannot refer to a stream defined further down in the file. Move the `DECLARE` or `SELECT` earlier.
 
 ### Schema cardinality mismatch with `_`
 
@@ -108,4 +108,4 @@ Both streams in the expression `core0[_] * core1[_]` must have schemas of the sa
 
 ### Data file unavailable
 
-This error **does not appear with `-c`** — the flag verifies the query's correctness, it does not check whether the data files exist. The file-access error only appears when processing is started without `-c`.
+This error **does not appear with `-c`** - the flag verifies the query's correctness, it does not check whether the data files exist. The file-access error only appears when processing is started without `-c`.

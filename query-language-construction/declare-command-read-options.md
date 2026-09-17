@@ -11,7 +11,7 @@ DECLARE field type STREAM name, rate FILE source
 
 ## ONESHOT
 
-Without `ONESHOT`, a data source is read in an infinite loop — once the end of the file is reached, the read position returns to the beginning. `ONESHOT` disables the loop: the file is read exactly once, and once exhausted the stream returns records with every field marked `NULL`. The record bytes are zeroed, but the null markers distinguish missing data from a numeric zero.
+Without `ONESHOT`, a data source is read in an infinite loop - once the end of the file is reached, the read position returns to the beginning. `ONESHOT` disables the loop: the file is read exactly once, and once exhausted the stream returns records with every field marked `NULL`. The record bytes are zeroed, but the null markers distinguish missing data from a numeric zero.
 
 ```rql
 DECLARE measurement INTEGER STREAM burst, 0.1 FILE 'data.dat' ONESHOT
@@ -27,7 +27,7 @@ Once data transfer from the source finishes, the system deletes the data file, t
 DECLARE temp INTEGER STREAM one_time, 0.1 FILE 'temp.dat' DISPOSABLE ONESHOT
 ```
 
-`DISPOSABLE` is used together with `ONESHOT` — data is read once, then deleted after reading. This combination is useful for temporary input data files.
+`DISPOSABLE` is used together with `ONESHOT` - data is read once, then deleted after reading. This combination is useful for temporary input data files.
 
 ## HOLD
 

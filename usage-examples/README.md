@@ -2,7 +2,7 @@
 
 This chapter presents short examples of using RetractorDB to solve concrete problems encountered when building monitoring systems.
 
-Every example is complete — it includes a problem description, the RQL query design, how to run it, and how to interpret the results. The examples can be run on their own: the required data files and scripts are described step by step.
+Every example is complete - it includes a problem description, the RQL query design, how to run it, and how to interpret the results. The examples can be run on their own: the required data files and scripts are described step by step.
 
 <div class="timeline">
 
@@ -27,7 +27,7 @@ Every example is complete — it includes a problem description, the RQL query d
 
   - data preparation: converting MIT-BIH recordings (WFDB format) into text files compatible with RetractorDB,
   - implementing the five-stage Pan-Tompkins algorithm in RQL: band-pass filter → differentiation → squaring → moving-window integration → threshold detection,
-  - visualizing the ECG signal and the QRS-detection result in a gnuplot window (RTL mode — newest samples on the right),
+  - visualizing the ECG signal and the QRS-detection result in a gnuplot window (RTL mode - newest samples on the right),
   - interpreting the results: RR-interval readings, identifying arrhythmia episodes in MIT-BIH record 205.
 
   The result is a working QRS detector processing a two-channel ECG signal (MLII + V1) at 360 Hz, implemented entirely with RQL queries, with no specialized libraries.

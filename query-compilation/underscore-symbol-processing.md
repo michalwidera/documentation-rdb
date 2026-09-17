@@ -4,7 +4,7 @@ The `[_]` index is syntactic sugar that replicates a field expression. One expre
 
 The number of copies is not determined solely by a stream's own schema. `x[_]` denotes all slots that `x` contributes to the record produced by the query's complete `FROM` clause. This distinction matters when a stream operator changes the schema width, for example by creating a window.
 
-The example uses the canonical declarations used throughout the chapter — `core0` has two fields (BYTE, INTEGER), `core1` has two fields (INTEGER, FLOAT), the schemas have equal cardinality:
+The example uses the canonical declarations used throughout the chapter - `core0` has two fields (BYTE, INTEGER), `core1` has two fields (INTEGER, FLOAT), the schemas have equal cardinality:
 
 ```rql
 DECLARE a BYTE, b INTEGER   STREAM core0, 0.1 FILE 'sensor_a.txt'
@@ -19,7 +19,7 @@ After compiling:
 {{#include ../regen/out/underscore.txt}}
 ```
 
-The `_` symbol expanded into two fields: `scaled[0] * scaled[2]` (i.e. `a * c`) and `scaled[1] * scaled[3]` (i.e. `b * d`). References to `core0` and `core1` were translated, via aliasing, into absolute positions in the combined schema. The resulting types are INTEGER (`BYTE * INTEGER`) and FLOAT (`INTEGER * FLOAT`) — the result of type promotion, described in a separate subchapter.
+The `_` symbol expanded into two fields: `scaled[0] * scaled[2]` (i.e. `a * c`) and `scaled[1] * scaled[3]` (i.e. `b * d`). References to `core0` and `core1` were translated, via aliasing, into absolute positions in the combined schema. The resulting types are INTEGER (`BYTE * INTEGER`) and FLOAT (`INTEGER * FLOAT`) - the result of type promotion, described in a separate subchapter.
 
 ## Width computed from the `FROM` clause
 

@@ -47,7 +47,7 @@ WHEN str1[0] = 13 OR str1[0] = 11 \
 DO SYSTEM 'echo "systemcall"'
 ```
 
-Assume that a stream str1 has previously been defined, whose data — integer values — arrives once per second. In this case, the first rule, attached to this stream, waits for data whose value exceeds 11. Should such an event occur, a dump of the data is made, covering the range from 5 seconds before to 5 seconds after the event described by the logical condition.
+Assume that a stream str1 has previously been defined, whose data - integer values - arrives once per second. In this case, the first rule, attached to this stream, waits for data whose value exceeds 11. Should such an event occur, a dump of the data is made, covering the range from 5 seconds before to 5 seconds after the event described by the logical condition.
 
 The second rule, with a slightly different logical condition, prints the text "systemcall" to the screen from which the RetractorDB process was started.
 
@@ -74,7 +74,7 @@ DUMP [-]<step_back> TO [-]<step_forward> [RETENTION <n>]
 A rule can only be attached to a stream declared with a `SELECT` command (an artifact or substrate). Attaching it to a `DECLARE` input stream is a compilation error:
 
 ```rql
-# INVALID — core0 is a declaration, a rule cannot be attached to it
+# INVALID - core0 is a declaration, a rule cannot be attached to it
 RULE r1 ON core0 WHEN core0[0] > 10 DO SYSTEM 'echo alarm'
 ```
 
@@ -93,7 +93,7 @@ WHEN NOT str1[0] = 0
 
 ## The DO SYSTEM action
 
-The `DO SYSTEM` action executes the given shell command (via a `system(3)` call) the moment the condition is satisfied. RetractorDB logs the command's exit code — a non-zero code is reported as an error in the log.
+The `DO SYSTEM` action executes the given shell command (via a `system(3)` call) the moment the condition is satisfied. RetractorDB logs the command's exit code - a non-zero code is reported as an error in the log.
 
 ```rql
 RULE alert1 \
@@ -138,7 +138,7 @@ The file format is raw binary data matching the stream descriptor (no header). T
 
 ### The RETENTION option
 
-The `RETENTION <n>` parameter limits the number of stored dumps — the oldest file is overwritten by the new one (a circular buffer). Without `RETENTION`, every trigger overwrites a single `_dump.tmp` file.
+The `RETENTION <n>` parameter limits the number of stored dumps - the oldest file is overwritten by the new one (a circular buffer). Without `RETENTION`, every trigger overwrites a single `_dump.tmp` file.
 
 ```rql
 RULE event ON results WHEN results[0] > 500 DO DUMP -10 TO 5 RETENTION 20

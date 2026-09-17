@@ -2,7 +2,7 @@
 
 By Ad Hoc queries we mean queries directed at a running system. In the typical scenario originally envisioned during system development, the initial working assumption was that a system user would know all the queries and data sources needed to obtain the processed time series.
 
-During development, however, additional scenarios emerged, assuming that the system's operation should not be interrupted, and that additional queries should be attached to the query execution plan. We call this kind of functionality Ad Hoc queries — attached to the system while it is running, without interrupting its operation.
+During development, however, additional scenarios emerged, assuming that the system's operation should not be interrupted, and that additional queries should be attached to the query execution plan. We call this kind of functionality Ad Hoc queries - attached to the system while it is running, without interrupting its operation.
 
 <figure><img src="../assets/przeplyw_sterowania_adhoc.svg" width="75%" alt=""><figcaption><p>Fig. 48. Control flow for Ad Hoc queries</p></figcaption></figure>
 
@@ -61,7 +61,7 @@ and atomically, including on an idle instance.
 ### Where an ad hoc stream begins
 
 A plan built from the start of system operation numbers records from the logical
-origin computed by the compiler. A query attached ad hoc has no such history —
+origin computed by the compiler. A query attached ad hoc has no such history -
 its first record is **the first slot in which the runtime saw it**, not slot zero
 of the plan. The import is atomic: the compiled tree and its stream instances are
 published under a common lock, and the execution loop rebuilds the timeline
@@ -99,7 +99,7 @@ A    | 1        | -1   | 3     | data1.txt | 1
 B    | 2        | -1   | 2     | data2.txt | 1
 ```
 
-This will display, in tabular form, what's currently being processed in the system — how many bytes have already arrived, which files the data is being read from, and how much data has already been processed. If a more descriptive format is desired, we can issue the following command:
+This will display, in tabular form, what's currently being processed in the system - how many bytes have already arrived, which files the data is being read from, and how much data has already been processed. If a more descriptive format is desired, we can issue the following command:
 
 ```
 $ xqry -d -y

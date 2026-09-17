@@ -1,6 +1,6 @@
 # VOLATILE Clause
 
-The `VOLATILE` clause in the `SELECT` command creates a stream stored in memory. On disk, only the `.desc` descriptor file describing the data schema appears — the data itself is never written.
+The `VOLATILE` clause in the `SELECT` command creates a stream stored in memory. On disk, only the `.desc` descriptor file describing the data schema appears - the data itself is never written.
 
 ## Default volatility and the PERSISTENT exception
 
@@ -49,7 +49,7 @@ history of a `VOLATILE` result, the buffer may hold more than one record. This m
 
 * the in-memory buffer holds at least the most recent record and any history its consumers need,
 * data never reaches disk,
-* the `.desc` descriptor is still created — other processes can learn the stream's schema.
+* the `.desc` descriptor is still created - other processes can learn the stream's schema.
 
 ## Difference from `STORAGE MEMORY`
 
@@ -60,7 +60,7 @@ history of a `VOLATILE` result, the buffer may hold more than one record. This m
 | Descriptor on disk | yes                                             | yes                                      |
 | Data on disk       | no                                              | no                                       |
 
-`VOLATILE` is useful when the query result is being pulled by `xqry` on an ongoing basis and history is not needed — e.g. the current value of a sensor exposed by the operating system.
+`VOLATILE` is useful when the query result is being pulled by `xqry` on an ongoing basis and history is not needed - e.g. the current value of a sensor exposed by the operating system.
 
 ## Example
 

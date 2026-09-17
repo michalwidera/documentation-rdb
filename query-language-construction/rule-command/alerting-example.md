@@ -38,7 +38,7 @@ Session recording (animation below):
 
 ## Example 2: recording event context (DO DUMP)
 
-The `DO DUMP` action lets you capture a window of samples surrounding an event — data before and after it occurred. This is useful when we want to preserve the context of an anomaly for later analysis.
+The `DO DUMP` action lets you capture a window of samples surrounding an event - data before and after it occurred. This is useful when we want to preserve the context of an anomaly for later analysis.
 
 We create a `query.rql` file:
 
@@ -51,7 +51,7 @@ SELECT str1[0] STREAM str1 FROM core0
 RULE anomaly_log ON str1 WHEN str1[0] > 24 DO DUMP -3 TO 3
 ```
 
-Input data — numbers from 20 to 28:
+Input data - numbers from 20 to 28:
 
 ```
 $ seq 20 28 > datafile1.txt
@@ -67,7 +67,7 @@ When the value of stream `str1` exceeds 24, the rule triggers a write of 6 recor
 
 ### Reading the dump file
 
-The dump file contains no `.desc` header — when opening it in `xtrdb`, the schema must be specified manually:
+The dump file contains no `.desc` header - when opening it in `xtrdb`, the schema must be specified manually:
 
 ```
 $ xtrdb
@@ -105,7 +105,7 @@ Once capacity is exceeded (`RETENTION 5`), the oldest file is overwritten by the
 
 ## Example 4: multiple rules on a single stream
 
-Any number of rules can be attached to a single stream. The example below combines both actions — a system notification and context recording:
+Any number of rules can be attached to a single stream. The example below combines both actions - a system notification and context recording:
 
 ```rql
 STORAGE 'temp'
@@ -126,6 +126,6 @@ DO SYSTEM 'echo "ALARM: value above upper threshold" >> alarm.log'
 RULE context_log ON str1 WHEN str1[0] > 26 DO DUMP -5 TO 5 RETENTION 10
 ```
 
-The `upper_threshold` and `context_log` rules react to the same condition independently — crossing the upper threshold both writes a log entry and captures the data window at the same time. The `lower_threshold` rule handles the lower threshold separately.
+The `upper_threshold` and `context_log` rules react to the same condition independently - crossing the upper threshold both writes a log entry and captures the data window at the same time. The `lower_threshold` rule handles the lower threshold separately.
 
 All three rules are evaluated on every new sample of the `str1` stream.

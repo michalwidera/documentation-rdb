@@ -21,15 +21,15 @@ The appendices contain documents not directly related to the system's constructi
 
 - **[System Origin](system-origin/README.md)**
 
-  A description of the historical circumstances that led to RetractorDB's creation. The starting point is the author's experience building a neonatal monitoring system in the early 2000s — running into the limitations of relational databases when recording high-granularity signals, attempts based on the stream-processing systems of the time, and the evolution toward a dedicated time-series processing engine. The chapter also explains where the name "Retractor" comes from — a reference to a group of surgical instruments that separate and join tissue structures, treated here as an analogy for operations on data streams.
+  A description of the historical circumstances that led to RetractorDB's creation. The starting point is the author's experience building a neonatal monitoring system in the early 2000s - running into the limitations of relational databases when recording high-granularity signals, attempts based on the stream-processing systems of the time, and the evolution toward a dedicated time-series processing engine. The chapter also explains where the name "Retractor" comes from - a reference to a group of surgical instruments that separate and join tissue structures, treated here as an analogy for operations on data streams.
 
 - **[RQL Syntax Highlighting](syntax-highlighting/README.md)**
 
   RetractorDB query files (extension `.rql`) have dedicated syntax-highlighting definitions for three environments:
 
-  - **Visual Studio Code** — the `rql-vscode` extension, installed from the GitHub repository,
-  - **Vim** — the files `syntax/rql.vim` and `ftdetect/rql.vim`, installed via `scripts/buildrdb.sh vimsyntax` or manually into `~/.vim/`,
-  - **bat / batcat** — a Sublime Text 3 format definition, installed via `scripts/buildrdb.sh batsyntax`.
+  - **Visual Studio Code** - the `rql-vscode` extension, installed from the GitHub repository,
+  - **Vim** - the files `syntax/rql.vim` and `ftdetect/rql.vim`, installed via `scripts/buildrdb.sh vimsyntax` or manually into `~/.vim/`,
+  - **bat / batcat** - a Sublime Text 3 format definition, installed via `scripts/buildrdb.sh batsyntax`.
 
   Each environment recognizes RQL keywords (`SELECT`, `DECLARE`, `RULE`, `STREAM`, …), data types, comments, string literals, and numeric values.
 
@@ -47,7 +47,7 @@ The appendices contain documents not directly related to the system's constructi
 
 - **[Integration Tests](integration-tests.md)**
 
-  A catalog of all the system's integration tests, with a description of the functionality each one verifies. Integration tests run the actual binaries (`xretractor`, `xqry`, `xtrdb`) and compare their results against patterns — unlike GTest unit tests, which test isolated library classes.
+  A catalog of all the system's integration tests, with a description of the functionality each one verifies. Integration tests run the actual binaries (`xretractor`, `xqry`, `xtrdb`) and compare their results against patterns - unlike GTest unit tests, which test isolated library classes.
 
   Scenarios live in the shared **`test/IntegrationTest`** tree. Tests that start a server
   receive one of sixteen `RDB_NAMESPACE` namespaces and a CTest resource lock for their

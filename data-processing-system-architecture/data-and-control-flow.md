@@ -24,11 +24,11 @@ The xretractor process handles system signals and shuts down in a controlled man
 | `SIGTERM` | `kill <pid>`          | standard process termination              |
 | `SIGHUP`  | `kill -HUP <pid>`     | termination on terminal close             |
 
-All three signals produce the same effect: a graceful shutdown — the processing loop finishes the current cycle and stops. This allows xretractor, running as a service, to be shut down safely without risking corruption of artifact files.
+All three signals produce the same effect: a graceful shutdown - the processing loop finishes the current cycle and stops. This allows xretractor, running as a service, to be shut down safely without risking corruption of artifact files.
 
 ### Stopping via xqry
 
-Besides system signals, xretractor can be stopped programmatically — using the command:
+Besides system signals, xretractor can be stopped programmatically - using the command:
 
 ```bash
 xqry --server name --kill
@@ -42,11 +42,11 @@ The xqry process resolves an instance from `--server` or from the bus, builds an
 
 **2. xretractor receives the command and sets the stop flag**
 
-The selected instance's `IpcServer` communication thread continuously listens on its queue. After receiving a `kill` message, `executorsm::commandProcessor` sets the atomic `iLoopLimitCnt` counter to `stop_now` and wakes the execution loop. The same mechanism is used by the system-signal handler — regardless of the source, the effect is identical for that one instance.
+The selected instance's `IpcServer` communication thread continuously listens on its queue. After receiving a `kill` message, `executorsm::commandProcessor` sets the atomic `iLoopLimitCnt` counter to `stop_now` and wakes the execution loop. The same mechanism is used by the system-signal handler - regardless of the source, the effect is identical for that one instance.
 
 **3. The main processing loop detects the flag and finishes the current cycle**
 
-The main loop checks `iLoopLimitCnt` on every iteration. When it detects the value `stop_now`, it finishes the current cycle and exits the loop — without interrupting mid-computation. This ensures the integrity of the artifacts being written.
+The main loop checks `iLoopLimitCnt` on every iteration. When it detects the value `stop_now`, it finishes the current cycle and exits the loop - without interrupting mid-computation. This ensures the integrity of the artifacts being written.
 
 **4. xretractor notifies all connected clients (OOB broadcast)**
 
@@ -54,7 +54,7 @@ After exiting the loop, xretractor calls `IpcServer::broadcastOutOfBusiness()`. 
 
 **5. Every xqry client receives the termination signal and exits**
 
-Every xqry subscription has its own queue containing the server name and client PID. Upon receiving the `OUT_OF_BUSSINESS` message, xqry sets its internal `done` flag and shuts down in a controlled manner — regardless of how much data it had received up to that point.
+Every xqry subscription has its own queue containing the server name and client PID. Upon receiving the `OUT_OF_BUSSINESS` message, xqry sets its internal `done` flag and shuts down in a controlled manner - regardless of how much data it had received up to that point.
 
 **6. IPC resource cleanup**
 
@@ -83,7 +83,7 @@ RetractorDB is designed to work with multiple parallel clients. If, say, three x
 - the selected xretractor processes the kill request **once**, regardless of which client sent it,
 - `IpcServer::broadcastOutOfBusiness()` sends the `OUT_OF_BUSSINESS` message to **all** clients registered with that instance,
 - each of the three xqry processes receives the termination signal and exits on its own,
-- clients that hadn't subscribed to any stream (e.g. xqry invoked only with `--dir` or `--hello`) are not entered in the map and don't need to be notified — these commands exit immediately after providing their response.
+- clients that hadn't subscribed to any stream (e.g. xqry invoked only with `--dir` or `--hello`) are not entered in the map and don't need to be notified - these commands exit immediately after providing their response.
 
 Clients connected to other named instances do not receive the message and continue running.
 

@@ -1,10 +1,10 @@
 # Formal Foundations and Proofs
 
-In the chapter on the [algebra of regular time series](algebra-of-regular-time-series.md) I presented a set of operators together with the equations describing them. I deliberately omitted formal proofs there — I wanted to first show _what_ the system does before explaining _why_ it is allowed to do so. This page fills that gap. Here I gather the formal skeleton of the algebra: the connection between the stream operators and covering-system theory, along with proofs of the theorems underlying the correctness and optimization of query plans.
+In the chapter on the [algebra of regular time series](algebra-of-regular-time-series.md) I presented a set of operators together with the equations describing them. I deliberately omitted formal proofs there - I wanted to first show _what_ the system does before explaining _why_ it is allowed to do so. This page fills that gap. Here I gather the formal skeleton of the algebra: the connection between the stream operators and covering-system theory, along with proofs of the theorems underlying the correctness and optimization of query plans.
 
 > **ℹ️ Info**
 >
-> The entire construction below stays within a single domain — the rational numbers. This is not a stylistic choice. It is the whole point. Beatty's theorem needs irrational numbers, which a computer does not have. Fraenkel's theorem lets us descend to rational numbers. The proofs on this page show that the interleaving and de-interleaving operations are a special case of Beatty sequences satisfying Fraenkel's postulates — and are therefore realizable using rational numbers alone.
+> The entire construction below stays within a single domain - the rational numbers. This is not a stylistic choice. It is the whole point. Beatty's theorem needs irrational numbers, which a computer does not have. Fraenkel's theorem lets us descend to rational numbers. The proofs on this page show that the interleaving and de-interleaving operations are a special case of Beatty sequences satisfying Fraenkel's postulates - and are therefore realizable using rational numbers alone.
 
 
 ## Covering systems as the foundation
@@ -26,13 +26,13 @@ The parameters of this sequence have a clear geometric interpretation:
 * α′ denotes the offset,
 * −α′/α denotes the y-intercept (the point where it crosses the y-axis).
 
-The [Beatty](../references.md#1) theorem guarantees a partition of the set for irrational numbers. The [Fraenkel](../references.md#2) theorem is a generalization that — crucially for us — also allows rational numbers, provided five postulates are satisfied (quoted in the [introductory chapter](README.md)). An accessible proof of Fraenkel's theorem can be found in K. O'Bryant's paper _"Fraenkel's partition and Brown's decomposition"_ [\[23\]](../references.md#23).
+The [Beatty](../references.md#1) theorem guarantees a partition of the set for irrational numbers. The [Fraenkel](../references.md#2) theorem is a generalization that - crucially for us - also allows rational numbers, provided five postulates are satisfied (quoted in the [introductory chapter](README.md)). An accessible proof of Fraenkel's theorem can be found in K. O'Bryant's paper _"Fraenkel's partition and Brown's decomposition"_ [\[23\]](../references.md#23).
 
 The remainder of this page boils down to a single idea: showing that the stream operators are, in essence, machines generating Beatty sequences that partition (cover) the set of natural numbers.
 
 ## Tools: floor and ceiling properties
 
-The proofs rely almost exclusively on the floor function (⌊x⌋ — the integer part) and the ceiling function (⌈x⌉ — the smallest integer not less than x). I therefore first present a set of identities that will be used repeatedly. Let x ∈ ℝ, and let C denote an integer:
+The proofs rely almost exclusively on the floor function (⌊x⌋ - the integer part) and the ceiling function (⌈x⌉ - the smallest integer not less than x). I therefore first present a set of identities that will be used repeatedly. Let x ∈ ℝ, and let C denote an integer:
 
 \\[
 \left\lfloor x\right\rfloor = \left\lceil x\right\rceil \iff x \in \mathbb{Z}
@@ -42,13 +42,13 @@ The proofs rely almost exclusively on the floor function (⌊x⌋ — the intege
 \left\lfloor x\right\rfloor + 1 = \left\lceil x\right\rceil \iff x \in \mathbb{R} \setminus \mathbb{Z}
 \\]
 
-The second of these identities carries over directly to Beatty sequences themselves. The ceiling variant of the sequence, B′<sub>α</sub>(n) = ⌈nα⌉, is — for irrational α — merely a shifted version of the floor variant:
+The second of these identities carries over directly to Beatty sequences themselves. The ceiling variant of the sequence, B′<sub>α</sub>(n) = ⌈nα⌉, is - for irrational α - merely a shifted version of the floor variant:
 
 \\[
 B_{\alpha}^{\prime}(n) = \left\lceil n\alpha \right\rceil = \left\lfloor n\alpha \right\rfloor + 1
 \\]
 
-In a true Beatty sequence α must be irrational, so nα is never an integer for any n > 0 — the premise of the second identity holds for every term, and the ceiling variant simply raises every term of the floor variant by exactly 1. For us, however, this is the case that does not exist inside a computer. In the rational domain, admitted only by Fraenkel's theorem, nα is sometimes an integer, and then ⌈nα⌉ = ⌊nα⌋, so the shift by 1 disappears. The constant offset between the ceiling and the floor variant therefore ceases to hold globally and has to be settled term by term — which is exactly what the case analysis in part three of the proof of Theorem 2 (de-interleaving satisfies Fraenkel's postulates) does, where gcd(a, b) decides which of the two cases applies.
+In a true Beatty sequence α must be irrational, so nα is never an integer for any n > 0 - the premise of the second identity holds for every term, and the ceiling variant simply raises every term of the floor variant by exactly 1. For us, however, this is the case that does not exist inside a computer. In the rational domain, admitted only by Fraenkel's theorem, nα is sometimes an integer, and then ⌈nα⌉ = ⌊nα⌋, so the shift by 1 disappears. The constant offset between the ceiling and the floor variant therefore ceases to hold globally and has to be settled term by term - which is exactly what the case analysis in part three of the proof of Theorem 2 (de-interleaving satisfies Fraenkel's postulates) does, where gcd(a, b) decides which of the two cases applies.
 
 \\[
 \left\lfloor x + C\right\rfloor = \left\lfloor x\right\rfloor + C
@@ -66,7 +66,7 @@ and otherwise:
 1 \leq \operatorname{gcd}(a,b) \leq \min(a,b)
 \\]
 
-These two cases disjointly cover the entire domain of interest to us — which will let us carry out a proof "by cases."
+These two cases disjointly cover the entire domain of interest to us - which will let us carry out a proof "by cases."
 
 ## Operators in formal notation
 
@@ -91,7 +91,7 @@ For the proofs to be self-contained, I restate two definitions I will refer to d
 c_{n}= \left\\{ \begin{array}{cc} b_{n-\left\lfloor n z \right\rfloor } & \left\lfloor n z \right\rfloor = \left\lfloor \left( n+1\right) z \right\rfloor \\\\ a_{\left\lfloor n z \right\rfloor } & \left\lfloor n z \right\rfloor \neq \left\lfloor \left( n+1\right) z \right\rfloor \end{array} \right. , \ z = \frac{\Delta _{b}}{\Delta _{a}+\Delta _{b}}, \ \Delta _{c}=\frac{\Delta _{a}\Delta _{b}}{\Delta _{a}+\Delta _{b}}
 \\]
 
-**De-interleaving** is defined by two complementary formulas — operator Θ, which recovers the original stream, and operator ∼Θ, which determines the "remainder" of the de-interleaving:
+**De-interleaving** is defined by two complementary formulas - operator Θ, which recovers the original stream, and operator ∼Θ, which determines the "remainder" of the de-interleaving:
 
 \\[
 a_{n} = c_{n+ \left\lceil \frac{(n+1)\Delta _{a}}{\Delta _{b}} \right\rceil },\ \Delta _{a}=\frac{\Delta _{c}\Delta _{b}}{\left\vert \Delta _{c}-\Delta _{b}\right\vert }
@@ -126,10 +126,10 @@ This is the central theorem of this page. It proves that the two sequences descr
 
 > **✅ Note**
 >
-> **Theorem.** Let a, b ∈ ℕ<sub>>0</sub> represent the rational ratio of the rates of the component streams, ∆<sub>a</sub>/∆<sub>b</sub> = a/b. Both tuple-selection sequences describing the de-interleaving operation are — up to the index alignment shown in the proof — a special case of Beatty sequences satisfying the postulates of Fraenkel's theorem for rational parameters. Consequently they partition the set ℕ₀ := ℕ ∪ {0}, i.e. the index set of the interleaved stream, and de-interleaving exactly inverts interleaving using rational-number arithmetic alone.
+> **Theorem.** Let a, b ∈ ℕ<sub>>0</sub> represent the rational ratio of the rates of the component streams, ∆<sub>a</sub>/∆<sub>b</sub> = a/b. Both tuple-selection sequences describing the de-interleaving operation are - up to the index alignment shown in the proof - a special case of Beatty sequences satisfying the postulates of Fraenkel's theorem for rational parameters. Consequently they partition the set ℕ₀ := ℕ ∪ {0}, i.e. the index set of the interleaved stream, and de-interleaving exactly inverts interleaving using rational-number arithmetic alone.
 
 
-**Proof — part one (reduction to Beatty form).** The tuple-selection sequence for the de-interleaving residue (operator ∼Θ) has the form:
+**Proof - part one (reduction to Beatty form).** The tuple-selection sequence for the de-interleaving residue (operator ∼Θ) has the form:
 
 \\[
 \left( n + \left\lfloor \frac{nb}{a} \right\rfloor \right) _{n=0}^{\infty }
@@ -147,7 +147,7 @@ Reading off the slope and the offset: with a shift of α′ = 0 we obtain α = a
 \mathcal{B}\\!\left( \frac{a}{a + b}, 0 \right) = \left( \left\lfloor n\frac{a + b}{a} \right\rfloor \right) _{n=1}^{\infty }
 \\]
 
-**Proof — part two (verifying the five postulates and determining the residue).** We check the postulates of Fraenkel's theorem in turn for α = a/(a+b), α′ = 0:
+**Proof - part two (verifying the five postulates and determining the residue).** We check the postulates of Fraenkel's theorem in turn for α = a/(a+b), α′ = 0:
 
 1. The value α = a/(a+b) for a, b > 0 is greater than zero and less than one.
 2. The condition α + β = 1 is satisfied for β = b/(a+b).
@@ -161,7 +161,7 @@ The sequence complementing B(a/(a+b), 0) in the sense of Fraenkel's postulates i
 \mathcal{B}\\!\left( \frac{b}{a + b}, \frac{\operatorname{gcd}(a, b)}{a + b} \right)
 \\]
 
-After reindexing n ↦ n + 1, so that it runs from n = 0 — matching the selection sequences in the definition of de-interleaving — it takes the form:
+After reindexing n ↦ n + 1, so that it runs from n = 0 - matching the selection sequences in the definition of de-interleaving - it takes the form:
 
 \\[
 \left( \left\lfloor \frac{(n + 1) - \frac{\operatorname{gcd}(a,b)}{a+b}}{\frac{b}{a+b}} \right\rfloor \right) _{n=0}^{\infty }
@@ -173,7 +173,7 @@ Expanding the above expression:
 \left\lfloor \frac{(n + 1) - \frac{\operatorname{gcd}(a,b)}{a+b}}{\frac{b}{a+b}} \right\rfloor = \left\lfloor n\frac{a}{b} + n + \frac{a}{b} + 1 - \frac{\operatorname{gcd}(a, b)}{b} \right\rfloor
 \\]
 
-Comparing this — term by term for n ≥ 0 — with the tuple-selection sequence of the recovered stream (operator Θ):
+Comparing this - term by term for n ≥ 0 - with the tuple-selection sequence of the recovered stream (operator Θ):
 
 \\[
 \left( n + \left\lceil \frac{(n + 1)a}{b} \right\rceil \right) _{n=0}^{\infty }
@@ -185,7 +185,7 @@ and factoring out the integer part n + 1 via the property ⌊x + C⌋ = ⌊x⌋ 
 \left\lfloor n\frac{a}{b} - \frac{\operatorname{gcd}(a, b)}{b} \right\rfloor + 1 = \left\lceil n\frac{a}{b} \right\rceil ,\quad n \in \mathbb{N}_{>0}
 \\]
 
-**Proof — part three (case analysis).** Using the properties of the coefficient gcd(a, b), we consider two disjoint cases covering the entire domain.
+**Proof - part three (case analysis).** Using the properties of the coefficient gcd(a, b), we consider two disjoint cases covering the entire domain.
 
 _Case 1: gcd(a, b) = b, i.e. a/b ∈ ℕ._ Then n·a/b ∈ ℕ, so by the identity ⌊x⌋ = ⌈x⌉ ⟺ x ∈ ℤ we have ⌈n·a/b⌉ = ⌊n·a/b⌋, and by ⌊x + C⌋ = ⌊x⌋ + C:
 
@@ -213,7 +213,7 @@ If n·a/b ∈ ℤ, then ⌈n·a/b⌉ = n·a/b, and since 0 < gcd(a,b)/b < 1:
 
 which again gives the identity being proved.
 
-Both selection sequences describing the de-interleaving operation are therefore — up to the unit reindexing from part two — Beatty sequences satisfying Fraenkel's postulates for rational parameters: the pair B(a/(a+b), 0) and B(b/(a+b), gcd(a,b)/(a+b)) partitions the set ℕ, and together with the initial residue term 0 from part one — the set ℕ₀, the full index set of the interleaved stream. The recovered stream and the residue are therefore exact. ∎
+Both selection sequences describing the de-interleaving operation are therefore - up to the unit reindexing from part two - Beatty sequences satisfying Fraenkel's postulates for rational parameters: the pair B(a/(a+b), 0) and B(b/(a+b), gcd(a,b)/(a+b)) partitions the set ℕ, and together with the initial residue term 0 from part one - the set ℕ₀, the full index set of the interleaved stream. The recovered stream and the residue are therefore exact. ∎
 
 > **✅ Note**
 >
@@ -226,7 +226,7 @@ Both selection sequences describing the de-interleaving operation are therefore 
 
 ## Operator properties used in optimization
 
-Based on the algebra presented, a number of properties of data streams can be shown. They have direct application in the data-management system — during query-plan optimization and result interpretation.
+Based on the algebra presented, a number of properties of data streams can be shown. They have direct application in the data-management system - during query-plan optimization and result interpretation.
 
 ### Disruption of event ordering
 
@@ -273,7 +273,7 @@ Both streams carry ∆<sub>c</sub> = ∆<sub>a</sub>. They therefore coincide up
 
 ### Interleaving alignment method
 
-The interleaving operation is not commutative in general: since 0 < z < 1, at n = 0 the equality branch of the interleaving definition always applies, so the stream φ(A, B) begins with element b₀, while the stream φ(B, A) begins with element a₀. Interleaving is, however, equivariant with respect to time shifts matched to the streams' rates — which is valuable for query-plan optimization.
+The interleaving operation is not commutative in general: since 0 < z < 1, at n = 0 the equality branch of the interleaving definition always applies, so the stream φ(A, B) begins with element b₀, while the stream φ(B, A) begins with element a₀. Interleaving is, however, equivariant with respect to time shifts matched to the streams' rates - which is valuable for query-plan optimization.
 
 In the causal realization a stream has the form
 \\(\widehat{S}=((s_n,\Delta),W_S)\\), where \\(W_S\\) is its startup tail.
@@ -289,7 +289,7 @@ The tail of an interleave with interval
 operator definition, without going through a single phase term.
 
 Record \\(i\\) of \\(\varphi(A,B)\\) carries the content of record \\(j(i)\\)
-of exactly one component — the one the interleave definition selects in slot
+of exactly one component - the one the interleave definition selects in slot
 \\(i\\). Write \\(\Delta_{s(i)}\\) and \\(W_{s(i)}\\) for the interval and tail
 of the selected component. Record \\(j(i)\\) is determined at time
 \\(\bigl(j(i)+1+W_{s(i)}\bigr)\Delta_{s(i)}\\), while consumer slot \\(i\\) ends
@@ -315,7 +315,7 @@ W_{\varphi(A,B)}
 \\]
 
 The formula is **exact**: it neither overshoots nor undershoots the event-model
-bound for any node. The period scan starts at zero — the logical origin shifts
+bound for any node. The period scan starts at zero - the logical origin shifts
 the consumer index and the component index by the same amount, so the window
 \\([0,\,p+q)\\) yields the same value as any shifted window.
 
@@ -333,7 +333,7 @@ H_{a,b}=\left\lceil\frac{p+q-1}{p}\right\rceil
 \\]
 
 protected the worst read phase of the second argument, but did not check whether
-that phase actually falls on the record that waits longest — hence it overshot
+that phase actually falls on the record that waits longest - hence it overshot
 the tail by one slot for some nodes. It survives in the implementation as the
 fallback for \\(p+q\\) above the scan threshold (`kHashPhaseScanLimit` in
 `SOperations.hpp`): overshooting costs one slot of latency, whereas
@@ -352,7 +352,7 @@ W_{\tau_m(S)}=\max\left(0,\;W_S-m\right)
 \\]
 
 The tail **decreases**: record \\(n-m\\) is older than the current one and
-therefore all the more available — the slot deficit is \\(W_S-m\\) and is
+therefore all the more available - the slot deficit is \\(W_S-m\\) and is
 constant. Details and measurement: [Tails, logical origins and operator
 observability](operator-tails-and-observability.md).
 
@@ -363,7 +363,7 @@ observability](operator-tails-and-observability.md).
 > shifted by the same amount of time), then interleaving the shifted streams and
 > the interleaving of the original streams shifted by the sum of these numbers
 > have **the same record sequence, the same interval and the same logical
-> origin**. Their tails satisfy an inequality — the factored side is never the
+> origin**. Their tails satisfy an inequality - the factored side is never the
 > later one.
 
 Formally, with \\(L:=i+k\\):
@@ -380,7 +380,7 @@ W_{\mathrm{RHS}}=\max\left(0,\;W_{\varphi(A,B)}-L\right)\le W_{\mathrm{LHS}}
 
 where \\(\operatorname{Obs}\\) is the value part of the observation (interval,
 logical origin, record sequence with its `NULL` map, descriptor, gap trace,
-materialization policy) — see [Tails, logical origins and operator
+materialization policy) - see [Tails, logical origins and operator
 observability](operator-tails-and-observability.md).
 
 **Proof.**
@@ -482,12 +482,12 @@ value maps, and the materialization policy.
 
 The theorems presented are not formalism for its own sake. Each of them plays a concrete role in the working system:
 
-* **Theorems 1 and 2** guarantee that the pairs of operations interleaving/de-interleaving and sum/difference are complementary — data is neither lost nor duplicated in an uncontrolled way. They are what allow us to treat these operations like multiplication/division and addition/subtraction on the set of regular time series.
-* **Theorem 2** in particular proves that the entire construction can be realized using rational numbers alone — and thus deterministically and exactly on a computer. This is the condition without which RetractorDB could not exist.
+* **Theorems 1 and 2** guarantee that the pairs of operations interleaving/de-interleaving and sum/difference are complementary - data is neither lost nor duplicated in an uncontrolled way. They are what allow us to treat these operations like multiplication/division and addition/subtraction on the set of regular time series.
+* **Theorem 2** in particular proves that the entire construction can be realized using rational numbers alone - and thus deterministically and exactly on a computer. This is the condition without which RetractorDB could not exist.
 * **The theorems on operator properties** (commutativity of summation, interleaving alignment, ordering disruption) provide rewrite rules for stream expressions. The query-plan optimizer uses them to transform plans into cheaper-to-execute forms without changing the result.
 
 The branch of mathematics in which these equations are situated is the theory of covering systems [\[4\]](../references.md#4) within number theory. I presented the full formalism along with a complete set of proofs in the paper [A Deterministic Method for Processing Data Sequences](https://www.academia.edu/1840563/Deterministyczna_metoda_przetwarzania_ciagow_danych) [\[3\]](../references.md#3).
 
 > **ℹ️ Info**
 >
-> A numerical verification of the equations above — Python prototypes operating on rational numbers (the `Fraction` library) — can be found on the [Model Implementation](model-implementation.md) page and in the repository [github.com/michalwidera/equations](https://github.com/michalwidera/equations).
+> A numerical verification of the equations above - Python prototypes operating on rational numbers (the `Fraction` library) - can be found on the [Model Implementation](model-implementation.md) page and in the repository [github.com/michalwidera/equations](https://github.com/michalwidera/equations).

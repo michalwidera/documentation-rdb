@@ -11,7 +11,7 @@ In Fig. 13 every instance compiles its own plan and claims its own set of stream
 a bus slot; numbered nodes stand in for the names there, because all that matters is that
 they never repeat across instances. What is disjoint are the object names, not the memory
 area: the bus segment and the IPC objects of every instance live in the same `/dev/shm` and
-differ only by the instance-name suffix — for instance `alpha` these are the command queue
+differ only by the instance-name suffix - for instance `alpha` these are the command queue
 `RetractorQueryQueue.alpha`, the response segment `RetractorShmemMap.alpha`, the map mutex
 `RetractorMapMutex.alpha`, and the client response queue `brcdbr.alpha.<pid>`. The storage
 directory is shared as well, with the files of the individual instances kept disjoint.

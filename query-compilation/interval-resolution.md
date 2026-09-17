@@ -1,6 +1,6 @@
 # Interval Resolution
 
-Every stream in RetractorDB has an assigned time interval — delta (Δ). The interval determines how often new values are produced. For declared streams (`DECLARE`), the interval is given by the user. For output streams (`SELECT`), the interval is determined by the compiler from the stream-algebra equations.
+Every stream in RetractorDB has an assigned time interval - delta (Δ). The interval determines how often new values are produced. For declared streams (`DECLARE`), the interval is given by the user. For output streams (`SELECT`), the interval is determined by the compiler from the stream-algebra equations.
 
 The examples in this chapter use the canonical declarations from the whole chapter: `core0` (Δ=1/10), `core1` (Δ=1/5), `core2` (Δ=3/10).
 
@@ -23,7 +23,7 @@ loop:
     prevUnresolved = unresolvedCount
 ```
 
-Every round resolves at least one stream — because the graph is acyclic, and the topological sort guarantees sources are processed before outputs. If the number of unresolved streams stops decreasing, that indicates a cycle — see [Loop Detection](loop-detection.md).
+Every round resolves at least one stream - because the graph is acyclic, and the topological sort guarantees sources are processed before outputs. If the number of unresolved streams stops decreasing, that indicates a cycle - see [Loop Detection](loop-detection.md).
 
 ## Operator equations
 
@@ -47,7 +47,7 @@ SELECT ... STREAM c FROM a # b
 
 \\[\Delta_c = \frac{\Delta_a \cdot \Delta_b}{\Delta_a + \Delta_b}\\]
 
-The result corresponds to the harmonic mean of the intervals — the stream only produces a value when both inputs are available at the same time.
+The result corresponds to the harmonic mean of the intervals - the stream only produces a value when both inputs are available at the same time.
 
 Example: core0(Δ=1/10) # core1(Δ=1/5) → str1(Δ=1/15)
 
@@ -62,7 +62,7 @@ SELECT ... STREAM c FROM a > n
 A shift changes neither the stream's rate nor its emitted record sequence, but it
 does change the index at which that sequence appears: record `m` carries the
 content of record `m-n`. It is a causal delay, but its carrier is the **logical
-origin**, not the tail — records with an index below `n` have no definition. The
+origin**, not the tail - records with an index below `n` have no definition. The
 operator's own tail is non-positive: it equals `max(0, W_src − n)`, because
 record `m-n` is older than the current one and therefore all the more available.
 The plan listing shows both quantities as `origin=` and `tail=`; the silent slots
@@ -90,7 +90,7 @@ AGSE (the Episode Series Generation Algorithm) generates sliding windows. The ou
 
 ### De-hash operators (STREAM\_DEHASH\_DIV, STREAM\_DEHASH\_MOD)
 
-The inverse operations of `#` — they determine what interval one of the input streams had, given the result's interval and the other argument:
+The inverse operations of `#` - they determine what interval one of the input streams had, given the result's interval and the other argument:
 
 \\[\Delta_a = \frac{\Delta_c \cdot \Delta_b}{\left|\Delta_c - \Delta_b\right|}\\]
 
@@ -104,4 +104,4 @@ SELECT str1[0] STREAM str1 FROM core0
 SELECT str2[0] STREAM str2 FROM str1
 ```
 
-In the first iteration round, the compiler determines Δ\_str1 = 1/10 (because Δ\_core0 is known). In the second round — Δ\_str2 = 1/10 (because Δ\_str1 is now known). Without iteration, str2 would have to be declared before str1, which would limit the language's expressiveness.
+In the first iteration round, the compiler determines Δ\_str1 = 1/10 (because Δ\_core0 is known). In the second round - Δ\_str2 = 1/10 (because Δ\_str1 is now known). Without iteration, str2 would have to be declared before str1, which would limit the language's expressiveness.

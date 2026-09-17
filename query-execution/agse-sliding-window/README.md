@@ -10,11 +10,11 @@ stream@(k, w)
 
 where:
 
-* **k** — the window's hop (a natural number): by how many source records the window shifts on every step,
-* **w** — the window size (a non-zero integer): how many source fields a single output record contains.
+* **k** - the window's hop (a natural number): by how many source records the window shifts on every step,
+* **w** - the window size (a non-zero integer): how many source fields a single output record contains.
 
 A positive `w` follows RetractorDB's historical convention: the newest
-window field comes first. A negative value means **mirrored aggregation** —
+window field comes first. A negative value means **mirrored aggregation** -
 it reverses that order, placing fields in arrival order.
 
 ## How the output stream's interval changes
@@ -26,11 +26,11 @@ If the source stream has `W` fields per record and interval `Δ`, the output str
 
 | Parameters          | Effect                                                          |
 | ------------------- | -------------------------------------------------------------- |
-| `k = \|w\|`        | a tumbling window — successive windows do not overlap            |
-| `k < \|w\|`        | a sliding window — successive windows overlap                     |
-| `k > \|w\|`        | sampling with gaps — some data is skipped                          |
-| `k = 1, \|w\| = 1` | serialization — a multi-field record is split into single-element ones |
-| `w < 0`            | mirrored aggregation — arrival order, oldest field first |
+| `k = \|w\|`        | a tumbling window - successive windows do not overlap            |
+| `k < \|w\|`        | a sliding window - successive windows overlap                     |
+| `k > \|w\|`        | sampling with gaps - some data is skipped                          |
+| `k = 1, \|w\| = 1` | serialization - a multi-field record is split into single-element ones |
+| `w < 0`            | mirrored aggregation - arrival order, oldest field first |
 
 ## Typical usage patterns
 
@@ -59,16 +59,16 @@ Below is a schematic representation of how `source@(k, w)` behaves for a single-
 Input data:       0  1  2  3  4  5  6  7  8  9  ...
                   ↓  ↓  ↓  ↓  ↓  ↓  ↓  ↓  ↓  ↓
 
-@(1, 3) — sliding window, hop=1, window=3:
+@(1, 3) - sliding window, hop=1, window=3:
   [2,1,0]  [3,2,1]  [4,3,2]  [5,4,3]  ...
 
-@(3, 3) — tumbling window, hop=3, window=3:
+@(3, 3) - tumbling window, hop=3, window=3:
   [2,1,0]           [5,4,3]           ...
 
-@(5, 1) — sampling every 5 elements:
+@(5, 1) - sampling every 5 elements:
   [0]               [5]               ...
 
-@(2,-2) — mirrored, hop=2, window=2:
+@(2,-2) - mirrored, hop=2, window=2:
   [0,1]    [2,3]    [4,5]    [6,7]    ...
 ```
 
@@ -80,7 +80,7 @@ does not lead the signal. The illustration above shows the sequence of emitted
 windows; the first of them carries index `origin`, not zero.
 
 AGSE emits only complete windows. Initial slots in which the window would reach
-before the start of the source **are not records and have no definition** — they
+before the start of the source **are not records and have no definition** - they
 form the `origin=` reported in the plan. Slots in which the window is defined but
 its newest field has not yet been produced form the `tail=`. A genuine `NULL` in
 source data remains an element of the complete window. The formal tail and history
@@ -91,10 +91,10 @@ capacity bounds are given in
 
 The subchapters below present concrete uses of the AgSe operator:
 
-* **Serialization Example** — turning a multi-field record into a sequence of single-element records and back again via mirrored aggregation.
-* **Moving Average Example** — a sliding window as the basis for a signal-averaging filter.
-* **Window Types** — tumbling, sliding, and sampling on the same data stream.
+* **Serialization Example** - turning a multi-field record into a sequence of single-element records and back again via mirrored aggregation.
+* **Moving Average Example** - a sliding window as the basis for a signal-averaging filter.
+* **Window Types** - tumbling, sliding, and sampling on the same data stream.
 
-We'll start by considering the serialization process using the Aggregation and Serialization operator — AgSe.
+We'll start by considering the serialization process using the Aggregation and Serialization operator - AgSe.
 
 > **_NOTE:_** The functionality described here is covered by the tests: `agse1`, `agse2`, `agse3`, `Pattern6`, described in the appendix [Integration Tests](../../appendices/integration-tests.md).

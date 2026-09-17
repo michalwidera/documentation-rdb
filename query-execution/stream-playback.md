@@ -1,6 +1,6 @@
 # Stream Playback
 
-We very often think of time series as data marked with timestamps. Data stored, for example, in a file, can be processed however we like — preserving its order based on the recorded time relationships. RetractorDB has been given the ability to re-emit such a stream, preserving the recorded time relationships, as if the data were actually arriving again.
+We very often think of time series as data marked with timestamps. Data stored, for example, in a file, can be processed however we like - preserving its order based on the recorded time relationships. RetractorDB has been given the ability to re-emit such a stream, preserving the recorded time relationships, as if the data were actually arriving again.
 
 To demonstrate this, let's prepare a text file filled with data, e.g. from 30 to 45.
 
@@ -10,7 +10,7 @@ $ seq 30 45 > data.txt
 
 We'll play back a file prepared this way in RetractorDB.
 
-Next, let's create the following file filled with queries for the system — query.rql, containing only a single declaration ending in HOLD.
+Next, let's create the following file filled with queries for the system - query.rql, containing only a single declaration ending in HOLD.
 
 ```rql
 DECLARE a INTEGER STREAM core, 1 FILE 'data.txt' HOLD

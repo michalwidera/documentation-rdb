@@ -34,7 +34,7 @@ Every field has a name and a type. Available types:
 
 ### Field arrays (`type[N]`)
 
-Any field can be given an array multiplier `[N]` — the field then occupies `N × type_size` bytes and creates `N` consecutive positions in the record schema:
+Any field can be given an array multiplier `[N]` - the field then occupies `N × type_size` bytes and creates `N` consecutive positions in the record schema:
 
 ```rql
 DECLARE coef INTEGER[25] STREAM filter, 1 FILE 'coefficients.txt'
@@ -60,7 +60,7 @@ An example of a command that creates an object in RetractorDB returning random v
 DECLARE random_field INTEGER STREAM random_stream, 0.1 FILE '/dev/random'
 ```
 
-The source mentioned in the command, if declared as a text file with the .txt extension, will be interpreted by the system as a continuous, unbounded data file read line by line. Upon reaching the end of the file, reading resumes from the beginning. This functionality is built into RetractorDB. Basic support for the format is provided — if we specify two integer fields in the declaration, and the file contains two integer values separated by a space, those values will be read as consecutive elements of the record.
+The source mentioned in the command, if declared as a text file with the .txt extension, will be interpreted by the system as a continuous, unbounded data file read line by line. Upon reaching the end of the file, reading resumes from the beginning. This functionality is built into RetractorDB. Basic support for the format is provided - if we specify two integer fields in the declaration, and the file contains two integer values separated by a space, those values will be read as consecutive elements of the record.
 
 ```rql
 DECLARE field_1 INTEGER STREAM cyclic_stream, 0.1 FILE 'file.txt'
@@ -72,7 +72,7 @@ For the parsing of the file to happen automatically, the file must have the .txt
 
 If the input data file has the .dat extension, it will be treated as a binary file, and reading from it will likewise loop. Looping means that after the last value in the source file has been read, the read position is moved back to the beginning. Data from such a file is read in an infinite loop, returning to the start once it finishes.
 
-The three optional directives (`ONESHOT`, `DISPOSABLE`, `HOLD`) control the data source's lifecycle — a detailed description and comparison table can be found in the chapter [Read Options](declare-command-read-options.md).
+The three optional directives (`ONESHOT`, `DISPOSABLE`, `HOLD`) control the data source's lifecycle - a detailed description and comparison table can be found in the chapter [Read Options](declare-command-read-options.md).
 
 > **ℹ️ Info**
 >

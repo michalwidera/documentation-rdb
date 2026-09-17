@@ -21,7 +21,7 @@ After compilation we get:
 {{#include ../regen/out/alias.txt}}
 ```
 
-`merged[0]` and `core0[0]` both end up as `PUSH_ID(merged[0])` — they are the same field. But `core1[0]` — the first field of `core1`'s schema — ends up as `PUSH_ID(merged[2])`, not `merged[0]`. The compiler translated the local index `core1[0]` into an absolute position in the combined schema: `core0` occupies positions 0 and 1, so `core1` starts at position 2.
+`merged[0]` and `core0[0]` both end up as `PUSH_ID(merged[0])` - they are the same field. But `core1[0]` - the first field of `core1`'s schema - ends up as `PUSH_ID(merged[2])`, not `merged[0]`. The compiler translated the local index `core1[0]` into an absolute position in the combined schema: `core0` occupies positions 0 and 1, so `core1` starts at position 2.
 
 ## A reference outside the `FROM` clause
 
@@ -38,7 +38,7 @@ Compilation ends with the error:
 Check result:Stream 'result' refers to 'core1', which is not in its FROM clause. A field list reads only the streams named in FROM: refer to the field by its position in the record of a stream in FROM, or move the reference to a query whose FROM names 'core1'.
 ```
 
-`merged` is a user query with its own interval and buffer, so the compiler does not determine the position of its sources in the `result` record. The correct form addresses the field by its position in the `merged` record — `core1` starts there at position 2:
+`merged` is a user query with its own interval and buffer, so the compiler does not determine the position of its sources in the `result` record. The correct form addresses the field by its position in the `merged` record - `core1` starts there at position 2:
 
 ```rql
 SELECT merged[0], merged[2] STREAM result FROM merged
@@ -82,8 +82,8 @@ Comparing compilation for the `core0` and `core1` declarations above shows the d
 
 | `FROM` expression | References in the `SELECT` list | Compilation result |
 |---|---|---|
-| `core0 + core1` | `core0[0]`, `core1[0]` | `PUSH_ID(merged[0])`, `PUSH_ID(merged[2])` — the schemas are concatenated, so the components remain distinguishable |
-| `core0 # core1` | `core0[0]`, `core1[0]` | compilation error — both arguments share position `0` of the single output schema |
+| `core0 + core1` | `core0[0]`, `core1[0]` | `PUSH_ID(merged[0])`, `PUSH_ID(merged[2])` - the schemas are concatenated, so the components remain distinguishable |
+| `core0 # core1` | `core0[0]`, `core1[0]` | compilation error - both arguments share position `0` of the single output schema |
 
 The second row corresponds to this query:
 

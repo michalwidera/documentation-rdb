@@ -9,7 +9,7 @@ determines whether reduction runs horizontally across fields or vertically acros
 
 ## Current-record reducers in FROM
 
-Stream reducers operate on a stream with multiple fields — typically the output of the
+Stream reducers operate on a stream with multiple fields - typically the output of the
 `@(k,w)` operator or a record that contains a numeric array. They reduce all flat slots of
 one record to one value.
 
@@ -41,7 +41,7 @@ The postfix forms `stream.min`, `.max`, `.avg`, and `.sumc` remain backward comp
 The reducer result is **not read by name in the `SELECT` list**. The compiler rejects
 `SELECT avg STREAM o FROM AVG(src)` through the `Check result:` channel, because in that
 position `avg` is a stream operator rather than a field, and nothing can execute it. Read the
-reduction result with `SELECT *`, or — when further computation is needed — materialize the
+reduction result with `SELECT *`, or - when further computation is needed - materialize the
 reducer as a separate stream:
 
 ```rql
@@ -69,7 +69,7 @@ not zero.
 
 ### Output interval
 
-Aggregates do not change the stream's rate — the output interval is the same as the source's:
+Aggregates do not change the stream's rate - the output interval is the same as the source's:
 
 \\[\Delta_{result} = \Delta_{stream}\\]
 
@@ -114,7 +114,7 @@ SELECT source[_] * filter[_] STREAM accRow FROM source@(1,25)+filter
 SELECT accRow[0]             STREAM output FROM SUMC(accRow)
 ```
 
-The window appears directly in `FROM`, so it does not require a separate query. `source[_]` expands according to the 25 slots contributed to the input record by `source@(1,25)`. `SUMC(accRow)` sums all fields of the `accRow` record — the products of signal samples and filter coefficients — producing the output of an FIR filter.
+The window appears directly in `FROM`, so it does not require a separate query. `source[_]` expands according to the 25 slots contributed to the input record by `source@(1,25)`. `SUMC(accRow)` sums all fields of the `accRow` record - the products of signal samples and filter coefficients - producing the output of an FIR filter.
 
 ### Example: MIN and MAX
 
@@ -251,7 +251,7 @@ The `width` parameter (a natural number after the colon `:`) specifies the outpu
 
 > **ℹ️ Info**
 >
-> The argument separator is a colon `:`, not a comma `,`. A comma is the SELECT list separator — using a comma in `to_string(x, n)` will cause a parse error.
+> The argument separator is a colon `:`, not a comma `,`. A comma is the SELECT list separator - using a comma in `to_string(x, n)` will cause a parse error.
 
 
 ### Example
@@ -301,7 +301,7 @@ to_integer(expression)
 > `to_integer` **truncates toward zero**; it does not floor. For negative values the result
 > differs from the floor by one.
 
-The rule is the same for a rational and for a floating-point argument — in both cases the
+The rule is the same for a rational and for a floating-point argument - in both cases the
 fractional part is dropped and the sign is kept:
 
 | Input value | `to_integer` | floor (for comparison) |
@@ -311,7 +311,7 @@ fractional part is dropped and the sign is kept:
 | `-4/3`      | `-1`         | `-2`                   |
 | `-2.6666…`  | `-2`         | `-3`                   |
 
-A `NULL` passes through unchanged — `to_integer(NULL)` yields `NULL`, not zero.
+A `NULL` passes through unchanged - `to_integer(NULL)` yields `NULL`, not zero.
 
 ### A pitfall when porting to Python
 

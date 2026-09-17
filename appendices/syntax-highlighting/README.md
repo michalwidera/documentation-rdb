@@ -54,7 +54,7 @@ The repository contains two Vim files in the `scripts/.vim/` directory:
 
 ### Installing via buildrdb.sh
 
-The most convenient method — the script copies both files into the appropriate `~/.vim/` subdirectories:
+The most convenient method - the script copies both files into the appropriate `~/.vim/` subdirectories:
 
 ```bash
 scripts/buildrdb.sh vimsyntax
@@ -182,7 +182,7 @@ The `.desc` extension (stream descriptor files) is also recognized. Highlighting
 bat --language rql any-file.txt
 ```
 
-**Verifying the installation — available languages:**
+**Verifying the installation - available languages:**
 
 ```bash
 bat --list-languages | grep -i rql
@@ -211,4 +211,4 @@ DO SYSTEM 'echo "systemcall"'
 
 Running `bat query.rql` displays the file's content with line numbers and syntax highlighting in the terminal, where keywords, types, comments, and string literals get distinct colors according to `bat`'s active theme (Fig. 65).
 
-<figure><img src="../../assets/batcat-polecenie-rql.png" alt="View of the batcat test.rql command"><figcaption><p>Fig. 65. RQL syntax highlighting in the terminal — the batcat command</p></figcaption></figure>
+<figure><img src="../../assets/batcat-polecenie-rql.png" alt="View of the batcat test.rql command"><figcaption><p>Fig. 65. RQL syntax highlighting in the terminal - the batcat command</p></figcaption></figure>

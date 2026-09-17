@@ -60,7 +60,7 @@
   * [Stream Playback](query-execution/stream-playback.md)
 * [Usage Examples](usage-examples/README.md)
   * [Signal Filter Implementation](usage-examples/signal-filter-implementation.md)
-  * [ECG Visualization and Arrhythmia Detection — MIT-BIH Database](usage-examples/ecg-visualization-mit-bih.md)
+  * [ECG Visualization and Arrhythmia Detection - MIT-BIH Database](usage-examples/ecg-visualization-mit-bih.md)
 * [Appendices](appendices/README.md)
   * [Production Builds and Diagnostic Variants](appendices/production-builds-and-research-variants.md)
   * [Stream Monitoring API](appendices/stream-monitoring-api.md)

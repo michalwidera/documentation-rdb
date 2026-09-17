@@ -35,15 +35,15 @@ graph TD
 
 _Fig. 43. Example dependency graph for qTree_
 
-After the topological sort, the order in the vector is: `[A, B, C, D]`. Query C, which depends on B, always ends up after B in iteration — this guarantees correctness of the computations.
+After the topological sort, the order in the vector is: `[A, B, C, D]`. Query C, which depends on B, always ends up after B in iteration - this guarantees correctness of the computations.
 
-The `getAvailableTimeIntervals()` method extracts the unique `rInterval` values from all queries (excluding compiler directives and zero values) — the result is the input to the `TimeLine` constructor.
+The `getAvailableTimeIntervals()` method extracts the unique `rInterval` values from all queries (excluding compiler directives and zero values) - the result is the input to the `TimeLine` constructor.
 
 ***
 
 ## The minimal time grid: TimeLine / CRSMath
 
-`TimeLine` (`src/retractor/lib/CRSMath.cpp`) manages rational time intervals. The constructor reduces the set of intervals — removing multiples and keeping only the coprime ones:
+`TimeLine` (`src/retractor/lib/CRSMath.cpp`) manages rational time intervals. The constructor reduces the set of intervals - removing multiples and keeping only the coprime ones:
 
 ```
 Input: {1/2, 1, 4}  →  Output: {1/2}
@@ -94,7 +94,7 @@ for (auto &q : coreInstance_) {
 }
 ```
 
-After this step, every declaration has `bufferState = armed` — the data from the physical source is in `outputPayload`.
+After this step, every declaration has `bufferState = armed` - the data from the physical source is in `outputPayload`.
 
 ***
 
@@ -112,7 +112,7 @@ for (auto &q : *coreInstancePtr)
 return retVal;
 ```
 
-The result `inSet` is the set of query identifiers active in this slot — a subset of all queries.
+The result `inSet` is the set of query identifiers active in this slot - a subset of all queries.
 
 ### Processing: `processRows(inSet)`
 
@@ -123,7 +123,7 @@ The function performs **two passes** over `inSet` (`dataModel.cpp`, line \~98), 
 flowchart LR
     S([processRows - inSet]) --> P1
 
-    subgraph P1["Pass 1 — non-declarations (topological order)"]
+    subgraph P1["Pass 1 - non-declarations (topological order)"]
         direction TB
         X1["constructInputPayload()<br/>builds input data from FROM"] --> XW
         XW["computeWindowAggregates()<br/>reduces history for SELECT windows"] --> X2
@@ -134,7 +134,7 @@ flowchart LR
 
     P1 --> P2
 
-    subgraph P2["Pass 2 — declarations (unblock for the next slot)"]
+    subgraph P2["Pass 2 - declarations (unblock for the next slot)"]
         direction TB
         Y1{"bufferState<br/>== armed?"} -->|yes| Y2
         Y2["bufferState = flux<br/>unblock read"] --> Y3
@@ -168,7 +168,7 @@ scan. Their results go to `streamInstance::windowValues` and become ordinary ope
 
 ## Broadcasting results: `broadcast()`
 
-After every `processRows()`, `broadcast(inSet)` is called (`executorsm.cpp`, line \~449) — the algorithm is shown in Fig. 46:
+After every `processRows()`, `broadcast(inSet)` is called (`executorsm.cpp`, line \~449) - the algorithm is shown in Fig. 46:
 
 ```mermaid
 %% pdf-width: 85%
@@ -239,7 +239,7 @@ The dependency tree determines the order of pass 1. Time intervals from the Beat
 
 ***
 
-## Algebraic realization — tying the code to the equations
+## Algebraic realization - tying the code to the equations
 
 Every key part of the algorithm described on this page is a direct realization of equations from [the algebra of regular time series](../mathematical-foundations/algebra-of-regular-time-series.md) and [the formal proofs](../mathematical-foundations/formal-foundations-and-proofs.md).
 
@@ -275,25 +275,25 @@ return i + floorR(i * deltaB / deltaA);
 b_{n} = c_{n+\left\lfloor \frac{n\Delta_{b}}{\Delta_{a}} \right\rfloor}
 \\]
 
-`Hash` implements the test from the definition of interleaving — the condition \\(\left\lfloor iz \right\rfloor = \left\lfloor (i+1)z \right\rfloor\\) with \\(z = \Delta_{b}/(\Delta_{a}+\Delta_{b})\\) — and returns the corresponding offset into stream A or B.
+`Hash` implements the test from the definition of interleaving - the condition \\(\left\lfloor iz \right\rfloor = \left\lfloor (i+1)z \right\rfloor\\) with \\(z = \Delta_{b}/(\Delta_{a}+\Delta_{b})\\) - and returns the corresponding offset into stream A or B.
 
-The helper functions `floorR()` and `ceilR()` operate exclusively on `boost::rational<int>`, never passing through `double`. This is a direct realization of the requirement from [Theorem 2](../mathematical-foundations/formal-foundations-and-proofs.md): an implicit cast to `float` breaks the assumptions of Fraenkel's theorem — materialization into floating-point form must be deferred until the floor or ceiling operation is explicitly applied.
+The helper functions `floorR()` and `ceilR()` operate exclusively on `boost::rational<int>`, never passing through `double`. This is a direct realization of the requirement from [Theorem 2](../mathematical-foundations/formal-foundations-and-proofs.md): an implicit cast to `float` breaks the assumptions of Fraenkel's theorem - materialization into floating-point form must be deferred until the floor or ceiling operation is explicitly applied.
 
 ### `TimeLine` as the minimal basis of a covering system
 
-The `TimeLine` constructor determines the **primitive set of intervals** — removing every delta that is an integer multiple of another delta in the set. An interval is primitive when no smaller interval in the set divides it with a natural quotient. This is the computation of the minimal covering system in the sense of Fraenkel's theorem: only primitive deltas generate independent Beatty sequences, and only they are needed to determine the complete time grid.
+The `TimeLine` constructor determines the **primitive set of intervals** - removing every delta that is an integer multiple of another delta in the set. An interval is primitive when no smaller interval in the set divides it with a natural quotient. This is the computation of the minimal covering system in the sense of Fraenkel's theorem: only primitive deltas generate independent Beatty sequences, and only they are needed to determine the complete time grid.
 
-The `getNextTimeSlot()` method — marked with the comment `// MAGIC Warning` in the source — generates successive grid points as:
+The `getNextTimeSlot()` method - marked with the comment `// MAGIC Warning` in the source - generates successive grid points as:
 
 \\[
 t_{k} = \min_{\delta \in \mathrm{sr}} \left(\delta \cdot \mathrm{counter}[\delta]\right)
 \\]
 
-where `sr` is the primitive set of intervals, and \\(\mathrm{counter}[\delta]\\) counts the "hits" recorded so far for each delta. The two-phase loop — first determining the minimum, then incrementing the counters separately — guarantees correct handling of collisions: several deltas can determine the same slot at once.
+where `sr` is the primitive set of intervals, and \\(\mathrm{counter}[\delta]\\) counts the "hits" recorded so far for each delta. The two-phase loop - first determining the minimum, then incrementing the counters separately - guarantees correct handling of collisions: several deltas can determine the same slot at once.
 
 > **ℹ️ Info**
 >
-> The `// MAGIC Warning` comment in `CRSMath.cpp`'s source means the algorithm is correct for a non-obvious reason. Intuition alone is not enough — correctness is guaranteed by Fraenkel's theorem. Because `sr` contains only primitive intervals (none a multiple of another), the counters for the individual deltas never "get ahead of each other" in a way that would skip or duplicate a slot. A collision — when two deltas point to the same slot — is a legitimate case, handled by the second loop. The "magic" is that the simple formula `min(δ·counter[δ])`, with automatic incrementing, is equivalent to a full Beatty-sequence generator for the entire covering system.
+> The `// MAGIC Warning` comment in `CRSMath.cpp`'s source means the algorithm is correct for a non-obvious reason. Intuition alone is not enough - correctness is guaranteed by Fraenkel's theorem. Because `sr` contains only primitive intervals (none a multiple of another), the counters for the individual deltas never "get ahead of each other" in a way that would skip or duplicate a slot. A collision - when two deltas point to the same slot - is a legitimate case, handled by the second loop. The "magic" is that the simple formula `min(δ·counter[δ])`, with automatic incrementing, is equivalent to a full Beatty-sequence generator for the entire covering system.
 
 ### `isThisDeltaAwaitCurrentTimeSlot()` as a Beatty-sequence membership test
 
@@ -302,4 +302,4 @@ boost::rational<int> value = ctSlot_ / inDelta;
 return (value.denominator() == 1);
 ```
 
-The test checks whether \\(t_{\mathrm{slot}} / \Delta \in \mathbb{N}\\) — whether the current slot is an integer multiple of the query's delta. In the language of Beatty-sequence theory: a point \\(t\\) belongs to the sequence of density \\(\Delta\\) if and only if \\(t/\Delta\\) is a natural number. The condition on the denominator equaling 1 follows from `boost::rational` arithmetic — the fraction is always in reduced form, so a denominator of 1 means exactly an integer, with no rounding involved.
+The test checks whether \\(t_{\mathrm{slot}} / \Delta \in \mathbb{N}\\) - whether the current slot is an integer multiple of the query's delta. In the language of Beatty-sequence theory: a point \\(t\\) belongs to the sequence of density \\(\Delta\\) if and only if \\(t/\Delta\\) is a natural number. The condition on the denominator equaling 1 follows from `boost::rational` arithmetic - the fraction is always in reduced form, so a denominator of 1 means exactly an integer, with no rounding involved.

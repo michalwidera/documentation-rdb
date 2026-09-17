@@ -4,14 +4,14 @@ The defined algebra entails the possibility of defining algebraic expressions. T
 
 This means that in the field list after the SELECT clause, the plus operator means one thing, while in the FROM clause it means something else entirely. An innocent-looking query from the definition combines two entirely different worlds and concepts: one, an algebra based on numbers; the other, based on regular time series.
 
-Example. As an example, we present an algebraic expression built over the set of regular time series (hereafter called streams). Assume the existence of two streams: A(a<sub>1</sub> int, a<sub>2</sub> int),1 and B(b<sub>1</sub> int),½ — where,
+Example. As an example, we present an algebraic expression built over the set of regular time series (hereafter called streams). Assume the existence of two streams: A(a<sub>1</sub> int, a<sub>2</sub> int),1 and B(b<sub>1</sub> int),½ - where,
 
-* A denotes a stream containing, in each record, two fields of type int — a<sub>1</sub> and a<sub>2</sub> — arriving once per second, and
+* A denotes a stream containing, in each record, two fields of type int - a<sub>1</sub> and a<sub>2</sub> - arriving once per second, and
 * B contains, in each record, a field of type int named b<sub>1</sub> arriving twice per second.
 
 The algebraic expression C=A+B creates a data stream with fields C(a<sub>1</sub> int, a<sub>2</sub> int, b<sub>1</sub> int),½.
 
-To interleave a data stream, sets A and B should have the same data schema. Let's assume, then, that there is a stream D(d<sub>1</sub> int),1 — arriving, like stream A, once per second.
+To interleave a data stream, sets A and B should have the same data schema. Let's assume, then, that there is a stream D(d<sub>1</sub> int),1 - arriving, like stream A, once per second.
 
 The algebraic expression E=B#D creates the stream: E(e<sub>1</sub> int),⅓. The rate ⅓ comes from the formula (1\*½)/(1+½). You will find this formula in the definition of the interleaving operation.
 
@@ -25,7 +25,7 @@ And such expressions may appear as valid, with respect to the developed time-ser
 
 ## Further examples
 
-Continuing with the streams defined above, A(a<sub>1</sub> int, a<sub>2</sub> int),1, B(b<sub>1</sub> int),½ and D(d<sub>1</sub> int),1, and the output streams C=A+B and E=B#D — below is a further set of valid algebraic expressions. Equivalents of all these expressions appear in FROM clauses of queries in the system's integration tests, and are verified on every build of the project.
+Continuing with the streams defined above, A(a<sub>1</sub> int, a<sub>2</sub> int),1, B(b<sub>1</sub> int),½ and D(d<sub>1</sub> int),1, and the output streams C=A+B and E=B#D - below is a further set of valid algebraic expressions. Equivalents of all these expressions appear in FROM clauses of queries in the system's integration tests, and are verified on every build of the project.
 
 Interleaving the result of an interleave:
 
@@ -50,7 +50,7 @@ I=D+((A+B)>1)
 J=(B>1)#D
 ```
 
-Shifting a sequence does not change the stream's rate — it only changes data access by a given number of samples. Therefore I has rate min(1,½)=½, and J — just like E — has rate ⅓.
+Shifting a sequence does not change the stream's rate - it only changes data access by a given number of samples. Therefore I has rate min(1,½)=½, and J - just like E - has rate ⅓.
 
 De-interleaving:
 
@@ -59,7 +59,7 @@ K=E&1
 L=E%½
 ```
 
-The right-hand argument of the de-interleaving operators is a rational number, not a stream. Substituting into the de-interleaving formulas: K has rate (⅓·1)/|⅓−1|=½ — left-hand de-interleaving recovers stream B from the interleave E. Similarly L has rate (⅓·½)/|⅓−½|=1 — right-hand de-interleaving recovers stream D. De-interleaving is the inverse of interleaving, just as division is the inverse of multiplication.
+The right-hand argument of the de-interleaving operators is a rational number, not a stream. Substituting into the de-interleaving formulas: K has rate (⅓·1)/|⅓−1|=½ - left-hand de-interleaving recovers stream B from the interleave E. Similarly L has rate (⅓·½)/|⅓−½|=1 - right-hand de-interleaving recovers stream D. De-interleaving is the inverse of interleaving, just as division is the inverse of multiplication.
 
 Difference:
 
@@ -67,7 +67,7 @@ Difference:
 M=C-1
 ```
 
-Difference is the inverse operation to sum — it extracts, from the joined stream C, the component indicated by the rational number on the right-hand side of the operator.
+Difference is the inverse operation to sum - it extracts, from the joined stream C, the component indicated by the rational number on the right-hand side of the operator.
 
 Aggregation and serialization:
 
@@ -78,9 +78,9 @@ R=A@(2,2)
 S=(A@(2,2))@(1,1)
 ```
 
-N creates a sliding window of width 4 shifted by one element, P — thanks to its negative width — builds the same windows mirror-imaged, R creates disjoint windows (hop equal to the width). Expression S shows that the result of an Agse operation can be the argument of another Agse operation.
+N creates a sliding window of width 4 shifted by one element, P - thanks to its negative width - builds the same windows mirror-imaged, R creates disjoint windows (hop equal to the width). Expression S shows that the result of an Agse operation can be the argument of another Agse operation.
 
-All of the above forms can be combined into arbitrarily complex expressions — like F=((B#D)+A)>2 from the example above — as long as the data schemas of the arguments satisfy the requirements of the respective operations.
+All of the above forms can be combined into arbitrarily complex expressions - like F=((B#D)+A)>2 from the example above - as long as the data schemas of the arguments satisfy the requirements of the respective operations.
 
 ## Coverage of examples in integration tests
 

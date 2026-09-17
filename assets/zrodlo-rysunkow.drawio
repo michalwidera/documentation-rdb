@@ -933,7 +933,7 @@
         <mxCell id="qrs-0" />
         <mxCell id="qrs-1" parent="qrs-0" />
 
-        <mxCell id="qrs-rdb" parent="qrs-1" style="swimlane;whiteSpace=wrap;html=0;convertToSvg=1;startSize=34;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=15;" value="RetractorDB — xretractor / rec205-detect.rql" vertex="1">
+        <mxCell id="qrs-rdb" parent="qrs-1" style="swimlane;whiteSpace=wrap;html=0;convertToSvg=1;startSize=34;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=15;" value="RetractorDB - xretractor / rec205-detect.rql" vertex="1">
           <mxGeometry height="590" width="500" x="245" y="30" as="geometry" />
         </mxCell>
 
@@ -1184,19 +1184,19 @@
       <root>
         <mxCell id="mprost-0" />
         <mxCell id="mprost-1" parent="mprost-0" />
-        <mxCell id="mprost-claim-lbl" value="at startup an instance claims a bus slot and creates its own IPC objects — all of it in the same /dev/shm" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=left;verticalAlign=middle;fontSize=11;fontStyle=2;" parent="mprost-1" vertex="1">
+        <mxCell id="mprost-claim-lbl" value="at startup an instance claims a bus slot and creates its own IPC objects - all of it in the same /dev/shm" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=left;verticalAlign=middle;fontSize=11;fontStyle=2;" parent="mprost-1" vertex="1">
           <mxGeometry x="140" y="0" width="430" height="38" as="geometry" />
         </mxCell>
-        <mxCell id="mprost-free-lbl" value="further slots — up to 32 instances" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=right;verticalAlign=middle;fontSize=11;fontStyle=2;fontColor=#7F5000;" parent="mprost-1" vertex="1">
+        <mxCell id="mprost-free-lbl" value="further slots - up to 32 instances" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=right;verticalAlign=middle;fontSize=11;fontStyle=2;fontColor=#7F5000;" parent="mprost-1" vertex="1">
           <mxGeometry x="580" y="0" width="210" height="38" as="geometry" />
         </mxCell>
-        <mxCell id="mprost-shm" value="&lt;b&gt;/dev/shm&lt;/b&gt; — one shared-memory area of the host, common to every instance" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;startSize=26;" parent="mprost-1" vertex="1">
+        <mxCell id="mprost-shm" value="&lt;b&gt;/dev/shm&lt;/b&gt; - one shared-memory area of the host, common to every instance" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;startSize=26;" parent="mprost-1" vertex="1">
           <mxGeometry x="140" y="44" width="650" height="212" as="geometry" />
         </mxCell>
         <mxCell id="mprost-shm-ico" value="" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#434445;aspect=fixed;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;shape=mxgraph.vvd.memory;" parent="mprost-shm" vertex="1">
           <mxGeometry x="12" y="2" width="56" height="22" as="geometry" />
         </mxCell>
-        <mxCell id="mprost-bus" value="&lt;b&gt;xrdbbus_v5&lt;/b&gt; — bus segment (instance registry)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;startSize=28;" parent="mprost-shm" vertex="1">
+        <mxCell id="mprost-bus" value="&lt;b&gt;xrdbbus_v5&lt;/b&gt; - bus segment (instance registry)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;startSize=28;" parent="mprost-shm" vertex="1">
           <mxGeometry x="10" y="32" width="630" height="72" as="geometry" />
         </mxCell>
         <mxCell id="mprost-slot-a" value="slot: &lt;b&gt;alpha&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="mprost-bus" vertex="1">
@@ -1256,7 +1256,7 @@
         <mxCell id="mprost-ipc-c-R" value="R" style="ellipse;whiteSpace=wrap;html=1;fillColor=#505050;strokeColor=none;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" parent="mprost-ipc-c" vertex="1">
           <mxGeometry x="130" y="26" width="22" height="22" as="geometry" />
         </mxCell>
-        <mxCell id="mprost-ipc-legend" value="Q — command queue &#183; S — response segment &#183; M — map mutex &#183; R — client response queue; object names carry the instance suffix" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=left;verticalAlign=middle;fontSize=10;fontStyle=2;" parent="mprost-shm" vertex="1">
+        <mxCell id="mprost-ipc-legend" value="Q - command queue &#183; S - response segment &#183; M - map mutex &#183; R - client response queue; object names carry the instance suffix" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=left;verticalAlign=middle;fontSize=10;fontStyle=2;" parent="mprost-shm" vertex="1">
           <mxGeometry x="10" y="110" width="630" height="30" as="geometry" />
         </mxCell>
         <mxCell id="mprost-ia" value="instance: &lt;b&gt;alpha&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;startSize=26;" parent="mprost-1" vertex="1">
@@ -1364,7 +1364,7 @@
         <mxCell id="mprost-io-c" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;startArrow=classic;startFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.8;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="mprost-1" source="mprost-ic" target="mprost-store" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="mprost-io-lbl" value="artifact reads and writes — one disk, disjoint instance files" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=left;verticalAlign=middle;fontSize=11;fontStyle=2;" parent="mprost-1" vertex="1">
+        <mxCell id="mprost-io-lbl" value="artifact reads and writes - one disk, disjoint instance files" style="text;html=1;whiteSpace=wrap;overflow=hidden;align=left;verticalAlign=middle;fontSize=11;fontStyle=2;" parent="mprost-1" vertex="1">
           <mxGeometry x="600" y="535" width="180" height="50" as="geometry" />
         </mxCell>
         <mxCell id="mprost-xqry" value="xqry" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=#6c8ebf;fillColor=#dae8fc;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;align=center;shape=mxgraph.office.concepts.application_generic;fontSize=10;" parent="mprost-1" vertex="1">

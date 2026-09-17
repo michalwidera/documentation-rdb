@@ -1,6 +1,6 @@
 # Files
 
-This chapter describes the five files that make up the complete file set of an artifact or substrate: the schema descriptor (`.desc`), the main binary data file, the metadata index (`.meta`), the data shadow file (`.shadow`), and the index shadow file (`.meta.shadow`). For each file, the binary format, field semantics, and read/write rules are presented. The chapter also covers the `metaData` class — the RLE compression mechanism, transmission-gap handling, the update interface, and persistence across restarts. The final section shows the relationships between all the files at the level of `append`, `update`, and `read` operations.
+This chapter describes the five files that make up the complete file set of an artifact or substrate: the schema descriptor (`.desc`), the main binary data file, the metadata index (`.meta`), the data shadow file (`.shadow`), and the index shadow file (`.meta.shadow`). For each file, the binary format, field semantics, and read/write rules are presented. The chapter also covers the `metaData` class - the RLE compression mechanism, transmission-gap handling, the update interface, and persistence across restarts. The final section shows the relationships between all the files at the level of `append`, `update`, and `read` operations.
 
 The scope of this chapter **does not include** the file-rotation mechanism between sessions (→ [Rotation](rotation.md)) or the `xtrdb -s` inspection tool (→ [Inspection Tool](inspection-tool.md)).
 
@@ -34,7 +34,7 @@ RETMEMORY capacity         # cyclic in-memory retention
 
 ### Example `.desc` files
 
-**A default artifact** — two numeric fields, `DEFAULT` storage (data file + shadow file):
+**A default artifact** - two numeric fields, `DEFAULT` storage (data file + shadow file):
 
 ```desc
 {
@@ -44,7 +44,7 @@ RETMEMORY capacity         # cyclic in-memory retention
 }
 ```
 
-**An ephemeris** — an ephemeral, RAM-only stream:
+**An ephemeris** - an ephemeral, RAM-only stream:
 
 ```desc
 {
@@ -54,7 +54,7 @@ RETMEMORY capacity         # cyclic in-memory retention
 }
 ```
 
-**A substrate with retention** — a cyclic on-disk buffer of the last 1000 records (10 segments of 100):
+**A substrate with retention** - a cyclic on-disk buffer of the last 1000 records (10 segments of 100):
 
 ```desc
 {
@@ -89,7 +89,7 @@ RETMEMORY capacity         # cyclic in-memory retention
 | `RATIONAL` | 8 B (two int32)              |
 | `STRING`   | N B (declared size)          |
 
-For array fields `name[N]`, the total size = type_size × N. The `TYPE`, `REF`, `RETENTION`, and `RETMEMORY` fields take no space in the record — they are descriptor metadata.
+For array fields `name[N]`, the total size = type_size × N. The `TYPE`, `REF`, `RETENTION`, and `RETMEMORY` fields take no space in the record - they are descriptor metadata.
 
 Record size `R` = the sum of the sizes of all data fields.
 
@@ -103,16 +103,16 @@ offset +0   int32   numerator
 offset +4   int32   denominator
 ```
 
-The byte order is the machine's native one — little-endian on x86-64 and ARM64, the same as
+The byte order is the machine's native one - little-endian on x86-64 and ARM64, the same as
 for `INTEGER` and `UINT` fields. The field occupies 8 bytes; in an array field
 `RATIONAL name[N]` the pairs follow one another, `8 × N` bytes in total.
 
-The value is always stored in **lowest terms**, and the denominator is always **positive** —
+The value is always stored in **lowest terms**, and the denominator is always **positive** -
 the sign is carried by the numerator alone. This follows from `boost::rational` arithmetic,
 which normalizes the result on every assignment; it is not a writing convention. In particular:
 
 * zero is stored as `0/1`, never as `0/0` or `0/5`;
-* a whole number is stored as `n/1` — a `RATIONAL` field with denominator 1 is exactly an
+* a whole number is stored as `n/1` - a `RATIONAL` field with denominator 1 is exactly an
   integer, with no rounding involved (the slot-divisibility test in the
   [query tree traversal algorithm](../../query-execution/query-tree-traversal-algorithm.md)
   relies on the same invariant);
@@ -145,14 +145,14 @@ f8 ff ff ff   03 00 00 00
    -8              3            →  -8/3
 ```
 
-The fourth record is `07 00 00 00 01 00 00 00`, that is `7/1` — the mean of three sevens,
+The fourth record is `07 00 00 00 01 00 00 00`, that is `7/1` - the mean of three sevens,
 stored as a rational number with denominator 1 rather than as an `INTEGER`.
 
 #### Reading the value without decoding bytes
 
 The pair layout only matters when reading the binary file directly. That a field is of type
 `RATIONAL` and occupies 8 bytes is reported by `xtrdb -s name` from the descriptor
-(→ [Inspection Tool](inspection-tool.md)) — the tool shows structure, not values. The value
+(→ [Inspection Tool](inspection-tool.md)) - the tool shows structure, not values. The value
 itself is obtained by passing the field through a conversion in the query; three functions
 offer three different trade-offs:
 
@@ -160,11 +160,11 @@ offer three different trade-offs:
 | ----------------- | ----------------- | ---- |
 | `to_string(field : N)` | the text `-8/3` in a `STRING[N]` field | exact form; a whole number comes out as `7/1`, not `7` |
 | `to_double(field)` | a `DOUBLE` field holding `-2.6666…` | an approximation, but sign and magnitude are preserved |
-| `to_integer(field)` | an `INTEGER` field holding `-2` | **truncation toward zero**, not floor — → [Field Expressions and Scalar Functions](../../query-language-construction/select-command/field-expressions-and-scalar-functions.md) |
+| `to_integer(field)` | an `INTEGER` field holding `-2` | **truncation toward zero**, not floor - → [Field Expressions and Scalar Functions](../../query-language-construction/select-command/field-expressions-and-scalar-functions.md) |
 
 For export to text-based systems `to_string` is the right choice, because it preserves the
 value exactly; `to_integer` is convenient but drops the fractional part, and does so
-differently from Python's flooring `//` — the rounding rule is documented alongside the
+differently from Python's flooring `//` - the rounding rule is documented alongside the
 expression functions.
 
 ### The TYPE field and storage strategy
@@ -194,7 +194,7 @@ Every record contains the packed field values in the order defined by the descri
 | len\_0 + len\_1                 | ...      | ...           |
 | len\_0 + len\_1 + ... + len\_n  | field\_n | len\_n bytes  |
 
-The **append** operation (adding a new record) writes data to the end of the file. The **update** operation (modifying an existing record) — if a shadow file exists — goes into the shadow file, not the main file.
+The **append** operation (adding a new record) writes data to the end of the file. The **update** operation (modifying an existing record) - if a shadow file exists - goes into the shadow file, not the main file.
 
 ### Example
 
@@ -208,7 +208,7 @@ Record size: INTEGER (4 B) + FLOAT (4 B) = **8 bytes**. After 5 seconds of data 
 
 ## The metadata file (.meta)
 
-The `.meta` file is an index of null values and transmission gaps. It stores information about which record fields have null values, and where gaps occurred — without duplicating the data itself.
+The `.meta` file is an index of null values and transmission gaps. It stores information about which record fields have null values, and where gaps occurred - without duplicating the data itself.
 
 ### File format
 
@@ -258,7 +258,7 @@ Consecutive records with the same null pattern are merged into a single entry by
 
 ### The transmission-gap marker
 
-A transmission gap (e.g. a system shutdown, a lost signal) is recorded as an entry with `isGap=true` and all null bits set to `true`. The `count` parameter stores the length of the gap in units of the stream's interval. The binary data file itself contains no additional records for the gap — that information lives solely in the `.meta` file.
+A transmission gap (e.g. a system shutdown, a lost signal) is recorded as an entry with `isGap=true` and all null bits set to `true`. The `count` parameter stores the length of the gap in units of the stream's interval. The binary data file itself contains no additional records for the gap - that information lives solely in the `.meta` file.
 
 > **_NOTE:_** The functionality described here is covered by the tests: `issue113_meta_internal`, `issue113_meta_autocreate`, described in the appendix [Integration Tests](../../appendices/integration-tests.md).
 
@@ -271,16 +271,16 @@ The `.meta` file is managed by the `rdb::metaData` class. It acts as a coordinat
 | Unit | Header | Role |
 | ---- | ------ | ---- |
 | `IndexRecord` | `indexRecord.hpp` | format of a single entry and its (de)serialization |
-| `MetaIndexStore` | `metaIndexStore.hpp` | raw `.meta` file I/O — header, committed entries, cache |
+| `MetaIndexStore` | `metaIndexStore.hpp` | raw `.meta` file I/O - header, committed entries, cache |
 | `GapDetector` | `gapDetector.hpp` | gap-detection state machine (nullfill, absorption, pending gap) |
 | `splitSegment()`, `sumNonGapRecords()` | `rleSegment.hpp` | RLE segment operations |
 | `storageShadow` | `storageShadow.hpp` | variant that routes updates to the index shadow (`.meta.shadow`) |
 
 `metaData` itself encapsulates three areas of responsibility:
 
-1. **In-memory RLE aggregation** — it buffers the current segment (the most recent run of records with an identical null pattern) in the `currentEntry_` field, without writing it to the file on every record.
-2. **Data persistence** — only completed segments (when the pattern changes, or on an explicit call to `flushCurrentEntry()`) are written to the file as committed entries.
-3. **A query index** — it exposes an interface for querying the null pattern of any record and for detecting transmission gaps.
+1. **In-memory RLE aggregation** - it buffers the current segment (the most recent run of records with an identical null pattern) in the `currentEntry_` field, without writing it to the file on every record.
+2. **Data persistence** - only completed segments (when the pattern changes, or on an explicit call to `flushCurrentEntry()`) are written to the file as committed entries.
+3. **A query index** - it exposes an interface for querying the null pattern of any record and for detecting transmission gaps.
 
 The class holds two states:
 
@@ -309,7 +309,7 @@ _Fig. 16. Lifecycle of a metaData object_
 
 **Constructor** (`metaData(descriptor, path)`):
 - Initializes an empty `currentEntry_` based on the number of fields in the descriptor.
-- Calls `loadIndex()` — if the file exists, it loads all committed segments, determines `committedRecordCount_`, and moves the last non-gap segment back into `currentEntry_` (allowing the RLE run to continue after a restart).
+- Calls `loadIndex()` - if the file exists, it loads all committed segments, determines `committedRecordCount_`, and moves the last non-gap segment back into `currentEntry_` (allowing the RLE run to continue after a restart).
 - If the file does not exist, it creates it and writes the header (8 reserved bytes, zeros).
 
 **The destructor** automatically calls `flushCurrentEntry()`, guaranteeing that the current buffer reaches disk even when the program exits normally.
@@ -329,7 +329,7 @@ pattern identical to currentEntry_?
           set currentEntry_ = {nullBitset, count=1}
 ```
 
-I/O only happens **when the pattern changes** — for a run of identical records, the cost is a single in-memory counter increment.
+I/O only happens **when the pattern changes** - for a run of identical records, the cost is a single in-memory counter increment.
 
 #### `onRecordModified(index, nullBitset)`
 
@@ -369,16 +369,16 @@ sequenceDiagram
     participant F as .meta file
 
     S->>M: onTransmissionGap(5)
-    M->>F: flushCurrentEntry() — write [normal, count=N]
+    M->>F: flushCurrentEntry() - write [normal, count=N]
     M->>F: appendEntry(isGap=true, count=5)
     Note over F: the file now contains a gap marker
 ```
 
-_Fig. 17. Gap-recording sequence — onTransmissionGap_
+_Fig. 17. Gap-recording sequence - onTransmissionGap_
 
 ### Safety mechanism: `flushCurrentEntry()` and overwriting (tail_.dirty)
 
-The `storage` class calls `flushCurrentEntry()` after **every** call to `write()`, to guarantee survival of a process crash. A naive implementation would append a new entry to the file on every flush — causing file growth proportional to the number of records, even without any change in the null pattern.
+The `storage` class calls `flushCurrentEntry()` after **every** call to `write()`, to guarantee survival of a process crash. A naive implementation would append a new entry to the file on every flush - causing file growth proportional to the number of records, even without any change in the null pattern.
 
 The solution: a **lazy overwrite** mechanism flagged by `tail_.dirty`.
 
@@ -420,15 +420,15 @@ sequenceDiagram
     M->>F: appendEntry([T,F], count=1)
 ```
 
-_Fig. 18. The lazy-overwrite mechanism — overwriting the last .meta entry_
+_Fig. 18. The lazy-overwrite mechanism - overwriting the last .meta entry_
 
-Thanks to this, the `.meta` file grows only when the **null pattern changes** — not on every record. With continuous, uniform data arrival, the file has a constant size regardless of the number of records.
+Thanks to this, the `.meta` file grows only when the **null pattern changes** - not on every record. With continuous, uniform data arrival, the file has a constant size regardless of the number of records.
 
 ### Persistence and state recovery
 
 After the process restarts, a new `metaData` object loads the file via `loadIndex()` (sequence shown in Fig. 19):
 
-1. It skips the header — 8 reserved bytes; nothing in them is interpreted.
+1. It skips the header - 8 reserved bytes; nothing in them is interpreted.
 2. It loads all committed entries from the file.
 3. If the last entry **is not a gap**, it moves it back into `currentEntry_` and removes it from the file (allowing the RLE run to continue after a restart without duplication).
 4. It computes `committedRecordCount_` as the sum of `recordCount` over all non-gap entries remaining in the file.
@@ -456,27 +456,27 @@ _Fig. 19. Persistence and state recovery after a restart_
 
 | Method | Description  |
 | ----   | ------------ |
-| `getNullBitset(i)` | Returns the null pattern for record `i`. Virtual: in the `storageShadow` variant it first checks overrides in `metaShadow` (from the end — the most recent wins), and only falls back to the main index if there's no entry. |
+| `getNullBitset(i)` | Returns the null pattern for record `i`. Virtual: in the `storageShadow` variant it first checks overrides in `metaShadow` (from the end - the most recent wins), and only falls back to the main index if there's no entry. |
 | `nullBitsetFor(i)` | As above, but for a record outside the index range it returns an all-false pattern instead of throwing. Lets `storage::read()` apply null metadata without range checks. |
 | `isGapBefore(i)` | Returns `true` if, in the RLE index, an entry with `isGap=true` sits immediately before record `i`. Record 0 never has a gap before it. |
 | `segments()` | Returns all RLE segments: committed (from disk) plus the current one (from memory), if non-empty. Does not include overrides from `.meta.shadow`. Used for inspection and tests. |
 | `totalRecords()` | The sum of records across all segments (committed + pending). |
 | `isEmpty()` | Shorthand for `totalRecords() == 0`. |
-| `rotate(percounter)` | Rotates the index file: renames the current `.meta` file to `.meta.old<N>`, creates a new empty file. Called by `storage::detectStartupState()` after detecting data-file rotation (data file empty, index non-empty). When `percounter < 0`, the file is not renamed — only an index reset is performed. |
+| `rotate(percounter)` | Rotates the index file: renames the current `.meta` file to `.meta.old<N>`, creates a new empty file. Called by `storage::detectStartupState()` after detecting data-file rotation (data file empty, index non-empty). When `percounter < 0`, the file is not renamed - only an index reset is performed. |
 | `reset()` | Clears the index in place: zeroes the counters, rewrites the file with only the header, without renaming it. Also calls `discardShadow()`. Called by `storage` when clearing without preserving history (e.g. after `purge()`). |
 
 ### The index-shadow interface
 
-Methods of the `storageShadow` class — the index variant injected by `makeMetaIndex()` for stores that maintain a data shadow file. The base `metaData` does not have them, and there is no mode switch: the presence of a shadow is decided by the choice of class at store initialization.
+Methods of the `storageShadow` class - the index variant injected by `makeMetaIndex()` for stores that maintain a data shadow file. The base `metaData` does not have them, and there is no mode switch: the presence of a shadow is decided by the choice of class at store initialization.
 
 | Method | Description  |
 | ----   | ------------ |
 | constructor | Loads existing overrides from the `.meta.shadow` file (`metaShadow::load()`), restoring the shadow state after a process restart. |
-| `mergeShadow()` | Merges the shadow overrides into the main index (applying each override in write order — the last one wins), then deletes the `.meta.shadow` file. The counterpart to `merge()` for the data shadow file. |
+| `mergeShadow()` | Merges the shadow overrides into the main index (applying each override in write order - the last one wins), then deletes the `.meta.shadow` file. The counterpart to `merge()` for the data shadow file. |
 | `discardShadow()` | Clears the in-memory list of overrides and deletes the `.meta.shadow` file. Called when discarding the data shadow (purge, reset, rotation). |
 | `metaShadowFilePath(p)` | Static: returns the index shadow path corresponding to a given `.meta` file, without instantiating an object. Used by `storage` when cleaning up resources. |
 
-### Usage example — a typical production scenario
+### Usage example - a typical production scenario
 
 ```
 storage.write(rec0)           → onRecordAppended([F,F,F]) + flushCurrentEntry()
@@ -507,7 +507,7 @@ The shadow file allows modification of recorded records without destroying the o
 | `position` | 8 B (size\_t) | the record's index in the main file |
 | `data`     | R bytes       | the record's new values          |
 
-Every modification appends a new entry to the end of the shadow file. With multiple modifications of the same record, the file may contain multiple entries for the same position — the most recent one is the current one.
+Every modification appends a new entry to the end of the shadow file. With multiple modifications of the same record, the file may contain multiple entries for the same position - the most recent one is the current one.
 
 ### Read priority
 
@@ -543,7 +543,7 @@ sequenceDiagram
         Shadow-->>App: (position=i, data=data_i)
         App->>Main: pwrite(data_i, offset=i×R)
     end
-    App->>Shadow: ftruncate(0) — clear the shadow file
+    App->>Shadow: ftruncate(0) - clear the shadow file
 ```
 
 _Fig. 21. Merging the shadow file into the main file_
@@ -573,14 +573,14 @@ The `.meta.shadow` file is the counterpart of `.shadow` at the null-index level.
 
 The `.meta.shadow` file is created automatically when two conditions are met:
 
-1. The store is of type `DEFAULT` or `POSIXSHD` — i.e. one that keeps record modifications in a `.shadow` file (not in the main file).
+1. The store is of type `DEFAULT` or `POSIXSHD` - i.e. one that keeps record modifications in a `.shadow` file (not in the main file).
 2. At least one modification of an existing record (`storage::write()` at an index other than the maximum) is made during the given session.
 
 Condition 1 is not a mode switch but a **choice of class**. At store initialization the `makeMetaIndex()` factory (`accessorFactory.hpp`) asks the accessor for `hasShadow()` and returns:
 
 | Condition | Returned object | Behavior |
 | --------- | --------------- | -------- |
-| declared source (`DECLARE`) | `metaData` with an empty path | inert variant — the index works in memory, nothing reaches disk |
+| declared source (`DECLARE`) | `metaData` with an empty path | inert variant - the index works in memory, nothing reaches disk |
 | accessor has a data shadow file | `storageShadow` | `onRecordModified()` routes overrides to `metaShadow` (`.meta.shadow`) |
 | everything else | `metaData` | modifications rewrite the main `.meta` index |
 
@@ -597,7 +597,7 @@ The `.meta.shadow` file has no header. It is a sequence of entries in the same b
 | `bitsetSize` | 8 B (size\_t) | number of descriptor fields (N)         |
 | `bitset`     | ⌈N/8⌉ B       | the new null pattern for this record    |
 
-Every call to `onRecordModified()` in shadow mode appends one entry to the end of the file. Multiple entries for the same position are allowed — the **last** entry governs (last-write-wins semantics, matching the `.shadow` file).
+Every call to `onRecordModified()` in shadow mode appends one entry to the end of the file. Multiple entries for the same position are allowed - the **last** entry governs (last-write-wins semantics, matching the `.shadow` file).
 
 ### Read priority
 
@@ -614,7 +614,7 @@ flowchart TD
     MAIN --> RET2["Return the pattern from .meta"]
 ```
 
-_Fig. 22. Null-pattern read priority — main index vs. index shadow_
+_Fig. 22. Null-pattern read priority - main index vs. index shadow_
 
 ### Lifecycle
 
@@ -624,16 +624,16 @@ The `.meta.shadow` file is managed in parallel with the data shadow file:
 | ---------------------------- | ----------------------- |
 | First record modification    | File creation; first entry appended |
 | Subsequent modifications     | Further entries appended |
-| `merge()` — merging the shadow into the main file | `mergeShadow()` — overrides applied to `.meta`; file deleted |
-| `purge()` / `reset()` — discarding the shadow | `discardShadow()` — file deleted without merging |
-| Process restart               | `storageShadow` constructor → `metaShadow::load()` — file read; overrides restored in memory |
+| `merge()` - merging the shadow into the main file | `mergeShadow()` - overrides applied to `.meta`; file deleted |
+| `purge()` / `reset()` - discarding the shadow | `discardShadow()` - file deleted without merging |
+| Process restart               | `storageShadow` constructor → `metaShadow::load()` - file read; overrides restored in memory |
 | Removal of a temporary store (destructor) | `.meta.shadow` file deleted along with `.meta` |
 
 ### Persistence across restarts
 
 After the process restarts, a new `storageShadow` object restores the shadow state already in its constructor, via `metaShadow::load()` (Fig. 23):
 
-1. It reads all entries from `.meta.shadow` (no header — a direct format).
+1. It reads all entries from `.meta.shadow` (no header - a direct format).
 2. It loads them into the override list in write order.
 3. `getNullBitset()` and subsequent calls to `onRecordModified()` behave exactly as they did before the restart.
 
@@ -659,9 +659,9 @@ sequenceDiagram
     Proc2->>MS: delete the .meta.shadow file
 ```
 
-_Fig. 23. Index shadow — restoring null patterns after a restart_
+_Fig. 23. Index shadow - restoring null patterns after a restart_
 
-### Usage example — correcting a record while preserving consistency
+### Usage example - correcting a record while preserving consistency
 
 ```
 # 5 records in stream str1, 3 FLOAT fields
@@ -675,9 +675,9 @@ storage.write(rec2_corrected, pos=2)
     → .meta.shadow: append (index=2, [F,F,F])
 
 # File state:
-# .meta        — unchanged: [isGap=F, count=2, [F,F,F]], 
+# .meta        - unchanged: [isGap=F, count=2, [F,F,F]],
 # >> [isGap=F, count=1, [T,F,F]], [isGap=F, count=2, [F,F,F]]
-# .meta.shadow — new entry: [gapFlag=0, recordCount=2, bitset=[F,F,F]]
+# .meta.shadow - new entry: [gapFlag=0, recordCount=2, bitset=[F,F,F]]
 
 # Read:
 getNullBitset(2) → [F,F,F]  (from .meta.shadow)
@@ -721,14 +721,14 @@ graph LR
 
 _Fig. 24. The relationship between an artifact's write, modify, and read operations (`DEFAULT` and `POSIXSHD` types)_
 
-Fig. 24 shows the flow of `append`, `update`, and `read` operations through the `storage` layer, and their direct effect on the data file, `.meta`, `.shadow`, and `.meta.shadow`. The record index decides the kind of write: `N` equal to or greater than the record count is an `append`, a smaller one is an `update`. An entry in `.shadow` is keyed by a byte offset (`N·size`, relative to the segment when retention is used), an entry in `.meta.shadow` by the record index `N`. A record made up solely of null values outside the nullfill phase does not reach the main file — it leaves only a gap entry in `.meta`. The shadow layer exists only for the `DEFAULT` and `POSIXSHD` types; in the remaining types (`POSIX`, `DIRECT`, `GENERIC`, `MEMORY`) an `update` overwrites the record directly in the main file and in `.meta`.
+Fig. 24 shows the flow of `append`, `update`, and `read` operations through the `storage` layer, and their direct effect on the data file, `.meta`, `.shadow`, and `.meta.shadow`. The record index decides the kind of write: `N` equal to or greater than the record count is an `append`, a smaller one is an `update`. An entry in `.shadow` is keyed by a byte offset (`N·size`, relative to the segment when retention is used), an entry in `.meta.shadow` by the record index `N`. A record made up solely of null values outside the nullfill phase does not reach the main file - it leaves only a gap entry in `.meta`. The shadow layer exists only for the `DEFAULT` and `POSIXSHD` types; in the remaining types (`POSIX`, `DIRECT`, `GENERIC`, `MEMORY`) an `update` overwrites the record directly in the main file and in `.meta`.
 
-## Starting point — a binary file without metadata
+## Starting point - a binary file without metadata
 
-The simplest possible way to record a time series is a sequence of raw values in a binary file: fixed record size, no header, no structure description. This approach has one advantage — minimal overhead — and a number of significant limitations:
+The simplest possible way to record a time series is a sequence of raw values in a binary file: fixed record size, no header, no structure description. This approach has one advantage - minimal overhead - and a number of significant limitations:
 
 - Interpreting the data requires knowledge external to the file (field names, types, order).
-- No information about transmission gaps — continuity of the data is only apparent.
+- No information about transmission gaps - continuity of the data is only apparent.
 - Every modification of a historical record irreversibly destroys the original data.
 - A change to the record structure invalidates the entire file.
 
@@ -736,38 +736,38 @@ RetractorDB records data from sensors operating in real time, where power interr
 
 ## What each file contributes
 
-**The descriptor (`.desc`) — self-description and independence from code**
+**The descriptor (`.desc`) - self-description and independence from code**
 
 A binary data file is useless without knowledge of the record structure. The descriptor stores that knowledge alongside the data, which means:
 
-- Data can be read and interpreted without access to the source code or configuration — the `.desc` file is enough.
+- Data can be read and interpreted without access to the source code or configuration - the `.desc` file is enough.
 - The `xtrdb` tool can analyze any artifact without additional parameters.
 - Changes to a stream's structure (adding a field, changing a type) are explicit and versionable.
 - The `TYPE` field in the descriptor determines the storage strategy, allowing the same engine to handle durable artifacts, ephemeral ephemerides, and external data sources without changing the query logic.
 
-**The metadata file (`.meta`) — trustworthiness of the time series**
+**The metadata file (`.meta`) - trustworthiness of the time series**
 
 A time series with gaps, treated as continuous, leads to incorrect time-window computations, incorrect aggregations, and false correlations. The `.meta` file provides:
 
-- The ability to distinguish a record with a zero value from a record that is absent (null) — semantically completely different states.
-- Recording of transmission gaps without inserting fake records into the data file — the binary file stays dense and positionally addressable.
-- RLE compression — typical time series have long stretches without nulls, so the metadata cost is close to zero for good-quality data.
+- The ability to distinguish a record with a zero value from a record that is absent (null) - semantically completely different states.
+- Recording of transmission gaps without inserting fake records into the data file - the binary file stays dense and positionally addressable.
+- RLE compression - typical time series have long stretches without nulls, so the metadata cost is close to zero for good-quality data.
 - The ability to reconstruct the exact recording schedule, including gap lengths, which is necessary when computing intervals in the stream algebra.
 
-**The shadow file (`.shadow`) — non-destructive data correction**
+**The shadow file (`.shadow`) - non-destructive data correction**
 
 In measurement systems, correcting faulty samples after the fact is a standard procedure. Overwriting the binary file is irreversible and destroys the evidence of the original measurement. The shadow file:
 
 - Lets you correct any historical record without modifying the main file.
-- Preserves the original measurement as the default — deleting the `.shadow` file fully restores the initial state.
+- Preserves the original measurement as the default - deleting the `.shadow` file fully restores the initial state.
 - Allows merging (`merge`) corrections into the main file only when that is a deliberate decision by the operator, not a side effect of writing.
 - Separates certified data (the main file) from working data (the shadow file), which matters in applications requiring auditability.
 
-**The index shadow file (`.meta.shadow`) — metadata consistency during correction**
+**The index shadow file (`.meta.shadow`) - metadata consistency during correction**
 
-A correction to a record in the data shadow file must be reflected in the null index — otherwise `getNullBitset()` would return a stale pattern from the main `.meta`. The `.meta.shadow` file:
+A correction to a record in the data shadow file must be reflected in the null index - otherwise `getNullBitset()` would return a stale pattern from the main `.meta`. The `.meta.shadow` file:
 
 - Maintains consistency between the pairs: `main file ↔ .meta` and `.shadow ↔ .meta.shadow`.
 - Lets `getNullBitset()` return the current null pattern for a corrected record without modifying the main index.
-- Tracks the lifecycle of the data shadow file — merged and deleted exactly alongside `.shadow`.
+- Tracks the lifecycle of the data shadow file - merged and deleted exactly alongside `.shadow`.
 - Enables full state recovery after a restart: overrides loaded from `.meta.shadow` are immediately available without re-scanning the data shadow file.

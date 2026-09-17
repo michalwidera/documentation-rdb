@@ -4,11 +4,11 @@ I mentioned substrates, ephemerides, and artifacts in the chapter on system arch
 
 First I'd like to draw attention to a certain property of the algebraic expressions introduced. In practice we can write any expression, compile it, and produce a formula for operations on individual elements of the time series that yields the desired result.
 
-In practice, the system carries out only one- or two-argument operations. Examples of one-argument operations are the time shift or the Agse operation — there, the argument is a single data stream. The rest of the operations act on two data streams. During compilation, all algebraic expressions are broken down into ones with two arguments.
+In practice, the system carries out only one- or two-argument operations. Examples of one-argument operations are the time shift or the Agse operation - there, the argument is a single data stream. The rest of the operations act on two data streams. During compilation, all algebraic expressions are broken down into ones with two arguments.
 
 The parser accepts both the parenthesized form and unparenthesized chains, e.g. `s1+s2+s3`, `s1#s2#s3`, and `s1+s2+s3+s4`. Such notation is then reduced to a sequence of two-argument operations with automatic intermediate substrates.
 
-The example uses the canonical declarations from the whole chapter — three streams with different types and intervals:
+The example uses the canonical declarations from the whole chapter - three streams with different types and intervals:
 
 ```rql
 DECLARE a BYTE, b INTEGER STREAM core0, 0.1 FILE 'sensor_a.txt'
@@ -24,7 +24,7 @@ Compilation:
 {{#include ../regen/out/substrate-hash.txt}}
 ```
 
-An unannounced stream, `STREAM_HASH_core0_core1`, appeared — this is exactly a substrate. The compiler broke `(core0 # core1) + core2` into two two-argument operations and inserted an intermediate stream. The substrate's delta: Δ = (1/10 · 1/5) / (1/10 + 1/5) = 1/15.
+An unannounced stream, `STREAM_HASH_core0_core1`, appeared - this is exactly a substrate. The compiler broke `(core0 # core1) + core2` into two two-argument operations and inserted an intermediate stream. The substrate's delta: Δ = (1/10 · 1/5) / (1/10 + 1/5) = 1/15.
 
 What happens once we attach the query:
 
@@ -40,7 +40,7 @@ Only one new query gets attached to the plan:
 
 You're probably wondering why only one, and not two again? The answer is optimization. We're reusing the intermediate results from before. This is one of the unexpected benefits of using RetractorDB.
 
-There's one more important thing worth mentioning here. There is a SUBSTRAT directive, whose argument is a string in quotes. You can use the following types: 'memory', 'default', 'direct', 'posix', 'posixshd', 'generic', 'device', 'textsource'. A full description of each type can be found in the chapter [Storage Types](../query-language-construction/select-command/storage-types.md). The default type, 'default', causes substrates to materialize entirely on disk. That's not the desired behavior in a production system, but it is desired during development and debugging. A useful type is 'memory'. Substrates of this type live only in memory. Their data never lands on disk — everything happens in memory, and there's only as much data as is needed to execute the queries. The remaining types are currently untested and in development.
+There's one more important thing worth mentioning here. There is a SUBSTRAT directive, whose argument is a string in quotes. You can use the following types: 'memory', 'default', 'direct', 'posix', 'posixshd', 'generic', 'device', 'textsource'. A full description of each type can be found in the chapter [Storage Types](../query-language-construction/select-command/storage-types.md). The default type, 'default', causes substrates to materialize entirely on disk. That's not the desired behavior in a production system, but it is desired during development and debugging. A useful type is 'memory'. Substrates of this type live only in memory. Their data never lands on disk - everything happens in memory, and there's only as much data as is needed to execute the queries. The remaining types are currently untested and in development.
 
 Adding a query with the same operations but a different name can trigger substrate deduplication. If the program, delta, and schema are equivalent, the compiler redirects the `PUSH_STREAM` references to the existing stream and removes the duplicate.
 
@@ -54,9 +54,9 @@ The compiler carries out an optimization called **substrate reduction** (the `de
 
 Reduction of a substrate into a user query happens if and only if three conditions are simultaneously satisfied:
 
-1. **The same schema shape** — the field count, types, byte sizes, and cardinalities are identical. Field names are not compared.
-2. **The same delta** — the streams' sampling rate is the same.
-3. **The same processing operations** — the sequence of `PUSH_STREAM` / `STREAM_TIMEMOVE` / `STREAM_HASH`, etc. instructions is identical.
+1. **The same schema shape** - the field count, types, byte sizes, and cardinalities are identical. Field names are not compared.
+2. **The same delta** - the streams' sampling rate is the same.
+3. **The same processing operations** - the sequence of `PUSH_STREAM` / `STREAM_TIMEMOVE` / `STREAM_HASH`, etc. instructions is identical.
 
 ### Reduction example
 
@@ -70,7 +70,7 @@ SELECT merged[0]  STREAM merged  FROM (core0 > 2) + core1
 SELECT shifted[0] STREAM shifted FROM core0 > 2
 ```
 
-Without reduction, the compiler would generate three streams: the substrate `STREAM_TIMEMOVE_core0`, `merged`, and `shifted`. The substrate and `shifted` have an identical structure — the same source stream `core0` and the same `>2` operation. After reduction, the substrate is removed, and the reference `PUSH_STREAM(STREAM_TIMEMOVE_core0)` inside `merged` is replaced with `PUSH_STREAM(shifted)`:
+Without reduction, the compiler would generate three streams: the substrate `STREAM_TIMEMOVE_core0`, `merged`, and `shifted`. The substrate and `shifted` have an identical structure - the same source stream `core0` and the same `>2` operation. After reduction, the substrate is removed, and the reference `PUSH_STREAM(STREAM_TIMEMOVE_core0)` inside `merged` is replaced with `PUSH_STREAM(shifted)`:
 
 ```rasm
 {{#include ../regen/out/substrate-shift.txt}}
@@ -80,7 +80,7 @@ Without reduction, the compiler would generate three streams: the substrate `STR
 
 Reduction applies exclusively to substrates generated by the compiler (`isSubstrat = true`). Queries explicitly defined by the user are **never** reduced, even if two of them have an identical structure.
 
-Example — two user queries with the same operation:
+Example - two user queries with the same operation:
 
 ```rql
 DECLARE a BYTE, b INTEGER   STREAM core0, 0.1 FILE 'sensor_a.txt'
@@ -159,11 +159,11 @@ After creating the common `STREAM_SELECT_*`, the compiler removes orphaned subst
 
 The pass runs after `resolveFieldReferences()` and `expandIndexWildcards()`, but before `localizeFieldOffsets()`. This lets a field fingerprint compare the source identity and index instead of a local offset that depends on whether the input order is `a+b` or `b+a`.
 
-The `select_cse_commutative_add` test checks both plan shape and execution. It covers equivalent indexed projections and explicit field lists, NULL values and their metadata, separate public descriptors, `SELECT *`, changed field order, and positive and negative three-source cases. The test compares equivalent pairs byte for byte and confirms that the counterexamples produce different results — see [Integration Tests](../appendices/integration-tests.md).
+The `select_cse_commutative_add` test checks both plan shape and execution. It covers equivalent indexed projections and explicit field lists, NULL values and their metadata, separate public descriptors, `SELECT *`, changed field order, and positive and negative three-source cases. The test compares equivalent pairs byte for byte and confirms that the counterexamples produce different results - see [Integration Tests](../appendices/integration-tests.md).
 
 ## Elimination of duplicate substrates
 
-When several queries use the same stream operation — e.g. `core0 + core1` — the substrate-extraction phase (`extractIntermediateStreams`) creates a separate substrate for each of them. Without a subsequent repair phase, the graph would end up with parallel, identical intermediate nodes computing exactly the same value.
+When several queries use the same stream operation - e.g. `core0 + core1` - the substrate-extraction phase (`extractIntermediateStreams`) creates a separate substrate for each of them. Without a subsequent repair phase, the graph would end up with parallel, identical intermediate nodes computing exactly the same value.
 
 ### When a substrate is created
 
@@ -188,12 +188,12 @@ The condition \\(i\Delta_{a}=k\Delta_{b}\\) means that both interleave arguments
 
 Let the reduced ratio \\(\Delta_a/\Delta_b\\) be \\(p/q\\). The interleave tail
 protects every phase of the period \\(p+q\\), because the compiler scans that
-period slot by slot and takes the maximum required latency — formula and
+period slot by slot and takes the maximum required latency - formula and
 justification in [Formal Foundations and
 Proofs](../mathematical-foundations/formal-foundations-and-proofs.md).
 
 A shift delays a causal realization: it moves the **logical origin** `O` by `N`
-and sets its own tail to \\(\max(0,W_S-N)\\) — it does not change the record
+and sets its own tail to \\(\max(0,W_S-N)\\) - it does not change the record
 sequence or insert a prefix. For
 \\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\), the matching condition
 gives exactly:
@@ -241,7 +241,7 @@ independent copies of file-backed input streams. It compares the `matched`
 and `CC` artifacts byte for byte, compares their metadata after excluding
 the reserved header, checks the complete sequence against a reference
 derived from the `B,A,A` interleave period, and verifies equal tails
-(`origin=3` with a zero tail — \\(\tau_3\\) over an interleave of tail 2
+(`origin=3` with a zero tail - \\(\tau_3\\) over an interleave of tail 2
 absorbs it entirely). Both sides are factored to the same shape here, so the
 comparison is exhaustive. Neither side emits placeholder records. Separately,
 `computeRequiredCapacities()` assigns `N+1+2` history records to a declared
@@ -254,7 +254,7 @@ The `r1_identity_nulls` test checks the same identity for
 compares the rewritten plan, a left-hand side blocked from rewriting, and
 an explicit right-hand side. The rewritten plan and the explicit right-hand side
 are equal in full. The **blocked** left-hand side has the same logical origin and
-the same content but a strictly larger tail — the comparison therefore covers the
+the same content but a strictly larger tail - the comparison therefore covers the
 common prefix of the payload and of the `NULL` map, with a separate assertion
 requiring the factored side to be strictly longer. A nonempty periodic
 all-`NULL` record prevents missing data from masking an incorrect tail. Compiler unit tests
@@ -262,7 +262,7 @@ also cover the \\(3/5\\), \\(7/11\\), and \\(160/147\\) ratios.
 
 ### The deduplication algorithm
 
-After extracting substrates and determining time intervals, the compiler runs the `deduplicateSubstrats()` step. The algorithm works iteratively — a `while(changed)` loop repeats the search until no more duplicate pairs are found.
+After extracting substrates and determining time intervals, the compiler runs the `deduplicateSubstrats()` step. The algorithm works iteratively - a `while(changed)` loop repeats the search until no more duplicate pairs are found.
 
 On every pass, for each pair of substrates `(it, it2)`, five equivalence conditions are checked in turn:
 
@@ -280,29 +280,29 @@ Deduplication is the ninth of the twenty-three pipeline stages (the `compiler::c
 
 <div class="timeline compact">
 
-- `checkFunctionCalls` — scalar-function names and arity
-- `checkStreamReducerFieldRefs` — stream reducer outside the `FROM` clause
-- `expandStreamGenerators` — stream-family expansion
-- `snapshotNamedSourceRefs` — snapshot of user-written references
-- `extractIntermediateStreams` — substrate extraction
-- `expandSchemaWildcards` — expansion of `*` and `[_]`
-- `resolveStreamIntervals` — time-interval computation
-- `factorMatchedHashTimeMoves` — matched interleave-shift factorization
-- **`deduplicateSubstrats` — duplicate elimination ← this step**
-- `validateSubstratNameUniqueness` — substrate-name validation
-- `resolveFieldReferences` — field-reference resolution
-- `resolveWindowAggregates` — record-history aggregate groups
-- `inferFieldShapes` — result-field shapes
-- `checkRuleConditionShapes` — computability of rule conditions
-- `simplifyFieldExpressions` — field and rule simplification
-- `shareEquivalentSelectComputations` — sharing equivalent SELECT computations
-- `localizeFieldOffsets` — field-offset computation
-- `computeLogicalOrigin` — logical-origin computation
-- `computeStartupLatency` — startup-tail computation
-- `computeRequiredCapacities` — required-history computation
-- `validateConstraints` — operator-constraint validation
-- `applyCapacitiesToStreams` — capacity application
-- `topologicalSort` — final producer–consumer order
+- `checkFunctionCalls` - scalar-function names and arity
+- `checkStreamReducerFieldRefs` - stream reducer outside the `FROM` clause
+- `expandStreamGenerators` - stream-family expansion
+- `snapshotNamedSourceRefs` - snapshot of user-written references
+- `extractIntermediateStreams` - substrate extraction
+- `expandSchemaWildcards` - expansion of `*` and `[_]`
+- `resolveStreamIntervals` - time-interval computation
+- `factorMatchedHashTimeMoves` - matched interleave-shift factorization
+- **`deduplicateSubstrats` - duplicate elimination ← this step**
+- `validateSubstratNameUniqueness` - substrate-name validation
+- `resolveFieldReferences` - field-reference resolution
+- `resolveWindowAggregates` - record-history aggregate groups
+- `inferFieldShapes` - result-field shapes
+- `checkRuleConditionShapes` - computability of rule conditions
+- `simplifyFieldExpressions` - field and rule simplification
+- `shareEquivalentSelectComputations` - sharing equivalent SELECT computations
+- `localizeFieldOffsets` - field-offset computation
+- `computeLogicalOrigin` - logical-origin computation
+- `computeStartupLatency` - startup-tail computation
+- `computeRequiredCapacities` - required-history computation
+- `validateConstraints` - operator-constraint validation
+- `applyCapacitiesToStreams` - capacity application
+- `topologicalSort` - final producer–consumer order
 
 </div>
 
@@ -333,17 +333,17 @@ Both queries require the sum `core0+core1` to be computed first.
 
 The `extractIntermediateStreams` phase creates a separate substrate for each query, producing two identical intermediate nodes in the graph (Fig. 37):
 
-<figure><img src="../assets/dedup_przed.svg" width="40%" alt=""><figcaption><p>Fig. 37. Graph before deduplication — two identical STREAM_ADD_core0_core1 substrates</p></figcaption></figure>
+<figure><img src="../assets/dedup_przed.svg" width="40%" alt=""><figcaption><p>Fig. 37. Graph before deduplication - two identical STREAM_ADD_core0_core1 substrates</p></figcaption></figure>
 
 Once `deduplicateSubstrats()` runs, one of the duplicates is removed and every `PUSH_STREAM` reference is repointed to the surviving node. A single shared substrate remains in the graph (Fig. 38):
 
-<figure><img src="../assets/dedup_po.svg" width="40%" alt=""><figcaption><p>Fig. 38. Graph after deduplication — one shared substrate, generated with: xretractor dedup_after.rql -c -d</p></figcaption></figure>
+<figure><img src="../assets/dedup_po.svg" width="40%" alt=""><figcaption><p>Fig. 38. Graph after deduplication - one shared substrate, generated with: xretractor dedup_after.rql -c -d</p></figcaption></figure>
 
-The graph after deduplication is exactly what `xretractor -c -d` returns — the compiler always presents the result after all optimization phases.
+The graph after deduplication is exactly what `xretractor -c -d` returns - the compiler always presents the result after all optimization phases.
 
 ## Absorption of a substrate by an explicit stream
 
-The inner loop in `deduplicateSubstrats()` does not check the `isSubstrat` flag for candidate `it2` — that check exists only in the outer loop. This means an automatic substrate can be absorbed not only by another substrate, but by **any stream with an identical program and schema** — including a stream explicitly defined by the user.
+The inner loop in `deduplicateSubstrats()` does not check the `isSubstrat` flag for candidate `it2` - that check exists only in the outer loop. This means an automatic substrate can be absorbed not only by another substrate, but by **any stream with an identical program and schema** - including a stream explicitly defined by the user.
 
 Consider a query containing only a compound expression:
 
@@ -363,15 +363,15 @@ When the user adds an explicit stream declaration that is exactly the same sum:
 SELECT * STREAM mysum FROM core0+core1
 ```
 
-the substrate `STREAM_ADD_core0_core1` satisfies every equivalence condition relative to `mysum` — identical interval, identical token program, identical field schema. The `deduplicateSubstrats()` phase removes the substrate and repoints every `PUSH_STREAM` reference to `mysum`. The substrate disappears from the graph entirely (Fig. 40):
+the substrate `STREAM_ADD_core0_core1` satisfies every equivalence condition relative to `mysum` - identical interval, identical token program, identical field schema. The `deduplicateSubstrats()` phase removes the substrate and repoints every `PUSH_STREAM` reference to `mysum`. The substrate disappears from the graph entirely (Fig. 40):
 
-<figure><img src="../assets/absorb_z_mysum.svg" alt=""><figcaption><p>Fig. 40. Graph after adding SELECT * STREAM mysum FROM core0+core1 — the substrate replaced by an explicit stream</p></figcaption></figure>
+<figure><img src="../assets/absorb_z_mysum.svg" alt=""><figcaption><p>Fig. 40. Graph after adding SELECT * STREAM mysum FROM core0+core1 - the substrate replaced by an explicit stream</p></figcaption></figure>
 
-A side effect: `mysum` becomes a shared node — it serves both its own consumers and those that previously used the automatic substrate. In exchange, the user gains an explicit name for the intermediate results and can query them via `xqry`.
+A side effect: `mysum` becomes a shared node - it serves both its own consumers and those that previously used the automatic substrate. In exchange, the user gains an explicit name for the intermediate results and can query them via `xqry`.
 
 ## Schema update after absorption
 
-Simply repointing the `PUSH_STREAM` tokens is not enough. Every stream stores, in `lSchema`, a sequence of instructions describing how to build the output value of every field — including `PUSH_ID(stream_name, N)` tokens, which say: "take the N-th field from the input buffer named `stream_name`." When a substrate is absorbed, these tokens still refer to the old, removed substrate name. The `localizeFieldOffsets()` step builds an offset map based on the `PUSH_STREAM` tokens in the program — if a `PUSH_ID` key doesn't match any entry in the map, it defaults to offset 0.
+Simply repointing the `PUSH_STREAM` tokens is not enough. Every stream stores, in `lSchema`, a sequence of instructions describing how to build the output value of every field - including `PUSH_ID(stream_name, N)` tokens, which say: "take the N-th field from the input buffer named `stream_name`." When a substrate is absorbed, these tokens still refer to the old, removed substrate name. The `localizeFieldOffsets()` step builds an offset map based on the `PUSH_STREAM` tokens in the program - if a `PUSH_ID` key doesn't match any entry in the map, it defaults to offset 0.
 
 ### Error scenario with a non-zero offset
 
@@ -393,14 +393,14 @@ PUSH_ID(STREAM_ADD_s1_s2, 0)   ← field a from the source at offset 1
 PUSH_ID(STREAM_ADD_s1_s2, 1)   ← field b from the source at offset 1
 ```
 
-After absorption, `deduplicateSubstrats()` repoints `PUSH_STREAM` from `STREAM_ADD_s1_s2` to `mysum`. But without updating `lSchema`, the `PUSH_ID` tokens still carry the old name. When `localizeFieldOffsets()` fails to find `STREAM_ADD_s1_s2` in the offset map, it defaults to offset 0 — colliding with `s3`'s fields. Effect: fields `a` and `b` from `mysum` were being read from offset 0 (s3's position) instead of offset 1 (mysum's position).
+After absorption, `deduplicateSubstrats()` repoints `PUSH_STREAM` from `STREAM_ADD_s1_s2` to `mysum`. But without updating `lSchema`, the `PUSH_ID` tokens still carry the old name. When `localizeFieldOffsets()` fails to find `STREAM_ADD_s1_s2` in the offset map, it defaults to offset 0 - colliding with `s3`'s fields. Effect: fields `a` and `b` from `mysum` were being read from offset 0 (s3's position) instead of offset 1 (mysum's position).
 
 ### The fix: updating lSchema in deduplicateSubstrats
 
 To avoid this discrepancy, after updating the `PUSH_STREAM` tokens, `deduplicateSubstrats()` performs an additional pass over the `lSchema` of every query and rewrites:
 
-- `PUSH_ID(old_name, N)` tokens into `PUSH_ID(new_name, N)` — this covers the fields from `buildOutputSchema` for `STREAM_ADD`,
-- `PUSH_ID2("old_name[N]")` tokens into `PUSH_ID2("new_name[N]")` — this covers the symbolic names created by `buildOutputSchema` for `STREAM_TIMEMOVE`, `STREAM_HASH`, `STREAM_SUBTRACT`.
+- `PUSH_ID(old_name, N)` tokens into `PUSH_ID(new_name, N)` - this covers the fields from `buildOutputSchema` for `STREAM_ADD`,
+- `PUSH_ID2("old_name[N]")` tokens into `PUSH_ID2("new_name[N]")` - this covers the symbolic names created by `buildOutputSchema` for `STREAM_TIMEMOVE`, `STREAM_HASH`, `STREAM_SUBTRACT`.
 
 After the fix, the compiler's output for the example above looks correct:
 
@@ -415,7 +415,7 @@ merged(1/1)
                 PUSH_ID(merged[2])
 ```
 
-Fields `a` and `b` from `mysum` have offset 1 (`merged[1]`, `merged[2]`), which matches `mysum`'s actual position in `merged`'s buffer — after field `c` from stream `s3`.
+Fields `a` and `b` from `mysum` have offset 1 (`merged[1]`, `merged[2]`), which matches `mysum`'s actual position in `merged`'s buffer - after field `c` from stream `s3`.
 
 ### Cascaded absorption
 
@@ -429,4 +429,4 @@ SELECT * STREAM shifted FROM (s1+s2)>1
 SELECT * STREAM merged  FROM s3+((s1+s2)>1)
 ```
 
-in the first round, `mysum` absorbs `STREAM_ADD_s1_s2` and rewrites its names — including in the schema of the intermediate substrate `STREAM_TIMEMOVE_STREAM_ADD_s1_s2`. As a result, in the second round `shifted` can absorb this substrate (the program condition is now satisfied, because both point to `mysum`). After two rounds, no automatic substrate remains in the plan, and `merged` uses `s3` and `shifted` directly.
+in the first round, `mysum` absorbs `STREAM_ADD_s1_s2` and rewrites its names - including in the schema of the intermediate substrate `STREAM_TIMEMOVE_STREAM_ADD_s1_s2`. As a result, in the second round `shifted` can absorb this substrate (the program condition is now satisfied, because both point to `mysum`). After two rounds, no automatic substrate remains in the plan, and `merged` uses `s3` and `shifted` directly.

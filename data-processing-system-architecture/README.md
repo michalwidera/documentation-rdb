@@ -8,7 +8,7 @@ Compilation of the system's code is supported by the Conan package manager \[[8]
 
 ## Overview of topics covered in this chapter
 
-The chapter is built in layers — from the general view down to implementation detail.
+The chapter is built in layers - from the general view down to implementation detail.
 
 <div class="timeline">
 
@@ -22,7 +22,7 @@ The chapter is built in layers — from the general view down to implementation 
 
 - **[Data and Control Flow](data-and-control-flow.md)**
 
-  Which data paths are always active (data arrival → xretractor → artifacts), and which are optional or diagnostic. The graceful-shutdown mechanism is also described — xretractor reacts to `SIGINT`, `SIGTERM`, and `SIGHUP` signals by finishing the current cycle without risking file corruption.
+  Which data paths are always active (data arrival → xretractor → artifacts), and which are optional or diagnostic. The graceful-shutdown mechanism is also described - xretractor reacts to `SIGINT`, `SIGTERM`, and `SIGHUP` signals by finishing the current cycle without risking file corruption.
 
 - **[Artifacts, Substrates, and Ephemerides](artifacts-substrates-ephemerides.md)**
 
@@ -38,11 +38,11 @@ The chapter is built in layers — from the general view down to implementation 
 
 - **[Data Processing and Distribution](data-processing-and-distribution.md)**
 
-  A complete walkthrough: from preparing a data file, through running `xretractor`, through viewing streaming statistics (`xqry -d`), to live visualization in gnuplot (`xqry -s str1 -p 50,50 | gnuplot`) and network transmission via `nc`. The example combines two sources — a text file and `/dev/urandom` — illustrating how the `+` operator in the FROM clause performs algebraic stream joining.
+  A complete walkthrough: from preparing a data file, through running `xretractor`, through viewing streaming statistics (`xqry -d`), to live visualization in gnuplot (`xqry -s str1 -p 50,50 | gnuplot`) and network transmission via `nc`. The example combines two sources - a text file and `/dev/urandom` - illustrating how the `+` operator in the FROM clause performs algebraic stream joining.
 
 - **[Artifact Analysis](artifact-analysis.md)**
 
-  The `xtrdb` tool — an interactive binary-file inspector modeled after the dbase style. The `.open`, `.desc`, `.list`, `.rlist`, and `.meta` commands let you browse the contents of artifacts without knowing the binary format. The tool is also used to verify determinism: the same input data should always produce identical results.
+  The `xtrdb` tool - an interactive binary-file inspector modeled after the dbase style. The `.open`, `.desc`, `.list`, `.rlist`, and `.meta` commands let you browse the contents of artifacts without knowing the binary format. The tool is also used to verify determinism: the same input data should always produce identical results.
 
 </div>
 
@@ -56,4 +56,4 @@ xretractor query.rql             # start processing
 xqry -s <stream>                 # read current data
 ```
 
-A fourth element — `xtrdb` — comes into play for diagnostics and testing, not in a typical production workflow.
+A fourth element - `xtrdb` - comes into play for diagnostics and testing, not in a typical production workflow.

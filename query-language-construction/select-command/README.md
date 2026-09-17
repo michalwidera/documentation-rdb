@@ -18,7 +18,7 @@ FROM stream_algebraic_expression
 
 _Fig. 4. SELECT command syntax diagram_
 
-The railroad diagram in Fig. 4 was generated from the `select_statement` rule in the system's ANTLR4 grammar (`RQL.g4`). The diagram is read by following the lines from left to right: rounded green boxes are keywords and symbols entered literally, rectangles are values supplied by the user. The branch after the word SELECT shows that the field list is either an asterisk (the full record) or one or more expressions separated by commas (a loop looping back through a comma). An optional size in square brackets after the stream name creates a stream family. Tracks bypassing the FILE, RETENTION (with an optional second parameter — the number of segments), VOLATILE/PERSISTENT, and STORAGE clauses mean each of them is optional.
+The railroad diagram in Fig. 4 was generated from the `select_statement` rule in the system's ANTLR4 grammar (`RQL.g4`). The diagram is read by following the lines from left to right: rounded green boxes are keywords and symbols entered literally, rectangles are values supplied by the user. The branch after the word SELECT shows that the field list is either an asterisk (the full record) or one or more expressions separated by commas (a loop looping back through a comma). An optional size in square brackets after the stream name creates a stream family. Tracks bypassing the FILE, RETENTION (with an optional second parameter - the number of segments), VOLATILE/PERSISTENT, and STORAGE clauses mean each of them is optional.
 
 Readers familiar with SQL will immediately notice that the command shown above differs significantly from what they know from relational databases.
 
@@ -51,7 +51,7 @@ Within a template, `$` may occur:
 - as an expression value, for example `cells[0]+$`;
 - in a reference to another family in the `FROM` clause, for example `cell[$]@(2,4)`.
 
-A generator-index expression is integral and may contain literals, `$`, parentheses, and the operators `*`, `+`, and `-`. The family size must be positive and the template must actually use `$`. A generator cannot carry a `FILE` clause because one file name cannot serve multiple streams. The compiler also rejects family indices outside the declared range, negative field indices, field indices beyond the source's slots, and collisions between generated and existing stream names. The field-index range is checked by the same rule as for a hand-written index — see [Index out of range](../../query-compilation/aliasing.md#index-out-of-range).
+A generator-index expression is integral and may contain literals, `$`, parentheses, and the operators `*`, `+`, and `-`. The family size must be positive and the template must actually use `$`. A generator cannot carry a `FILE` clause because one file name cannot serve multiple streams. The compiler also rejects family indices outside the declared range, negative field indices, field indices beyond the source's slots, and collisions between generated and existing stream names. The field-index range is checked by the same rule as for a hand-written index - see [Index out of range](../../query-compilation/aliasing.md#index-out-of-range).
 
 Expansion is the compiler's first pass. Afterwards the plan is identical to one containing hand-written `cell$0`...`cell$3` streams; runtime has no separate generator mechanism.
 
@@ -85,13 +85,13 @@ The stream algebraic expression in the `FROM` clause can include:
 
 | Operator | Syntax | Description |
 | --- | --- | --- |
-| Sum | `A + B` | Concatenates the schemas of two streams — see [Summation Sequencing](summation-sequencing.md) |
-| Interleave | `A # B` | Interleaves two streams — see [Interleaving Sequencing](interleaving-sequencing.md) |
+| Sum | `A + B` | Concatenates the schemas of two streams - see [Summation Sequencing](summation-sequencing.md) |
+| Interleave | `A # B` | Interleaves two streams - see [Interleaving Sequencing](interleaving-sequencing.md) |
 | Shift | `A > N` | Shifts reads by `N` samples |
 | Interval conversion | `A - r` | Retimes a stream to rational interval `r` |
 | De-interleave | `A & r` / `A % r` | Recovers the left or right interleave component for ratio `r` |
-| AGSE window | `A @ (k, w)` | Builds a sliding data window — see [AGSE Sliding Data Window](../../query-execution/agse-sliding-window/) |
-| Reduction | `MIN(A)` / `MAX(A)` / `AVG(A)` / `SUMC(A)` | Reduces a multi-field record to one value — see [Aggregate Operators](aggregate-operators.md) |
+| AGSE window | `A @ (k, w)` | Builds a sliding data window - see [AGSE Sliding Data Window](../../query-execution/agse-sliding-window/) |
+| Reduction | `MIN(A)` / `MAX(A)` / `AVG(A)` / `SUMC(A)` | Reduces a multi-field record to one value - see [Aggregate Operators](aggregate-operators.md) |
 
 `MIN`/`MAX`/`AVG`/`SUMC(expression : W)` aggregates occur in the `SELECT` list rather than
 the `FROM` stream expression. They reduce W historical records and may be operands in a

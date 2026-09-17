@@ -217,4 +217,4 @@ xqry --server test --wait-server --select stream --elimitqry 10
 
 The information below the help list contains the branch name, commit hash, compiler
 version, build time and type, and the log path. The format is described in
-[xretractor — Version Information](xretractor.md#version-information).
+[xretractor - Version Information](xretractor.md#version-information).

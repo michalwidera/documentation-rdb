@@ -1,6 +1,6 @@
 # Summation Operation Sequencing
 
-Data flows into the system and is processed within it. The order in which it arrives and is processed can be described by the term sequencing. The way data is combined is described by the algebraic expression placed in the FROM clause. These expressions are written as a series of algebraic operations subject to strict rules — rules similar to those we learned in elementary school, governing arithmetic operations on numbers such as addition, multiplication, division, and subtraction.
+Data flows into the system and is processed within it. The order in which it arrives and is processed can be described by the term sequencing. The way data is combined is described by the algebraic expression placed in the FROM clause. These expressions are written as a series of algebraic operations subject to strict rules - rules similar to those we learned in elementary school, governing arithmetic operations on numbers such as addition, multiplication, division, and subtraction.
 
 Let's start by analyzing the following query:
 
@@ -19,13 +19,13 @@ $ swirly out.txt -o out.svg
 
 The swirly program was installed from its GitHub repository \[[6](../../references.md#6)]. This program is used to generate marble diagrams used to explain the behavior of RxJs asynchronous operations \[[7](../../references.md#7)].
 
-The modification I applied for my use case is an alternative meaning for the vertical lines. In my case, vertical lines separate uniform time intervals — showing the number of cycles requested at invocation time (in this case, 3 cycles). The generated image is shown in Fig. 5:
+The modification I applied for my use case is an alternative meaning for the vertical lines. In my case, vertical lines separate uniform time intervals - showing the number of cycles requested at invocation time (in this case, 3 cycles). The generated image is shown in Fig. 5:
 
-<figure><img src="../../assets/schemat_kulkowy_operacja_sumy.png" alt=""><figcaption><p>Fig. 5. Marble diagram — the sum operation</p></figcaption></figure>
+<figure><img src="../../assets/schemat_kulkowy_operacja_sumy.png" alt=""><figcaption><p>Fig. 5. Marble diagram - the sum operation</p></figcaption></figure>
 
 A few words of explanation are needed here about this generator and how its input is produced. I built into the compiler an option for visualizing the execution of a sequence of operations. Diagrams produced by the Swirly program are one convenient way of presenting time dependencies. On input, the Swirly program expects a text file describing the diagram. A generator that simulates the requested number of cycles and builds a file for Swirly has been built into the compiler.
 
-When xretractor is given, as its first parameter, the name of the file containing the query execution plan, it requires a second parameter ( -w \[--diagram] ) — indicating that we expect marble-diagram output. The required argument of the -w parameter is two numbers separated by a colon. The first tells the program whether to insert time separators into the diagram (the vertical lines separating cycles); the second parameter is how many cycles should be shown in the diagram.
+When xretractor is given, as its first parameter, the name of the file containing the query execution plan, it requires a second parameter ( -w \[--diagram] ) - indicating that we expect marble-diagram output. The required argument of the -w parameter is two numbers separated by a colon. The first tells the program whether to insert time separators into the diagram (the vertical lines separating cycles); the second parameter is how many cycles should be shown in the diagram.
 
 If you look at the generated out.txt file, you'll see the following content:
 
@@ -58,8 +58,8 @@ o:=fi
 
 and then run the swirly program again, we'll see a more detailed picture showing the sequence of events occurring in the system.
 
-<figure><img src="../../assets/schemat_kulkowy_sumy.png" alt=""><figcaption><p>Fig. 6. Marble diagram — Sum, modified diagram</p></figcaption></figure>
+<figure><img src="../../assets/schemat_kulkowy_sumy.png" alt=""><figcaption><p>Fig. 6. Marble diagram - Sum, modified diagram</p></figcaption></figure>
 
-In the diagram shown in Fig. 6, you can see which marbles were joined and which marbles they were formed from. Remember, though, that this is a manually corrected image, made for the purposes of this work — the generator built into the compiler does not implement this functionality.
+In the diagram shown in Fig. 6, you can see which marbles were joined and which marbles they were formed from. Remember, though, that this is a manually corrected image, made for the purposes of this work - the generator built into the compiler does not implement this functionality.
 
 > **_NOTE:_** The functionality described here is covered by the tests: `Pattern1`, `issue167_triarg`, described in the appendix [Integration Tests](../../appendices/integration-tests.md).

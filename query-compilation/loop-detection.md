@@ -1,6 +1,6 @@
 # Loop Detection in Compilation
 
-The query dependency graph must be a directed acyclic graph (DAG). If a query refers — directly or indirectly — to its own results, a cycle is created. The compiler detects this situation and aborts compilation with an error.
+The query dependency graph must be a directed acyclic graph (DAG). If a query refers - directly or indirectly - to its own results, a cycle is created. The compiler detects this situation and aborts compilation with an error.
 
 > **_NOTE:_** The functionality described here is covered by the test: `issue95_loopInCompile`, described in the appendix [Integration Tests](../appendices/integration-tests.md).
 
@@ -15,7 +15,7 @@ SELECT *                          STREAM agg    FROM MAX(merged)
 SELECT *                          STREAM broken FROM merged + broken
 ```
 
-The last query defines `broken` as the result of the operation `merged + broken` — the stream depends on itself. The dependency graph contains a cycle (Fig. 41):
+The last query defines `broken` as the result of the operation `merged + broken` - the stream depends on itself. The dependency graph contains a cycle (Fig. 41):
 
 ```mermaid
 %% pdf-width: 85%
@@ -47,7 +47,7 @@ The message `"Circular dependency in stream definitions"` appears when the `reso
 
 ## Detection mechanism
 
-On every iteration round, the `resolveStreamIntervals` stage counts the streams for which an interval could not yet be determined (`unresolvedCount`). In a valid, acyclic graph, this number decreases every round — at least one stream always gets its delta determined. In a graph with a cycle, streams depend on each other mutually and none can obtain a value — `unresolvedCount` stalls.
+On every iteration round, the `resolveStreamIntervals` stage counts the streams for which an interval could not yet be determined (`unresolvedCount`). In a valid, acyclic graph, this number decreases every round - at least one stream always gets its delta determined. In a graph with a cycle, streams depend on each other mutually and none can obtain a value - `unresolvedCount` stalls.
 
 ```cpp
 if (unresolvedCount >= prevUnresolved) {

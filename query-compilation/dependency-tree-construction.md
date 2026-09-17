@@ -1,8 +1,8 @@
 # Dependency Tree Construction
 
-The dependency tree is the query execution plan in the form of a directed graph. It is a data structure built during compilation and modified when Ad Hoc queries are added. The roots of this graph are ephemeris declarations — declarations of every kind that create external objects, so-called data sources. Inside the graph lie artifacts and substrates. At the end of the processing chain sit the artifacts — as the chain's final results.
+The dependency tree is the query execution plan in the form of a directed graph. It is a data structure built during compilation and modified when Ad Hoc queries are added. The roots of this graph are ephemeris declarations - declarations of every kind that create external objects, so-called data sources. Inside the graph lie artifacts and substrates. At the end of the processing chain sit the artifacts - as the chain's final results.
 
-Such a construction is a directed graph — a graph with multiple roots and multiple terminal vertices. Inside the graph there are connecting nodes. Every node lies on a path from a root to a terminal vertex. This is best visualized with an example.
+Such a construction is a directed graph - a graph with multiple roots and multiple terminal vertices. Inside the graph there are connecting nodes. Every node lies on a path from a root to a terminal vertex. This is best visualized with an example.
 
 Let's start by considering the following trivial query:
 
@@ -17,7 +17,7 @@ We can obtain a graph highlighting the dependencies between the individual objec
 $ xretractor -c query5.rql -d > out.dot && dot -Tsvg out.dot -o out.svg
 ```
 
-For a full description of the `-d -f -s` flags and how to interpret the output — see [Compilation Debugging](compilation-debugging.md).
+For a full description of the `-d -f -s` flags and how to interpret the output - see [Compilation Debugging](compilation-debugging.md).
 
 <figure><img src="../assets/dependencja_efemeryda_artefakt.svg" alt=""><figcaption><p>Fig. 33. Ephemeris–artifact dependency</p></figcaption></figure>
 

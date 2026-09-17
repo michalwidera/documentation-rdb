@@ -10,7 +10,7 @@ SELECT * STREAM str1 FROM A#B
 
 Aside from the # symbol instead of the + symbol in the from clause, the two files are identical. Let's run the compilation and the swirly program. The resulting graphic will look as follows:
 
-<figure><img src="../../assets/schemat_kulkowy_przeplotu.png" alt=""><figcaption><p>Fig. 7. Marble diagram — the interleaving operation</p></figcaption></figure>
+<figure><img src="../../assets/schemat_kulkowy_przeplotu.png" alt=""><figcaption><p>Fig. 7. Marble diagram - the interleaving operation</p></figcaption></figure>
 
 In Fig. 7 we see a change. The marbles of stream str1 have been evenly arranged in time. The events occurring in the declared input data streams have not changed. What has changed is the way the output stream str1 is built.
 

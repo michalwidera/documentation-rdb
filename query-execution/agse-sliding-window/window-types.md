@@ -4,19 +4,19 @@ By choosing its two parameters, the `@(k, w)` operator lets you build every one 
 
 ## Source stream
 
-The file `data.txt` — 12 consecutive integers:
+The file `data.txt` - 12 consecutive integers:
 
 ```
 $ seq 1 12 > data.txt
 ```
 
-The source declaration — one record per second, one field:
+The source declaration - one record per second, one field:
 
 ```rql
 DECLARE val INTEGER STREAM src, 1 FILE 'data.txt'
 ```
 
-## Tumbling window — non-overlapping windows
+## Tumbling window - non-overlapping windows
 
 Hop equal to window size: `k = w`. Every input element belongs to exactly one output window.
 
@@ -35,7 +35,7 @@ $ xqry -s tumbling
 
 Use cases: aggregating samples over fixed time intervals (e.g. per-minute, per-hour).
 
-## Sliding window — overlapping windows
+## Sliding window - overlapping windows
 
 Hop smaller than window size: `k < w`. Every input element appears in several successive windows.
 
@@ -56,7 +56,7 @@ $ xqry -s sliding
 
 Use cases: moving averages, trend detection, FIR filters (as in the [signal filter implementation](../../usage-examples/signal-filter-implementation.md)).
 
-## Sampling — windows with gaps
+## Sampling - windows with gaps
 
 Hop larger than window size: `k > w`. Some input elements are skipped.
 
@@ -76,7 +76,7 @@ $ xqry -s sampled
 
 Use cases: signal decimation, sample-rate reduction, diagnostics on every Nth measurement.
 
-## Mirrored window — reversed field order
+## Mirrored window - reversed field order
 
 A negative `w` value reverses the order of fields in the output record, while keeping the same window size.
 
@@ -95,7 +95,7 @@ $ xqry -s mirrored
 ...
 ```
 
-Compare this with `src@(2,2)`, which would give `1 2`, `3 4`, `5 6`… — order matching arrival. Mirrored aggregation is necessary when reversing serialization (deserialization), as described in the [serialization example](serialization-example.md).
+Compare this with `src@(2,2)`, which would give `1 2`, `3 4`, `5 6`… - order matching arrival. Mirrored aggregation is necessary when reversing serialization (deserialization), as described in the [serialization example](serialization-example.md).
 
 ## Summary of patterns
 

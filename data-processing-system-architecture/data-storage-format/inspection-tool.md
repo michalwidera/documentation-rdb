@@ -1,6 +1,6 @@
 # Inspection Tool: `xtrdb -s`
 
-The command `xtrdb -s <path>` displays a complete picture of an artifact's storage state — without starting the `xretractor` process, without entering interactive mode. Just point it at the base path (without extension), and the tool finds the associated files on its own: `.desc`, binary data, `.meta`, `.shadow`, cyclic segments, and rotated files.
+The command `xtrdb -s <path>` displays a complete picture of an artifact's storage state - without starting the `xretractor` process, without entering interactive mode. Just point it at the base path (without extension), and the tool finds the associated files on its own: `.desc`, binary data, `.meta`, `.shadow`, cyclic segments, and rotated files.
 
 > **_NOTE:_** The functionality described here is covered by the test: `issue153_storagemap_meta_cases`, described in the appendix [Integration Tests](../../appendices/integration-tests.md).
 
@@ -8,13 +8,13 @@ The command `xtrdb -s <path>` displays a complete picture of an artifact's stora
 
 | Situation | What `xtrdb -s` gives you |
 | -------- | ------------------- |
-| Post-crash diagnosis | You can immediately see whether the data file is consistent with the metadata — differing record counts signal a problem |
+| Post-crash diagnosis | You can immediately see whether the data file is consistent with the metadata - differing record counts signal a problem |
 | Retention verification | The DATA TOTAL section shows the segment breakdown and the current fill level of the circular buffer |
-| Modification control | The SHADOW section reveals the number of uncommitted changes — `Updates: N` is the number of entries in `.shadow`; in normal operation this is the expected state, because the engine never invokes `merge()` on its own |
+| Modification control | The SHADOW section reveals the number of uncommitted changes - `Updates: N` is the number of entries in `.shadow`; in normal operation this is the expected state, because the engine never invokes `merge()` on its own |
 | Data-quality analysis | The META bar, with the symbols `=`, `-`, `~`, `X`, shows the null/gap pattern without parsing the binary file |
 | Rotation-history audit | The ROTATED FILES section lists old versions of the file after successive rotations |
 
-The command is **read-only** — it does not modify any file. It can also be run while `xretractor` is not running.
+The command is **read-only** - it does not modify any file. It can also be run while `xretractor` is not running.
 
 ## What the map shows
 
@@ -53,15 +53,15 @@ Below the map come further sections:
 ### META bar legend
 
 ```
-[====] — data with no null values
-[----] — partial nulls (at least one field is null)
-[~~~~] — all fields are null (nullfill)
-[XXXX] — transmission gap
+[====] - data with no null values
+[----] - partial nulls (at least one field is null)
+[~~~~] - all fields are null (nullfill)
+[XXXX] - transmission gap
 ```
 
 ---
 
-## Example 1 — a simple artifact
+## Example 1 - a simple artifact
 
 Stream `measurement` with two fields, 100 records, no modifications, no gaps:
 
@@ -107,7 +107,7 @@ Interpretation: one RLE segment, no gaps, no nulls, no shadow file present. The 
 
 ---
 
-## Example 2 — an artifact with a transmission gap and a modification
+## Example 2 - an artifact with a transmission gap and a modification
 
 Stream `sensor` with three fields. After 50 records there was a gap (10 interval units), then 30 records arrived with partial gaps in the `pressure` field. Two records were later modified (a shadow file is present):
 
@@ -154,11 +154,11 @@ $ xtrdb -s sensor
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Interpretation: the binary file contains 80 records (the gap takes no space in the data file); the gap is encoded solely in `.meta`. The `[binary data]` column shows an empty range for the gap segment — there is no binary data for it. The `pressure` field in records 50–79 has null values in some records (`[----]`).
+Interpretation: the binary file contains 80 records (the gap takes no space in the data file); the gap is encoded solely in `.meta`. The `[binary data]` column shows an empty range for the gap segment - there is no binary data for it. The `pressure` field in records 50–79 has null values in some records (`[----]`).
 
 ---
 
-## Example 3 — an artifact with segmented retention
+## Example 3 - an artifact with segmented retention
 
 Stream `buffer` with cyclic retention: up to 10 segments of 100 records each (1000 records total). Currently 280 records have been written, across three segments:
 

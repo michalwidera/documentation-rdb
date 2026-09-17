@@ -17,13 +17,13 @@ The `WHEN` clause of the `RULE` command takes a logical expression, which is eva
 
 | Operator | Meaning |
 | -------- | ------- |
-| `AND`    | conjunction — both conditions must be satisfied |
-| `OR`     | disjunction — one condition is enough            |
-| `NOT`    | negation — the condition must not be satisfied   |
+| `AND`    | conjunction - both conditions must be satisfied |
+| `OR`     | disjunction - one condition is enough            |
+| `NOT`    | negation - the condition must not be satisfied   |
 
 ## Expression structure
 
-A condition is built from the fields of the stream schema specified in the `ON` clause. Fields are identified the same way as in `SELECT` — by the stream name with an index:
+A condition is built from the fields of the stream schema specified in the `ON` clause. Fields are identified the same way as in `SELECT` - by the stream name with an index:
 
 ```rql
 WHEN stream[index] operator value
@@ -55,7 +55,7 @@ RULE one_time ON data WHEN NOT data[0] = 0 DO DUMP -5 TO 0
 
 ## Field access
 
-The condition refers to the fields of the stream specified in `ON`. The field index corresponds to its position in that stream's schema — the same as in the `SELECT` clause. The condition reads the stream's output record, so an index equal to or greater than its field count is a compilation error (see [Index out of range](../query-compilation/aliasing.md#index-out-of-range)). Aliasing works exactly as described in the chapter [Aliasing](../query-compilation/aliasing.md).
+The condition refers to the fields of the stream specified in `ON`. The field index corresponds to its position in that stream's schema - the same as in the `SELECT` clause. The condition reads the stream's output record, so an index equal to or greater than its field count is a compilation error (see [Index out of range](../query-compilation/aliasing.md#index-out-of-range)). Aliasing works exactly as described in the chapter [Aliasing](../query-compilation/aliasing.md).
 
 If the stream in `ON` was produced by an interleave `A#B`, the condition must use the output stream name:
 

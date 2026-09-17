@@ -15,8 +15,8 @@ The `STORAGE` clause in the `SELECT` command, and the `SUBSTRAT` directive, acce
 | `DEVICE`       | `binaryDeviceRO`                      | no       | no     | Binary device; read-only; looping depends on `ONESHOT` |
 | `TEXTSOURCE`   | `textSourceRO`                        | no       | no     | Text file; read-only; looping depends on `ONESHOT` |
 
-**Retention** — artifacts are rotated, older files are deleted automatically (requires `RETENTION` on `SELECT`).\
-**Shadow** — every modification is written to a separate `.shadow` file; historical data is protected from being overwritten.
+**Retention** - artifacts are rotated, older files are deleted automatically (requires `RETENTION` on `SELECT`).\
+**Shadow** - every modification is written to a separate `.shadow` file; historical data is protected from being overwritten.
 
 For `MEMORY`, retention works in memory as a circular buffer: successive appends overwrite the oldest slot (`index % capacity`). Data is not segmented into files and never reaches disk.
 
@@ -38,7 +38,7 @@ SELECT str1[0] STREAM str1 FROM core0 STORAGE MEMORY
 SELECT str2[0] STREAM str2 FROM core0 RETENTION 100 STORAGE DIRECT
 ```
 
-For substrates globally — the `SUBSTRAT` directive:
+For substrates globally - the `SUBSTRAT` directive:
 
 ```rql
 SUBSTRAT 'memory'

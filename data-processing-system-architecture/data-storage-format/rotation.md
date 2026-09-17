@@ -8,7 +8,7 @@ By file rotation we mean the controlled closing of the current set of data and m
 
 Without the `ROTATION` directive in the RQL script, `xretractor` **deletes** artifact files (binary data, `.desc`, `.meta`) on every startup and begins recording from scratch.
 
-Rotation and deletion do not apply to ephemerides (`DECLARE`). That does not mean an ephemeride has no file at all: its data source (a text file, a device) is external to the system and untouchable, and next to it a `.desc` descriptor describing the read schema is created — `storage::attachDescriptor()` writes one for every stream, declared ones included. What an ephemeride does not get is a `.meta` index: for declared sources the `makeMetaIndex()` factory injects an **inert** variant (`metaData` with an empty file path) that keeps null patterns in memory and performs no I/O. It is therefore an absence of metadata persistence, not an absence of the index object itself.
+Rotation and deletion do not apply to ephemerides (`DECLARE`). That does not mean an ephemeride has no file at all: its data source (a text file, a device) is external to the system and untouchable, and next to it a `.desc` descriptor describing the read schema is created - `storage::attachDescriptor()` writes one for every stream, declared ones included. What an ephemeride does not get is a `.meta` index: for declared sources the `makeMetaIndex()` factory injects an **inert** variant (`metaData` with an empty file path) that keeps null patterns in memory and performs no I/O. It is therefore an absence of metadata persistence, not an absence of the index object itself.
 
 ## The `ROTATION` directive and the session counter
 
@@ -38,7 +38,7 @@ sequenceDiagram
     RQL->>Old: metaData::rotate(N): rename .meta → .meta.oldN
     RQL->>M: new empty .meta file
 
-    Note over RQL: operation — writing records
+    Note over RQL: operation - writing records
     RQL->>D: appends records
     RQL->>M: updates RLE index
 
@@ -48,19 +48,19 @@ sequenceDiagram
     Note over RQL: PersistentCounter writes N+1 to the file
 ```
 
-_Fig. 25. File rotation sequence — session start and stop_
+_Fig. 25. File rotation sequence - session start and stop_
 
-Rotation of the `.meta` file happens **at the start** of session N — `detectStartupState()` detects the inconsistency (data file empty, index non-empty from an old session) and calls `metaData::rotate(N)`. The binary data file is only renamed **at session shutdown**, by the `posixBinaryFile` destructor.
+Rotation of the `.meta` file happens **at the start** of session N - `detectStartupState()` detects the inconsistency (data file empty, index non-empty from an old session) and calls `metaData::rotate(N)`. The binary data file is only renamed **at session shutdown**, by the `posixBinaryFile` destructor.
 
 ## What ends up in `.old<N>` files
 
 | File | When it's created |
 | ---- | -------------- |
-| `<name>.oldN` | Session N shutdown — the `posixBinaryFile` destructor renames the data file |
-| `<name>.shadow.oldN` | Session N shutdown — the `posixBinaryFileWithShadow` destructor renames the shadow file |
-| `<name>.meta.oldN` | Session N startup — `detectStartupState()` detects rotation and renames the `.meta` left behind by session N−1 |
+| `<name>.oldN` | Session N shutdown - the `posixBinaryFile` destructor renames the data file |
+| `<name>.shadow.oldN` | Session N shutdown - the `posixBinaryFileWithShadow` destructor renames the shadow file |
+| `<name>.meta.oldN` | Session N startup - `detectStartupState()` detects rotation and renames the `.meta` left behind by session N−1 |
 
-As a consequence of this ordering, there is an offset of 1: the file `.meta.oldN` contains the null metadata for the data from session `N−1`, while `.oldN` contains the data from session `N`. In the `ROTATED FILES` section of the `xtrdb -s` tool, files are grouped by their numeric suffix — so the `.oldN` and `.meta.oldN` pairs differ by 1 relative to the session they physically correspond to.
+As a consequence of this ordering, there is an offset of 1: the file `.meta.oldN` contains the null metadata for the data from session `N−1`, while `.oldN` contains the data from session `N`. In the `ROTATED FILES` section of the `xtrdb -s` tool, files are grouped by their numeric suffix - so the `.oldN` and `.meta.oldN` pairs differ by 1 relative to the session they physically correspond to.
 
 ## Example: sequence of three sessions
 
@@ -94,7 +94,7 @@ $ xtrdb -s measurement
 └──────────────────────────────────────────────────────────────┘
 ```
 
-The file `measurement.meta.old3` stands alone in group `[3]` — the corresponding file `measurement.old3` will only be created once the current session is closed.
+The file `measurement.meta.old3` stands alone in group `[3]` - the corresponding file `measurement.old3` will only be created once the current session is closed.
 
 ## Opening a rotated file in `xtrdb`
 

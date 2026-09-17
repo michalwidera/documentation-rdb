@@ -18,6 +18,6 @@ Let's compile it and see the effect:
 {{#include ../regen/out/wildcard.txt}}
 ```
 
-The `*` symbol turned into four fields: `core0_0`, `core0_1`, `core1_2`, `core1_3`. Naming convention: source stream name + absolute position in the output schema. Field types determine the order — `core0` contributes BYTE and INTEGER at positions 0 and 1, `core1` contributes INTEGER and FLOAT at positions 2 and 3. Referring to `merged[2]` in the `result` query gets us a field of type INTEGER — third in order, the first field from `core1`.
+The `*` symbol turned into four fields: `core0_0`, `core0_1`, `core1_2`, `core1_3`. Naming convention: source stream name + absolute position in the output schema. Field types determine the order - `core0` contributes BYTE and INTEGER at positions 0 and 1, `core1` contributes INTEGER and FLOAT at positions 2 and 3. Referring to `merged[2]` in the `result` query gets us a field of type INTEGER - third in order, the first field from `core1`.
 
 > **_NOTE:_** The functionality described here is covered by the test: `Pattern3`, described in the appendix [Integration Tests](../appendices/integration-tests.md).

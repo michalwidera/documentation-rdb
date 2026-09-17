@@ -6,7 +6,7 @@ By alerting we mean the process of processing current data and having the system
 
 The presentation of the RULE command's syntax on page 24 already touches on this functionality. In this chapter I would like to explain in more detail how this solution works.
 
-To build an example demonstrating how alerting works, let's create the following query file — query.rql:
+To build an example demonstrating how alerting works, let's create the following query file - query.rql:
 
 ```rql
 DECLARE a UINT STREAM core0, 1 FILE 'datafile1.txt'

@@ -91,7 +91,7 @@ field references are resolved; see [Type Promotion](../../query-compilation/type
 The declared width is a property of the **field**, not a side effect of one particular
 compilation pass. It also holds when the whole argument is constant: `to_string(42 : 16)` yields
 `STRING[16]`, not `STRING[2]`. Expression simplification folds the argument underneath the call
-but never removes `to_string` itself — otherwise the declaration would disappear together with
+but never removes `to_string` itself - otherwise the declaration would disappear together with
 the program on a **second** compilation of the plan, that is after an ad-hoc query (`xqry -a`),
 which compiles the live plan a second time.
 
@@ -104,7 +104,7 @@ results. A `NULL` argument yields `NULL`; a non-finite result, such as `exp(1000
 `NULL` without stopping the stream.
 
 A `RATIONAL` argument is the exception: the compiler **rejects** it and requires an explicit
-`to_double`, exactly as it does for `Sqrt` — see the section below.
+`to_double`, exactly as it does for `Sqrt` - see the section below.
 
 Changing the result type of `sin` and `cos` can change the `.desc` descriptor and record layout
 relative to an older engine: `INTEGER` and `FLOAT` occupy 4 bytes, while `DOUBLE` occupies 8.
@@ -112,7 +112,7 @@ An existing artifact with the old schema must be recreated or written to a separ
 
 ### Irrational functions over a RATIONAL value
 
-`Sqrt`, `sin`, `cos`, `exp`, `tan`, `log`, and `log2` do **not accept** a `RATIONAL` argument —
+`Sqrt`, `sin`, `cos`, `exp`, `tan`, `log`, and `log2` do **not accept** a `RATIONAL` argument -
 the compiler rejects such a query through the `Check result:` channel and names the workaround.
 In practice this concerns stream reducers over `BYTE`, `INTEGER`, `UINT`, and `RATIONAL`
 fields, whose result type is `RATIONAL`. Reducers over `FLOAT` and `DOUBLE` preserve the input
@@ -139,7 +139,7 @@ still require an explicit `to_double`.
 
 For `sin`, `cos`, and `exp` the reason is different: these three end at `DOUBLE` and never
 return to `RATIONAL`, so they would compute correctly. Their rejection is a **language contract
-decision**, made so that no list of exceptions has to be remembered — one rule instead of seven
+decision**, made so that no list of exceptions has to be remembered - one rule instead of seven
 separate behaviours. The price is a `to_double` in every query computing, say, an RMS over
 a reducer.
 
@@ -150,7 +150,7 @@ never touches the denominator.
 
 The gate covers **only** the pairing with `RATIONAL` and changes no function's result type.
 `tan`, `log`, and `log2` over `INTEGER` still yield `INTEGER`, that is, they truncate the
-fractional part — an explicit and intended loss, not an overflow. Bringing them to `DOUBLE`, as
+fractional part - an explicit and intended loss, not an overflow. Bringing them to `DOUBLE`, as
 `sin`, `cos`, and `exp` are, would change the field type in `.desc`, so it is a separate task.
 
 > **_NOTE:_** Functions and type propagation are covered by the integration tests
