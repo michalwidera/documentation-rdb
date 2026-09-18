@@ -292,11 +292,11 @@ Both queries require the sum `core0+core1` to be computed first.
 
 The `extractIntermediateStreams` phase creates a separate substrate for each query, producing two identical intermediate nodes in the graph (Fig. 37):
 
-<figure><img src="../assets/dedup_przed.svg" width="40%" alt=""><figcaption><p>Fig. 37. Graph before deduplication - two identical STREAM_ADD_core0_core1 substrates</p></figcaption></figure>
+<figure><img src="../assets/dedup_przed.svg" width="70%" alt=""><figcaption><p>Fig. 37. Graph before deduplication - two identical substrates summing core0+core1</p></figcaption></figure>
 
 Once `deduplicateSubstrats()` runs, one of the duplicates is removed and every `PUSH_STREAM` reference is repointed to the surviving node. A single shared substrate remains in the graph (Fig. 38):
 
-<figure><img src="../assets/dedup_po.svg" width="40%" alt=""><figcaption><p>Fig. 38. Graph after deduplication - one shared substrate, generated with: xretractor dedup_after.rql -c -d</p></figcaption></figure>
+<figure><img src="../assets/dedup_po.svg" width="40%" alt=""><figcaption><p>Fig. 38. Graph after deduplication - one shared substrate, generated with: xretractor dedup.rql -c -d</p></figcaption></figure>
 
 The graph after deduplication is exactly what `xretractor -c -d` returns - the compiler always presents the result after all optimization phases.
 

@@ -1,0 +1,23 @@
+// Fig. 37 - the dedup.rql plan before deduplicateSubstrats(), drawn by hand.
+//
+// extractIntermediateStreams() extracts a substrate separately for str4 and str5, so the plan
+// holds two nodes with the same name STREAM_ADD_core0_core1. xretractor -c -d cannot show this,
+// not even with RDB_OPT_DEDUP_SUBSTRATES=OFF: the final qTree::topologicalSort() indexes queries
+// by name and merges both nodes into one. Node style follows presenter::graphiz(), so the figure
+// differs from dedup_po.svg (Fig. 38) only by the duplicated substrate.
+digraph structs {
+ node	[shape=record];
+ bgcolor="transparent";
+ core0	[shape=record,style=filled,fillcolor="#FFF2CC",color=Black,label="core0\ninterval=1/10\nDeclaration"]
+ core1	[shape=record,style=filled,fillcolor="#FFF2CC",color=Black,label="core1\ninterval=1/10\nDeclaration"]
+ substrat_str4	[shape=record,style=filled,fillcolor=Sienna,color=Black,label="STREAM_ADD_core0_core1\ninterval=1/10, Auto"]
+ substrat_str5	[shape=record,style=filled,fillcolor=Sienna,color=Black,label="STREAM_ADD_core0_core1\ninterval=1/10, Auto"]
+ str4	[shape=record,style="filled",fillcolor=Gray,color=Black,label="str4\ninterval=1/10\norigin=2"]
+ str5	[shape=record,style="filled",fillcolor=Gray,color=Black,label="str5\ninterval=1/10\norigin=3"]
+substrat_str4 -> core0
+substrat_str4 -> core1
+substrat_str5 -> core0
+substrat_str5 -> core1
+str4 -> substrat_str4
+str5 -> substrat_str5
+}

@@ -82,33 +82,10 @@ picture dag-2 dependencja_efemerydy_artefakty svg
 picture dag-3 dependencja_efemerydy_artefakty_artefakty svg
 picture dag-4 dependencja_z_substratem svg
 picture dedup dedup_po svg
+# The plan before deduplication is drawn by hand: xretractor cannot show it (see dedup_przed.dot).
+dot -Tsvg "$script_dir/dedup_przed.dot" -o "$book_dir/assets/dedup_przed.svg"
 picture absorb-auto absorb_bez_mysum svg
 picture absorb-named absorb_z_mysum svg
 picture filter zaleznosc_strumieni_filtr_sygnalowy svg
-
-no_dedup=${XRETRACTOR_NO_DEDUP:-}
-if [[ -z $no_dedup ]]; then
-  for build_dir in "$workspace_dir"/retractordb/build/Release-Ablation/*; do
-    if [[ -f "$build_dir/build.ninja" ]] && grep -qx 'RDB_OPT_DEDUP_SUBSTRATES:BOOL=OFF' "$build_dir/CMakeCache.txt"; then
-      refresh "$build_dir"
-      no_dedup=$build_dir/src/retractor/xretractor
-      break
-    fi
-  done
-fi
-
-if [[ -z $no_dedup || ! -x $no_dedup ]]; then
-  echo "Set XRETRACTOR_NO_DEDUP to xretractor built with RDB_OPT_DEDUP_SUBSTRATES=OFF." >&2
-  exit 2
-fi
-if ! "$no_dedup" --build-info | grep -qx 'RDB_OPT_DEDUP_SUBSTRATES=OFF'; then
-  echo "XRETRACTOR_NO_DEDUP does not have RDB_OPT_DEDUP_SUBSTRATES=OFF." >&2
-  exit 2
-fi
-
-dot_file=$(mktemp)
-trap 'rm -f "$dot_file"' EXIT
-"$no_dedup" -c -d -p "$script_dir/dedup.rql" >"$dot_file"
-dot -Tsvg "$dot_file" -o "$book_dir/assets/dedup_przed.svg"
 
 echo "Regenerated plan listings in regen/out and figures in assets/."
