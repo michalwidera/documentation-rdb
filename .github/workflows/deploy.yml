@@ -79,7 +79,7 @@ jobs:
           \titlelabel{\thetitle.\quad}
           \titleformat{\chapter}[display]
             {\normalfont\sffamily\huge\bfseries}
-            {\chaptertitlename\ \thechapter.}{20pt}{\Huge}
+            {\chaptertitlename\ \thechapter}{20pt}{\Huge}
           \titleformat*{\section}{\normalfont\sffamily\Large\bfseries}
           \titleformat*{\subsection}{\normalfont\sffamily\large\bfseries}
           \titleformat*{\subsubsection}{\normalfont\sffamily\normalsize\bfseries}
