@@ -330,7 +330,7 @@ A side effect: `mysum` becomes a shared node - it serves both its own consumers 
 
 ## Schema update after absorption
 
-Simply repointing the `PUSH_STREAM` tokens is not enough. Every stream stores, in `lSchema`, a sequence of instructions describing how to build the output value of every field - including `PUSH_ID(stream_name, N)` tokens, which say: "take the N-th field from the input buffer named `stream_name`." When a substrate is absorbed, these tokens still refer to the old, removed substrate name. The `localizeFieldOffsets()` step builds an offset map based on the `PUSH_STREAM` tokens in the program - if a `PUSH_ID` key doesn't match any entry in the map, it defaults to offset 0.
+Simply repointing the `PUSH_STREAM` tokens is not enough. Every stream stores, in `lSchema`, a sequence of instructions describing how to build the output value of every field - including `PUSH_ID(stream_name, N)` tokens, which say: "take the N-th field from the input buffer named `stream_name`." When a substrate is absorbed, these tokens still refer to the old, removed substrate name. The `localizeFieldOffsets()` step builds an offset map from the sources of the `FROM` clause - the `PUSH_STREAM` tokens in the program and the sources hidden behind compiler substrates - and uses it to turn every `PUSH_ID(source, N)` into a position in the stream's own input buffer. A name missing from the map stops compilation with a fatal error, because its position cannot be determined.
 
 ### Error scenario with a non-zero offset
 
@@ -345,14 +345,14 @@ SELECT * STREAM mysum  FROM s1+s2
 SELECT * STREAM merged FROM s3+(s1+s2)
 ```
 
-The compiler creates a substrate `STREAM_ADD_s1_s2`. Stream `merged` has two sources: `s3` (offset 0) and the substrate `STREAM_ADD_s1_s2` (offset 1, because s3 occupies position 0). The `buildOutputSchema` function writes the following tokens into `merged.lSchema`:
+The compiler creates a substrate `STREAM_ADD_s1_s2`. Stream `merged` has two sources: `s3` (offset 0) and the substrate `STREAM_ADD_s1_s2` (offset 1, because s3 occupies position 0). For the fields that come from the substrate, the `buildOutputSchema` function writes the following tokens into `merged.lSchema`:
 
 ```rasm
-PUSH_ID(STREAM_ADD_s1_s2, 0)   ← field a from the source at offset 1
-PUSH_ID(STREAM_ADD_s1_s2, 1)   ← field b from the source at offset 1
+PUSH_ID(STREAM_ADD_s1_s2, 0)   ← field STREAM_ADD_s1_s2_1 (a from s1)
+PUSH_ID(STREAM_ADD_s1_s2, 1)   ← field STREAM_ADD_s1_s2_2 (b from s2)
 ```
 
-After absorption, `deduplicateSubstrats()` repoints `PUSH_STREAM` from `STREAM_ADD_s1_s2` to `mysum`. But without updating `lSchema`, the `PUSH_ID` tokens still carry the old name. When `localizeFieldOffsets()` fails to find `STREAM_ADD_s1_s2` in the offset map, it defaults to offset 0 - colliding with `s3`'s fields. Effect: fields `a` and `b` from `mysum` were being read from offset 0 (s3's position) instead of offset 1 (mysum's position).
+After absorption, `deduplicateSubstrats()` repoints `PUSH_STREAM` from `STREAM_ADD_s1_s2` to `mysum`. Without updating `lSchema`, however, the `PUSH_ID` tokens would still carry the old name, which `localizeFieldOffsets()` cannot find in the offset map. Today this ends compilation with a fatal error. Until 2026-09-14 a missing key silently got offset 0, which is `s3`'s position - the fields from `mysum` were then read from offset 0 instead of offset 1, and the compiler gave no warning.
 
 ### The fix: updating lSchema in deduplicateSubstrats
 
@@ -361,20 +361,22 @@ To avoid this discrepancy, after updating the `PUSH_STREAM` tokens, `deduplicate
 - `PUSH_ID(old_name, N)` tokens into `PUSH_ID(new_name, N)` - this covers the fields from `buildOutputSchema` for `STREAM_ADD`,
 - `PUSH_ID2("old_name[N]")` tokens into `PUSH_ID2("new_name[N]")` - this covers the symbolic names created by `buildOutputSchema` for `STREAM_TIMEMOVE`, `STREAM_HASH`, `STREAM_SUBTRACT`.
 
-After the fix, the compiler's output for the example above looks correct:
+After the fix, the compiler's output (`xretractor -c`) for stream `merged` from the example above looks correct:
 
 ```rasm
 merged(1/1)
-        :- PUSH_STREAM(mysum)
         :- PUSH_STREAM(s3)
+        :- PUSH_STREAM(mysum)
         :- STREAM_ADD
-        a: INTEGER
+        s3_0: INTEGER
+                PUSH_ID(merged[0])
+        STREAM_ADD_s1_s2_1: INTEGER
                 PUSH_ID(merged[1])
-        b: INTEGER
+        STREAM_ADD_s1_s2_2: INTEGER
                 PUSH_ID(merged[2])
 ```
 
-Fields `a` and `b` from `mysum` have offset 1 (`merged[1]`, `merged[2]`), which matches `mysum`'s actual position in `merged`'s buffer - after field `c` from stream `s3`.
+The fields that come from `mysum` start at offset 1 (`merged[1]`, `merged[2]`), which matches `mysum`'s actual position in `merged`'s buffer - after field `s3_0` from stream `s3` at position 0. The fields keep the name of the absorbed substrate: the field names of user streams go into the `.desc` descriptor, so they are fixed before the optimizations, and the `verifyUserFieldNamesPreserved()` check makes sure deduplication does not change them.
 
 ### Cascaded absorption
 
@@ -388,4 +390,4 @@ SELECT * STREAM shifted FROM (s1+s2)>1
 SELECT * STREAM merged  FROM s3+((s1+s2)>1)
 ```
 
-in the first round, `mysum` absorbs `STREAM_ADD_s1_s2` and rewrites its names - including in the schema of the intermediate substrate `STREAM_TIMEMOVE_STREAM_ADD_s1_s2`. As a result, in the second round `shifted` can absorb this substrate (the program condition is now satisfied, because both point to `mysum`). After two rounds, no automatic substrate remains in the plan, and `merged` uses `s3` and `shifted` directly.
+in the first round, `mysum` absorbs `STREAM_ADD_s1_s2` and rewrites its names - including in the schema of the intermediate substrate `STREAM_TIMEMOVE_1_STREAM_ADD_s1_s2`. As a result, in the second round `shifted` can absorb this substrate (the program condition is now satisfied, because both point to `mysum`). After two rounds, no automatic substrate remains in the plan, and `merged` uses `s3` and `shifted` directly.
