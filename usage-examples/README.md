@@ -32,4 +32,17 @@ Every example is complete - it includes a problem description, the RQL query des
 
   The result is a working QRS detector processing a two-channel ECG signal (MLII + V1) at 360 Hz, implemented entirely with RQL queries, with no specialized libraries.
 
+- **[Candlestick Chart (OHLC)](candlestick-chart-ohlc.md)**
+
+  This example demonstrates how to build **OHLC candles** (open, high, low, close) from a regular stream of samples and draw them live together with the samples they were built from. The same construction fits any signal viewed in intervals: quotes, sensor readings, load.
+
+  The example covers:
+
+  - smoothing noise with the record-window aggregate `AVG(... : 25)`,
+  - a tumbling window with mirrored aggregation, `@(10,-10)`, which sets the candle boundaries and the order of its samples,
+  - the `MAX` and `MIN` reducers in the `FROM` clause, and joining a candle with its samples into one record with the `+` operator,
+  - visualization in the `xqry --gnuplot-ohlc` mode, started with the `ninja candlestick` target.
+
+  The result is a chart of 25 candles of 10 samples, refreshed every 0.2 s, in which every candle stands exactly over the samples it was built from.
+
 </div>

@@ -63,3 +63,16 @@ and then run the swirly program again, we'll see a more detailed picture showing
 In the diagram shown in Fig. 6, you can see which marbles were joined and which marbles they were formed from. Remember, though, that this is a manually corrected image, made for the purposes of this work - the generator built into the compiler does not implement this functionality.
 
 > **_NOTE:_** The functionality described here is covered by the tests: `Pattern1`, `issue167_triarg`, described in the appendix [Integration Tests](../../appendices/integration-tests.md).
+
+## The same name more than once in FROM
+
+A stream may appear in a `FROM` expression more than once - directly and under another operator, e.g. `bar + MAX(bar)` or `src + src>1`, or twice under different operators, e.g. `src@(1,5) + src@(2,3)`. The input record then holds a separate block of fields for each occurrence, and a reference by name (`bar[0]`, `src[4]`) as well as the `SELECT *` expansion must point to one of them. The compiler picks the first occurrence in a fixed order: first the direct operands of the expression in the order they are written, only then the streams nested under operators (a reducer, a shift, a window), also in the order they are written. The index range check uses the same order, so the bound of `src[k]` is measured on the occurrence the reference will actually read.
+
+```rql
+DECLARE v INTEGER[3] STREAM bar, 1/50 FILE 'a.txt'
+SELECT * STREAM chk FROM bar + MAX(bar)
+```
+
+The `chk` stream has four fields: the three fields of the `bar` that stands directly in `FROM`, and the record maximum. A direct operand always points to its own fields, even when it is written second: in `src>1 + src` the reference `src[0]` reads the current sample, not the shifted one. In `src@(1,5) + src@(2,3)` the name `src` is reachable only through windows, so it points to the first of them: `src[4]` is valid, and `src[5]` is a compilation error. To refer to the fields of the second occurrence, give it its own name in a separate query, e.g. `SELECT * STREAM w2 FROM src@(2,3)`, and use `w2` in the `FROM` expression.
+
+> **_NOTE:_** The first-occurrence rule is checked by the `ut_compiler` unit tests: `direct_operand_keeps_its_own_slots_beside_a_nested_occurrence` and `range_check_and_offset_agree_on_a_name_reached_twice`.
