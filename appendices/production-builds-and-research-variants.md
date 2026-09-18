@@ -1,14 +1,10 @@
 # Production Builds and Diagnostic Variants
 
-The `scripts/buildrdb.sh` script separates production builds from compilations
-with disabled optimizations or enabled instrumentation. The separation covers
-the CMake configuration, output directories, Conan generators, and verification
-of the resulting binary.
+The `scripts/buildrdb.sh` script separates production builds from compilations with disabled optimizations or enabled instrumentation. The separation covers the CMake configuration, output directories, Conan generators, and verification of the resulting binary.
 
 > **⚠️ Warning**
 >
-> Binaries produced by `release-ablation` and `probe` are diagnostic variants.
-> They must not be installed or packaged as production releases.
+> Binaries produced by `release-ablation` and `probe` are diagnostic variants. They must not be installed or packaged as production releases.
 
 ## Build modes
 
@@ -23,8 +19,7 @@ The diagnostic modes also use separate Conan generator directories:
 - `build/Conan-Release-Ablation/<configuration>`,
 - `build/Conan-Release-Probe`.
 
-Consequently, their CMake cache, compiler definitions, and binaries are not
-written to the production `build/Release` directory.
+Consequently, their CMake cache, compiler definitions, and binaries are not written to the production `build/Release` directory.
 
 ## The production `release` contract
 
@@ -34,23 +29,18 @@ The command:
 scripts/buildrdb.sh release
 ```
 
-operates in a *fail-closed* mode: every failed check stops the build. The
-script:
+operates in a *fail-closed* mode: every failed check stops the build. The script:
 
 1. requires a Git repository and a completely clean working tree;
 2. rejects tracked changes, staged changes, and untracked files;
 3. removes the previous `build/Release` directory;
-4. removes common variables that can inject compiler, linker, or CMake flags
-   from the configuration process;
+4. removes common variables that can inject compiler, linker, or CMake flags from the configuration process;
 5. explicitly passes the complete production configuration;
 6. builds the binary in a fresh directory;
 7. reads the configuration from the resulting `xretractor`;
 8. checks the source tree again after the build.
 
-Variables removed from the build process environment include `CFLAGS`,
-`CPPFLAGS`, `CXXFLAGS`, `LDFLAGS`, `CMAKE_ARGS`, `CMAKE_GENERATOR`, and
-`CMAKE_TOOLCHAIN_FILE`. The probe runtime variables `RDB_BENCH_CSV` and
-`RDB_BENCH_PLAN` are not passed either.
+Variables removed from the build process environment include `CFLAGS`, `CPPFLAGS`, `CXXFLAGS`, `LDFLAGS`, `CMAKE_ARGS`, `CMAKE_GENERATOR`, and `CMAKE_TOOLCHAIN_FILE`. The probe runtime variables `RDB_BENCH_CSV` and `RDB_BENCH_PLAN` are not passed either.
 
 The production configuration is always:
 
@@ -69,14 +59,11 @@ After compilation, the script runs:
 build/Release/src/retractor/xretractor --build-info
 ```
 
-and compares the result with the set above. A missing binary or any different
-value causes `release` to fail.
+and compares the result with the set above. A missing binary or any different value causes `release` to fail.
 
 > **ℹ️ Info**
 >
-> The Git cleanliness check proves that the build does not use local,
-> uncommitted changes. It does not prove that the contents of a committed
-> revision are correct. Review, tests, and CI are responsible for that part.
+> The Git cleanliness check proves that the build does not use local, uncommitted changes. It does not prove that the contents of a committed revision are correct. Review, tests, and CI are responsible for that part.
 
 ## Variants with disabled optimizations
 
@@ -97,15 +84,13 @@ RDB_BENCH_PROBE
 RDB_OPT_SIMPLIFY_EXPRESSIONS
 ```
 
-Each variant receives a directory that describes its complete configuration,
-for example:
+Each variant receives a directory that describes its complete configuration, for example:
 
 ```text
 build/Release-Ablation/dedup-OFF_share-ON_comm-ON_factor-ON_probe-OFF_simplify-ON
 ```
 
-All six values are passed explicitly. This prevents values stored by an
-earlier configuration in `CMakeCache.txt` from being inherited.
+All six values are passed explicitly. This prevents values stored by an earlier configuration in `CMakeCache.txt` from being inherited.
 
 The configuration:
 
@@ -114,16 +99,13 @@ RDB_OPT_SHARE_EQUIVALENT_SELECTS=OFF
 RDB_OPT_COMMUTATIVE_ADD=ON
 ```
 
-is invalid. Commutative-add canonicalization is part of equivalent `SELECT`
-computation sharing, so both the submenu and CMake reject this combination.
+is invalid. Commutative-add canonicalization is part of equivalent `SELECT` computation sharing, so both the submenu and CMake reject this combination.
 
-After building a variant, the script compares `--build-info` with
-the values selected in the submenu. A mismatch is a configuration error.
+After building a variant, the script compares `--build-info` with the values selected in the submenu. A mismatch is a configuration error.
 
 ## Diagnostic probe
 
-`RDB_BENCH_PROBE` is optional instrumentation rather than a plan
-optimization. The command:
+`RDB_BENCH_PROBE` is optional instrumentation rather than a plan optimization. The command:
 
 ```bash
 scripts/buildrdb.sh probe
@@ -135,37 +117,19 @@ builds a variant with all optimizations enabled and:
 RDB_BENCH_PROBE=ON
 ```
 
-The binary is written to `build/Release-Probe`. It is built from optimized
-`Release` code, but the resulting binary is not a production build.
+The binary is written to `build/Release-Probe`. It is built from optimized `Release` code, but the resulting binary is not a production build.
 
-In `release-ablation`, the probe can be enabled or disabled independently of a
-valid optimizer configuration.
+In `release-ablation`, the probe can be enabled or disabled independently of a valid optimizer configuration.
 
-The probe does not participate in the selection or order of optimizer passes.
-It is not zero-cost instrumentation, however:
-`RDB_BENCH_PLAN` additionally traverses the plan and writes statistics, while
-`RDB_BENCH_CSV` performs clock measurements and file operations. The probe is
-therefore semantically non-invasive, but its overhead can affect measured
-timings.
+The probe does not participate in the selection or order of optimizer passes. It is not zero-cost instrumentation, however: `RDB_BENCH_PLAN` additionally traverses the plan and writes statistics, while `RDB_BENCH_CSV` performs clock measurements and file operations. The probe is therefore semantically non-invasive, but its overhead can affect measured timings.
 
-When the binary has `RDB_BENCH_PROBE=ON` and `RDB_BENCH_PLAN` is set during
-compilation, the compiler writes the following stable line to standard error:
+When the binary has `RDB_BENCH_PROBE=ON` and `RDB_BENCH_PLAN` is set during compilation, the compiler writes the following stable line to standard error:
 
 ```text
 REWRITE_APPLIED r1=<count> r2=<count> r3=<count>
 ```
 
-The counters are reset before every compiler invocation. `r1` is the number of
-successful `(A > i) # (B > k) -> (A # B) > (i + k)` rewrites. `r2` is the
-number of unique `STREAM_ADD` nodes for which the canonical plan fingerprint
-actually swapped the children. `r3` is the number of simplifications in field
-programs and `RULE` conditions: constant folds, combined constant tails,
-removed neutral elements, and replacements of a repeated exact factor by a power
-(`E*E*E -> E^3`). That last rule covers only the `BYTE`, `INTEGER`, `UINT`, and
-`RATIONAL` types; it does not rewrite `FLOAT` or `DOUBLE` multiplication. The
-counters describe applied rewrites, not speedup.
-With `RDB_BENCH_PROBE=OFF`, the counter code is absent from the binary and no
-`REWRITE_APPLIED` line is emitted.
+The counters are reset before every compiler invocation. `r1` is the number of successful `(A > i) # (B > k) -> (A # B) > (i + k)` rewrites. `r2` is the number of unique `STREAM_ADD` nodes for which the canonical plan fingerprint actually swapped the children. `r3` is the number of simplifications in field programs and `RULE` conditions: constant folds, combined constant tails, removed neutral elements, and replacements of a repeated exact factor by a power (`E*E*E -> E^3`). That last rule covers only the `BYTE`, `INTEGER`, `UINT`, and `RATIONAL` types; it does not rewrite `FLOAT` or `DOUBLE` multiplication. The counters describe applied rewrites, not speedup. With `RDB_BENCH_PROBE=OFF`, the counter code is absent from the binary and no `REWRITE_APPLIED` line is emitted.
 
 ## Inspecting a variant manually
 
@@ -175,11 +139,7 @@ Every `xretractor` provides:
 path/to/xretractor --build-info
 ```
 
-The command prints the configuration and exits without starting the engine
-(`-b` is an equivalent shorthand). It is handled before the configuration file
-is loaded and validated, so it yields a correct result even when the host
-configuration would prevent the program from starting normally. An example
-production result is:
+The command prints the configuration and exits without starting the engine (`-b` is an equivalent shorthand). It is handled before the configuration file is loaded and validated, so it yields a correct result even when the host configuration would prevent the program from starting normally. An example production result is:
 
 ```text
 RDB_OPT_DEDUP_SUBSTRATES=ON
@@ -190,21 +150,13 @@ RDB_BENCH_PROBE=OFF
 RDB_OPT_SIMPLIFY_EXPRESSIONS=ON
 ```
 
-The directory name is only a convenience; the information read from the binary
-is the final confirmation of the compiler definitions used.
+The directory name is only a convenience; the information read from the binary is the final confirmation of the compiler definitions used.
 
 ## Variant tests
 
-Disabling an optimization can intentionally change plan structure and the
-availability of tests that require a particular shape. It must not change the
-value part of the result: interval, logical origin, public descriptor, records
-with null maps, or materialization policy. The startup tail has the weaker
-guarantee described below.
+Disabling an optimization can intentionally change plan structure and the availability of tests that require a particular shape. It must not change the value part of the result: interval, logical origin, public descriptor, records with null maps, or materialization policy. The startup tail has the weaker guarantee described below.
 
-CTest assigns `requires_*` labels to tests that need a specific optimization
-and can disable them for an incompatible configuration. The
-`expected_ablation_failure` label then describes the expected
-unavailability of a plan-shape test, not permission for semantic divergence.
+CTest assigns `requires_*` labels to tests that need a specific optimization and can disable them for an incompatible configuration. The `expected_ablation_failure` label then describes the expected unavailability of a plan-shape test, not permission for semantic divergence.
 
 Use the following procedure to assess a failure:
 
@@ -215,16 +167,9 @@ Use the following procedure to assess a failure:
 5. if the test requires the disabled pass, disable it for that variant;
 6. treat every other failure as a regression.
 
-The `it_optimizer_ablation-build-info` test verifies that the information
-reported by the binary matches the CMake configuration. The other
-`it_optimizer_ablation-*` tests check plan structures and semantic comparisons
-between variants.
+The `it_optimizer_ablation-build-info` test verifies that the information reported by the binary matches the CMake configuration. The other `it_optimizer_ablation-*` tests check plan structures and semantic comparisons between variants.
 
-A variant with an optimization disabled may change plan structure, but it must
-not change values, `NULL` maps, the public descriptor, logical origin, or
-materialization policy. A correct plan rewrite may shorten the tail, but it
-must not cause emission before the data is available. Any other divergence is
-a regression, not an admissible property of a variant.
+A variant with an optimization disabled may change plan structure, but it must not change values, `NULL` maps, the public descriptor, logical origin, or materialization policy. A correct plan rewrite may shorten the tail, but it must not cause emission before the data is available. Any other divergence is a regression, not an admissible property of a variant.
 
 ## Packaging
 
@@ -234,15 +179,11 @@ Prepare production packages only after a successful, verified `release`:
 scripts/buildrdb.sh release package
 ```
 
-The `package` option restores the production switch values and rebuilds the
-selected directory before running CPack. Do not run packaging from
-`Release-Ablation` or `Release-Probe` directories.
+The `package` option restores the production switch values and rebuilds the selected directory before running CPack. Do not run packaging from `Release-Ablation` or `Release-Probe` directories.
 
 ## Optional client API
 
-The `api/` directory is developed and tested with the engine, but it is not part of the
-default product. Plain `ninja`, `ninja install`, `ninja test`, and `ninja package` leave
-the API libraries and tests out of their results.
+The `api/` directory is developed and tested with the engine, but it is not part of the default product. Plain `ninja`, `ninja install`, `ninja test`, and `ninja package` leave the API libraries and tests out of their results.
 
 The explicit entry points are separate:
 
@@ -252,12 +193,6 @@ The explicit entry points are separate:
 | `ninja test-api` | Builds the C++ test client and runs tests carrying the `api` label. |
 | `cmake -DRDB_WITH_API=ON .` | Adds the `api` component to CPack packages; the ordinary `test` target then stops filtering out the `api` label. |
 
-The packaging switch must be set during configuration because CPack determines its
-component list at that point. Without `RDB_WITH_API=ON`, `.deb` and `.tar.gz` packages
-contain only the engine, systemd unit, and configuration examples. The `it_packaging`
-test protects this default minimal set.
+The packaging switch must be set during configuration because CPack determines its component list at that point. Without `RDB_WITH_API=ON`, `.deb` and `.tar.gz` packages contain only the engine, systemd unit, and configuration examples. The `it_packaging` test protects this default minimal set.
 
-C++ API targets are always known to CMake, but use `EXCLUDE_FROM_ALL`. Their installation
-rules belong to the separate `api` component, so `ninja install` alone does not run them.
-Library usage and the JSONL contract are described in
-[Stream Monitoring API](stream-monitoring-api.md).
+C++ API targets are always known to CMake, but use `EXCLUDE_FROM_ALL`. Their installation rules belong to the separate `api` component, so `ninja install` alone does not run them. Library usage and the JSONL contract are described in [Stream Monitoring API](stream-monitoring-api.md).

@@ -1,9 +1,6 @@
 # Stream Monitoring API
 
-The optional client API monitors streams from a running, explicitly named `xretractor`
-instance on the same Linux host. Its transport layer starts `xqry --jsonl` processes, so
-the API does not duplicate the Boost IPC protocol and follows the command-line tool's
-rules for selecting streams and ending subscriptions.
+The optional client API monitors streams from a running, explicitly named `xretractor` instance on the same Linux host. Its transport layer starts `xqry --jsonl` processes, so the API does not duplicate the Boost IPC protocol and follows the command-line tool's rules for selecting streams and ending subscriptions.
 
 The following interfaces are available:
 
@@ -11,8 +8,7 @@ The following interfaces are available:
 - a static C++23 library with a public header and CMake configuration;
 - a versioned JSON Lines v1 contract that can also be consumed without either library.
 
-The API does not start the server, load plans, reconnect after failure, or replay missed
-samples. It is a live observation interface, not a durable or lossless transport.
+The API does not start the server, load plans, reconnect after failure, or replay missed samples. It is a live observation interface, not a durable or lossless transport.
 
 ## JSON Lines v1 contract
 
@@ -25,8 +21,7 @@ xqry --server laboratory --jsonl --detail temperature
 xqry --server laboratory --jsonl --select temperature --elimitqry 10
 ```
 
-Every stdout line is a complete UTF-8 JSON object with `version: 1` and an `event` field.
-Diagnostic messages go to stderr.
+Every stdout line is a complete UTF-8 JSON object with `version: 1` and an `event` field. Diagnostic messages go to stderr.
 
 | Event | Contents |
 | --- | --- |
@@ -37,9 +32,7 @@ Diagnostic messages go to stderr.
 | `end` | Normal completion: `limit` or `server_stopped_or_reloaded`. |
 | `error` | Stable error code and description; the process exits non-zero. |
 
-A subscription emits its schema first, then records, and exactly one final `end` or
-`error` event. EOF without a final event is a process error even when the exit code is
-zero.
+A subscription emits its schema first, then records, and exactly one final `end` or `error` event. EOF without a final event is a process error even when the exit code is zero.
 
 ```json
 {"version":1,"event":"schema","stream":"temperature","delta":"1/20","query":"...","fields":[{"name":"v","type":"INTEGER","count":2}]}
@@ -47,10 +40,7 @@ zero.
 {"version":1,"event":"end","reason":"limit"}
 ```
 
-The schema's `count` field is the scalar cardinality. Numeric arrays preserve every
-element and its individual `NULL` value; `STRING[N]` remains one string. Non-null wire
-values are strings interpreted according to the schema type. This preserves rational
-numerators and denominators and distinguishes the string `"null"` from JSON `null`.
+The schema's `count` field is the scalar cardinality. Numeric arrays preserve every element and its individual `NULL` value; `STRING[N]` remains one string. Non-null wire values are strings interpreted according to the schema type. This preserves rational numerators and denominators and distinguishes the string `"null"` from JSON `null`.
 
 | RQL type | Python | C++ `Value` |
 | --- | --- | --- |
@@ -62,12 +52,9 @@ numerators and denominators and distinguishes the string `"null"` from JSON `nul
 | `IDXPAIR` | string-integer pair | `std::pair<std::string, int64_t>` |
 | `STRING` | `str` | `std::string` |
 
-Messages carry neither a source timestamp nor a durable sequence number. Floating-point
-precision is limited by the existing textual IPC serialization, and the complete INFO
-wrapper must fit the server queue's 1024-byte limit.
+Messages carry neither a source timestamp nor a durable sequence number. Floating-point precision is limited by the existing textual IPC serialization, and the complete INFO wrapper must fit the server queue's 1024-byte limit.
 
-`--idle-timeout N` ends JSONL after N milliseconds without a record; zero disables the
-limit. This is independent of the per-read timeout exposed by the libraries.
+`--idle-timeout N` ends JSONL after N milliseconds without a record; zero disables the limit. This is independent of the per-read timeout exposed by the libraries.
 
 ## Python
 
@@ -92,15 +79,9 @@ with Client("laboratory", xqry="/path/to/xqry") as db:
         print(samples.end_reason)
 ```
 
-`Client(server, xqry="xqry", timeout=5.0)` accepts a timeout in seconds.
-`subscribe(stream, limit=0, idle_timeout=0.0, capacity=1024)` returns an object whose
-schema is already known when the call returns. `next(timeout=...)` may raise `ReadTimeout`
-without closing the subscription; ordinary iteration waits indefinitely. A record maps
-each field name to a scalar or an array of elements.
+`Client(server, xqry="xqry", timeout=5.0)` accepts a timeout in seconds. `subscribe(stream, limit=0, idle_timeout=0.0, capacity=1024)` returns an object whose schema is already known when the call returns. `next(timeout=...)` may raise `ReadTimeout` without closing the subscription; ordinary iteration waits indefinitely. A record maps each field name to a scalar or an array of elements.
 
-Use context managers or call `close()` explicitly. Merely breaking out of a `for` loop
-does not close the iterator. The library does not install signal handlers for the
-application.
+Use context managers or call `close()` explicitly. Merely breaking out of a `for` loop does not close the iterator. The library does not install signal handlers for the application.
 
 ## C++
 
@@ -139,33 +120,19 @@ int main() {
 }
 ```
 
-`SubscribeOptions` exposes `limit`, `idleTimeout`, and `capacity`. `next(timeout)` returns
-`std::optional<Record>`; an empty value means normal completion or an explicit close.
-Errors throw `retractordb::Error` with a stable `code` field. Subscription handles are
-movable but not copyable; the destructor and `close()` terminate and reap their child
-process.
+`SubscribeOptions` exposes `limit`, `idleTimeout`, and `capacity`. `next(timeout)` returns `std::optional<Record>`; an empty value means normal completion or an explicit close. Errors throw `retractordb::Error` with a stable `code` field. Subscription handles are movable but not copyable; the destructor and `close()` terminate and reap their child process.
 
 ## Limits and error handling
 
-Library buffers are bounded: by default, 1024 pending events, 1 MiB per JSONL line, and
-64 KiB of retained stderr. An application-buffer overflow produces `buffer_overflow` and
-closes the subscription without silently dropping records. A server-side queue overflow
-is a limitation of the existing IPC and may surface only as an idle timeout.
+Library buffers are bounded: by default, 1024 pending events, 1 MiB per JSONL line, and 64 KiB of retained stderr. An application-buffer overflow produces `buffer_overflow` and closes the subscription without silently dropping records. A server-side queue overflow is a limitation of the existing IPC and may surface only as an idle timeout.
 
-Closing is idempotent: the library sends SIGTERM to its own `xqry`, waits for up to one
-second, then uses SIGKILL if necessary and reaps the process. Closing a client closes all
-of its subscriptions; it never sends `xqry --kill` to the server.
+Closing is idempotent: the library sends SIGTERM to its own `xqry`, waits for up to one second, then uses SIGKILL if necessary and reaps the process. Closing a client closes all of its subscriptions; it never sends `xqry --kill` to the server.
 
-Error codes include `read_timeout`, `idle_timeout`, `buffer_overflow`,
-`stream_not_found`, `no_active_plan`, `server_stopping`, `server_no_response`,
-`client_queue_missing`, `disconnected`, `communication_error`, `protocol_error`,
-`spawn_error`, `process_exit`, `process_timeout`, and `closed`.
+Error codes include `read_timeout`, `idle_timeout`, `buffer_overflow`, `stream_not_found`, `no_active_plan`, `server_stopping`, `server_no_response`, `client_queue_missing`, `disconnected`, `communication_error`, `protocol_error`, `spawn_error`, `process_exit`, `process_timeout`, and `closed`.
 
 ## Building and testing
 
-The API is developed with the engine but remains optional. Plain `ninja`,
-`ninja install`, `ninja test`, and `ninja package` do not build, install, test, or package
-the API.
+The API is developed with the engine but remains optional. Plain `ninja`, `ninja install`, `ninja test`, and `ninja package` do not build, install, test, or package the API.
 
 | Command | Effect |
 | --- | --- |
@@ -173,11 +140,6 @@ the API.
 | `ninja test-api` | Builds the test client and runs `ctest -L api`. |
 | `cmake -DRDB_WITH_API=ON .` | Adds the `api` component to CPack packages and API tests to the ordinary `test` target. |
 
-The C++ API is always configured, but its targets use `EXCLUDE_FROM_ALL`. `xqry` has its
-own Boost.JSON translation unit, so the engine does not link anything from `api/`. The
-dependency runs only from the API to the public `xqry` process interface.
+The C++ API is always configured, but its targets use `EXCLUDE_FROM_ALL`. `xqry` has its own Boost.JSON translation unit, so the engine does not link anything from `api/`. The dependency runs only from the API to the public `xqry` process interface.
 
-The `st_api_fake` and `st_api_real` tests cover both languages. The former covers types,
-`NULL`, malformed output, overflow, and process cleanup. The latter uses a real
-`xretractor` and checks independent subscriptions, arrays, rational numbers, a missing
-stream, and server shutdown.
+The `st_api_fake` and `st_api_real` tests cover both languages. The former covers types, `NULL`, malformed output, overflow, and process cleanup. The latter uses a real `xretractor` and checks independent subscriptions, arrays, rational numbers, a missing stream, and server shutdown.

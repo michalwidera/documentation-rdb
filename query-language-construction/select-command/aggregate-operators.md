@@ -2,16 +2,11 @@
 
 ## Two aggregation axes (MIN, MAX, AVG, SUMC)
 
-The same four keywords describe two different constructs. In `FROM`, a reducer folds the
-fields of one current record. In the `SELECT` list, a record-history aggregate folds one
-expression value evaluated for each consecutive historical record. The location therefore
-determines whether reduction runs horizontally across fields or vertically across time.
+The same four keywords describe two different constructs. In `FROM`, a reducer folds the fields of one current record. In the `SELECT` list, a record-history aggregate folds one expression value evaluated for each consecutive historical record. The location therefore determines whether reduction runs horizontally across fields or vertically across time.
 
 ## Current-record reducers in FROM
 
-Stream reducers operate on a stream with multiple fields - typically the output of the
-`@(k,w)` operator or a record that contains a numeric array. They reduce all flat slots of
-one record to one value.
+Stream reducers operate on a stream with multiple fields - typically the output of the `@(k,w)` operator or a record that contains a numeric array. They reduce all flat slots of one record to one value.
 
 ### Syntax
 
@@ -38,11 +33,7 @@ SELECT * STREAM total FROM SUMC(src@(1,5))
 
 The postfix forms `stream.min`, `.max`, `.avg`, and `.sumc` remain backward compatible but are deprecated. The parser emits a warning and recommends the function form. The existing `src@(1,5).sumc` syntax is valid, but new queries should use `SUMC(src@(1,5))`.
 
-The reducer result is **not read by name in the `SELECT` list**. The compiler rejects
-`SELECT avg STREAM o FROM AVG(src)` through the `Check result:` channel, because in that
-position `avg` is a stream operator rather than a field, and nothing can execute it. Read the
-reduction result with `SELECT *`, or - when further computation is needed - materialize the
-reducer as a separate stream:
+The reducer result is **not read by name in the `SELECT` list**. The compiler rejects `SELECT avg STREAM o FROM AVG(src)` through the `Check result:` channel, because in that position `avg` is a stream operator rather than a field, and nothing can execute it. Read the reduction result with `SELECT *`, or - when further computation is needed - materialize the reducer as a separate stream:
 
 ```rql
 SELECT *      STREAM m FROM AVG(src)
@@ -51,21 +42,16 @@ SELECT m[0]*2 STREAM o FROM m
 
 ### Array fields and NULL values
 
-A numeric declaration `T[N]` is one descriptor entry but occupies `N` flat record slots.
-The reducer visits every one of them. This query therefore finds the minimum across all 24
-cells in the current record, not just `cells[0]`:
+A numeric declaration `T[N]` is one descriptor entry but occupies `N` flat record slots. The reducer visits every one of them. This query therefore finds the minimum across all 24 cells in the current record, not just `cells[0]`:
 
 ```rql
 DECLARE cells INTEGER[24] STREAM battery, 1 FILE 'cells.txt'
 SELECT * STREAM cell_min FROM MIN(battery)
 ```
 
-Derived stream schemas expand numeric arrays to scalar fields while preserving slot order
-and byte layout. `STRING[N]`, by contrast, is one N-byte text field rather than an array of
-N numbers.
+Derived stream schemas expand numeric arrays to scalar fields while preserving slot order and byte layout. `STRING[N]`, by contrast, is one N-byte text field rather than an array of N numbers.
 
-NULL values are skipped. If every slot in the record is NULL, the reduction result is NULL,
-not zero.
+NULL values are skipped. If every slot in the record is NULL, the reduction result is NULL, not zero.
 
 ### Output interval
 
@@ -83,14 +69,9 @@ The result type depends on the input value type:
 | `FLOAT` | `FLOAT` |
 | `DOUBLE` | `DOUBLE` |
 
-Integer and rational inputs are reduced as rational numbers, so `AVG` does not lose the
-remainder. This also applies to `MIN` and `MAX`: the minimum of three sevens has type
-`RATIONAL` and value `7/1`, not type `INTEGER`. `FLOAT` and `DOUBLE` preserve their types;
-an artifact with such an input does not turn into a `RATIONAL` field.
+Integer and rational inputs are reduced as rational numbers, so `AVG` does not lose the remainder. This also applies to `MIN` and `MAX`: the minimum of three sevens has type `RATIONAL` and value `7/1`, not type `INTEGER`. `FLOAT` and `DOUBLE` preserve their types; an artifact with such an input does not turn into a `RATIONAL` field.
 
-A consumer of a `RATIONAL` field must know its numerator-denominator layout
-(→ [The RATIONAL field layout](../../data-processing-system-architecture/data-storage-format/files.md#the-rational-field-layout))
-or explicitly pass the result through `to_string`, `to_double`, or `to_integer`.
+A consumer of a `RATIONAL` field must know its numerator-denominator layout (→ [The RATIONAL field layout](../../data-processing-system-architecture/data-storage-format/files.md#the-rational-field-layout)) or explicitly pass the result through `to_string`, `to_double`, or `to_integer`.
 
 ### Example: mean of an AGSE-window record
 
@@ -101,9 +82,7 @@ DECLARE val INTEGER STREAM src, 1 FILE 'data.txt'
 SELECT * STREAM ma5 FROM AVG(src@(1,5))
 ```
 
-The `ma5` stream contains, at every moment, the average of five consecutive `src` samples.
-This is an AGSE operator composed with a record reducer, not the `SELECT`-list aggregate
-described below.
+The `ma5` stream contains, at every moment, the average of five consecutive `src` samples. This is an AGSE operator composed with a record reducer, not the `SELECT`-list aggregate described below.
 
 ### Example: signal filter (sumc)
 
@@ -124,9 +103,7 @@ SELECT * STREAM min10 FROM MIN(src@(1,10))
 SELECT * STREAM max10 FROM MAX(src@(1,10))
 ```
 
-> **_NOTE:_** Current-record reducers are covered by `simple_max`, `wide_from_names`,
-> `agse_array`, and `array_derived`, described in the appendix
-> [Integration Tests](../../appendices/integration-tests.md).
+> **_NOTE:_** Current-record reducers are covered by `simple_max`, `wide_from_names`, `agse_array`, and `array_derived`, described in the appendix [Integration Tests](../../appendices/integration-tests.md).
 
 ---
 
@@ -139,8 +116,7 @@ SELECT expression_with_AGGREGATOR(record_value : width) \
 STREAM result FROM source
 ```
 
-`AGGREGATOR(record_value : width)` itself is an operand in an ordinary field expression.
-It may be combined with literals, other fields, arithmetic operators, and scalar functions:
+`AGGREGATOR(record_value : width)` itself is an operand in an ordinary field expression. It may be combined with literals, other fields, arithmetic operators, and scalar functions:
 
 ```rql
 SELECT 2*MIN(a : 5)+1, null2zero(AVG(a+b : 5))-10 \
@@ -148,12 +124,7 @@ STREAM transformed \
 FROM src
 ```
 
-Only nesting a history aggregate inside another history aggregate is forbidden. `width` is
-a positive number of records. For an output record with logical index `n`, the aggregate
-evaluates `record_value` separately on source records `n-(width-1)` through `n`, then reduces
-exactly those values. The window is end-stamped and advances by one record. The output
-interval stays equal to the source interval, logical origin advances by `width-1`, and the
-startup tail is inherited from the source.
+Only nesting a history aggregate inside another history aggregate is forbidden. `width` is a positive number of records. For an output record with logical index `n`, the aggregate evaluates `record_value` separately on source records `n-(width-1)` through `n`, then reduces exactly those values. The window is end-stamped and advances by one record. The output interval stays equal to the source interval, logical origin advances by `width-1`, and the startup tail is inherited from the source.
 
 ```rql
 DECLARE a INTEGER, b INTEGER STREAM src, 1 FILE 'data.txt'
@@ -163,16 +134,11 @@ STREAM stats \
 FROM src
 ```
 
-Several aggregates over the same expression, source, and width share one history scan.
-NULL values are skipped; a window with no present value yields NULL. The result follows the
-same type-promotion table as a current-record reducer, and that type is preserved through
-pure copies, shifts, and other schema-copying operators.
+Several aggregates over the same expression, source, and width share one history scan. NULL values are skipped; a window with no present value yields NULL. The result follows the same type-promotion table as a current-record reducer, and that type is preserved through pure copies, shifts, and other schema-copying operators.
 
 ### Argument restrictions
 
-The argument must be a numeric expression that reads at least one field of one stored
-source. A query containing a record-history aggregate must have one plain stream reference
-in `FROM`. The compiler rejects:
+The argument must be a numeric expression that reads at least one field of one stored source. A query containing a record-history aggregate must have one plain stream reference in `FROM`. The compiler rejects:
 
 - a non-positive width;
 - a text expression or a constant that reads no field;
@@ -181,14 +147,11 @@ in `FROM`. The compiler rejects:
 - a compound `FROM` clause such as `FROM src - 2`;
 - a bare numeric-array name.
 
-For `DECLARE a INTEGER[3]`, select one channel, for example `MIN(a[0] : 5)`.
-`MIN(a : 5)` does not mean all array elements from every record and is rejected. Reduce all
-elements of one record separately with `FROM MIN(stream)`.
+For `DECLARE a INTEGER[3]`, select one channel, for example `MIN(a[0] : 5)`. `MIN(a : 5)` does not mean all array elements from every record and is rejected. Reduce all elements of one record separately with `FROM MIN(stream)`.
 
 ### Combining reductions across channels and time
 
-The two axes can be composed without serializing the array or manually creating a
-separate stream for every channel:
+The two axes can be composed without serializing the array or manually creating a separate stream for every channel:
 
 ```rql
 DECLARE value INTEGER[24] STREAM sensors, 1/10 FILE 'sensors.txt'
@@ -197,44 +160,28 @@ SELECT *                    STREAM row_min      FROM MIN(sensors)
 SELECT MIN(row_min[0] : 10) STREAM interval_min FROM row_min
 ```
 
-The first `MIN` reduces the 24 parallel values in one record. The second reduces results
-from ten consecutive records, so `interval_min` is the minimum of 240 values while
-retaining the source interval and emitting a sliding window after every record. If a
-sparser result is needed, decimate the completed stream as described in the next section.
+The first `MIN` reduces the 24 parallel values in one record. The second reduces results from ten consecutive records, so `interval_min` is the minimum of 240 values while retaining the source interval and emitting a sliding window after every record. If a sparser result is needed, decimate the completed stream as described in the next section.
 
 ### Hopping windows
 
-A `SELECT` aggregate has no step argument. Build a hopping window by decimating the
-completed window stream with `-` in a second node:
+A `SELECT` aggregate has no step argument. Build a hopping window by decimating the completed window stream with `-` in a second node:
 
 ```rql
 SELECT MIN(a : 5) STREAM sliding FROM src
 SELECT *          STREAM hopping FROM sliding - 2
 ```
 
-The argument of `-` is the target output interval. For hop H over a source interval
-\\(\Delta\\), pass \\(H\Delta\\). Splitting the construction preserves five consecutive
-records in every window and only then selects every H-th result. Direct
-`SELECT MIN(a : 5) ... FROM src - 2` is not shorthand for this construction and does not
-compile.
+The argument of `-` is the target output interval. For hop H over a source interval \\(\Delta\\), pass \\(H\Delta\\). Splitting the construction preserves five consecutive records in every window and only then selects every H-th result. Direct `SELECT MIN(a : 5) ... FROM src - 2` is not shorthand for this construction and does not compile.
 
-> **_NOTE:_** Syntax, types, boundaries, shared computations, expressions, NULL values,
-> and restrictions are covered by `window_aggregate` and by the `ut_compiler` and
-> `ut_expeval` unit tests.
+> **_NOTE:_** Syntax, types, boundaries, shared computations, expressions, NULL values, and restrictions are covered by `window_aggregate` and by the `ut_compiler` and `ut_expeval` unit tests.
 
 ---
 
 ## Further computation on an aggregate result
 
-Scalar functions belong to field-expression syntax, not to either kind of window. The full
-list, name and arity rules, and type semantics are documented in
-[Field Expressions and Scalar Functions](field-expressions-and-scalar-functions.md). Only
-conversions particularly relevant when consuming an aggregate result remain below.
+Scalar functions belong to field-expression syntax, not to either kind of window. The full list, name and arity rules, and type semantics are documented in [Field Expressions and Scalar Functions](field-expressions-and-scalar-functions.md). Only conversions particularly relevant when consuming an aggregate result remain below.
 
-`isnull(x)` returns 1 for NULL and 0 for a present value. `null2zero(x)` maps NULL to integer
-zero but passes a present value without changing its type. It is a lossy conversion, not a
-way to export missingness. Division by zero yields NULL for every numeric type and does not
-stop later stream processing.
+`isnull(x)` returns 1 for NULL and 0 for a present value. `null2zero(x)` maps NULL to integer zero but passes a present value without changing its type. It is a lossy conversion, not a way to export missingness. Division by zero yields NULL for every numeric type and does not stop later stream processing.
 
 ## Conversion example: to_string
 
@@ -284,9 +231,7 @@ Output field size: 8 (from `to_string`) + 3 (literal `_ok`) = 11 bytes.
 
 ## Conversion example: to_integer
 
-The `to_integer` function converts a numeric expression into a field of type `INTEGER`. It is
-the primary way of reading an artifact that holds an aggregate: it turns a `RATIONAL` field
-into a whole number the reader can consume without knowing the numerator-denominator layout.
+The `to_integer` function converts a numeric expression into a field of type `INTEGER`. It is the primary way of reading an artifact that holds an aggregate: it turns a `RATIONAL` field into a whole number the reader can consume without knowing the numerator-denominator layout.
 
 ### Syntax
 
@@ -298,11 +243,9 @@ to_integer(expression)
 
 > **⚠️ Warning**
 >
-> `to_integer` **truncates toward zero**; it does not floor. For negative values the result
-> differs from the floor by one.
+> `to_integer` **truncates toward zero**; it does not floor. For negative values the result differs from the floor by one.
 
-The rule is the same for a rational and for a floating-point argument - in both cases the
-fractional part is dropped and the sign is kept:
+The rule is the same for a rational and for a floating-point argument - in both cases the fractional part is dropped and the sign is kept:
 
 | Input value | `to_integer` | floor (for comparison) |
 | ----------- | ------------ | ---------------------- |
@@ -315,8 +258,7 @@ A `NULL` passes through unchanged - `to_integer(NULL)` yields `NULL`, not zero.
 
 ### A pitfall when porting to Python
 
-Python's `//` operator **floors**, so a naive transcription of the query diverges from the
-engine on every negative value:
+Python's `//` operator **floors**, so a naive transcription of the query diverges from the engine on every negative value:
 
 ```python
 >>> -8 // 3        # Python: floor
@@ -339,10 +281,6 @@ The same problem arises in any language whose integer division floors.
 
 ### Use cases
 
-`to_integer` fits wherever the consumer of the artifact expects a whole number and the
-fractional part is not needed. Where the value must stay exact, the right choice is
-`to_string`, which writes the fraction as the text `numerator/denominator`, or reading the
-pair directly
-(→ [The RATIONAL field layout](../../data-processing-system-architecture/data-storage-format/files.md#the-rational-field-layout)).
+`to_integer` fits wherever the consumer of the artifact expects a whole number and the fractional part is not needed. Where the value must stay exact, the right choice is `to_string`, which writes the fraction as the text `numerator/denominator`, or reading the pair directly (→ [The RATIONAL field layout](../../data-processing-system-architecture/data-storage-format/files.md#the-rational-field-layout)).
 
 > **_NOTE:_** The functionality described here is covered by the test `issue128_string_to_numeric`, described in the appendix [Integration Tests](../../appendices/integration-tests.md), and by the unit tests `ut_payload` and `ut_convertTypes`, which pin the `RATIONAL` field layout and the rounding rule.

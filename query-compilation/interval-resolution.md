@@ -59,18 +59,9 @@ SELECT ... STREAM c FROM a > n
 
 \\[\Delta_c = \Delta_a\\]
 
-A shift changes neither the stream's rate nor its emitted record sequence, but it
-does change the index at which that sequence appears: record `m` carries the
-content of record `m-n`. It is a causal delay, but its carrier is the **logical
-origin**, not the tail - records with an index below `n` have no definition. The
-operator's own tail is non-positive: it equals `max(0, W_src − n)`, because
-record `m-n` is older than the current one and therefore all the more available.
-The plan listing shows both quantities as `origin=` and `tail=`; the silent slots
-are their sum and the runtime emits nothing in them.
+A shift changes neither the stream's rate nor its emitted record sequence, but it does change the index at which that sequence appears: record `m` carries the content of record `m-n`. It is a causal delay, but its carrier is the **logical origin**, not the tail - records with an index below `n` have no definition. The operator's own tail is non-positive: it equals `max(0, W_src − n)`, because record `m-n` is older than the current one and therefore all the more available. The plan listing shows both quantities as `origin=` and `tail=`; the silent slots are their sum and the runtime emits nothing in them.
 
-Source history requires `n+1` records for the read range itself, plus two more
-for a declared source's head lead (the record armed when the storage is opened
-and the zero prefetch), which logical-index addressing does not shorten.
+Source history requires `n+1` records for the read range itself, plus two more for a declared source's head lead (the record armed when the storage is opened and the zero prefetch), which logical-index addressing does not shorten.
 
 ### Stream reducers (`MAX`, `MIN`, `AVG`, `SUMC`)
 

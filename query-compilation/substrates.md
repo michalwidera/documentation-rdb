@@ -186,17 +186,9 @@ After extracting substrates and resolving their intervals, the compiler applies 
 
 The condition \\(i\Delta_{a}=k\Delta_{b}\\) means that both interleave arguments are shifted by the same physical time. Without this condition the transformation is not equivalent, so the compiler keeps the original plan.
 
-Let the reduced ratio \\(\Delta_a/\Delta_b\\) be \\(p/q\\). The interleave tail
-protects every phase of the period \\(p+q\\), because the compiler scans that
-period slot by slot and takes the maximum required latency - formula and
-justification in [Formal Foundations and
-Proofs](../mathematical-foundations/formal-foundations-and-proofs.md).
+Let the reduced ratio \\(\Delta_a/\Delta_b\\) be \\(p/q\\). The interleave tail protects every phase of the period \\(p+q\\), because the compiler scans that period slot by slot and takes the maximum required latency - formula and justification in [Formal Foundations and Proofs](../mathematical-foundations/formal-foundations-and-proofs.md).
 
-A shift delays a causal realization: it moves the **logical origin** `O` by `N`
-and sets its own tail to \\(\max(0,W_S-N)\\) - it does not change the record
-sequence or insert a prefix. For
-\\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\), the matching condition
-gives exactly:
+A shift delays a causal realization: it moves the **logical origin** `O` by `N` and sets its own tail to \\(\max(0,W_S-N)\\) - it does not change the record sequence or insert a prefix. For \\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\), the matching condition gives exactly:
 
 \\[
 \frac{i\Delta_a}{\Delta_c}
@@ -204,20 +196,13 @@ gives exactly:
 =i+k
 \\]
 
-Shifting each input therefore corresponds to the same number `i+k` of output
-slots, and the logical origin of both sides is identical. **The tails are not
-identical.** The factored side reads content directly from the interleave, while
-the unfactored side reads it only after shifting its components, so it waits
-longer:
+Shifting each input therefore corresponds to the same number `i+k` of output slots, and the logical origin of both sides is identical. **The tails are not identical.** The factored side reads content directly from the interleave, while the unfactored side reads it only after shifting its components, so it waits longer:
 
 \\[
 W_{\mathrm{RHS}}=\max\left(0,\;W_{\varphi(A,B)}-(i+k)\right)\le W_{\mathrm{LHS}}
 \\]
 
-The rule thus preserves the emitted sequence, the interval and `origin=`, and may
-**decrease** `tail=`. It is a latency optimization, not a neutral rewrite; for
-the full proof and a counterexample see [Formal foundations and
-proofs](../mathematical-foundations/formal-foundations-and-proofs.md).
+The rule thus preserves the emitted sequence, the interval and `origin=`, and may **decrease** `tail=`. It is a latency optimization, not a neutral rewrite; for the full proof and a counterexample see [Formal foundations and proofs](../mathematical-foundations/formal-foundations-and-proofs.md).
 
 Before optimization the plan contains two substrates:
 
@@ -236,29 +221,9 @@ result = STREAM_HASH_A_B > (i + k)
 
 The `factorMatchedHashTimeMoves()` pass does not remove explicit user streams or substrates used by other consumers. It runs before deduplication so that the exposed `A # B` substrate can subsequently be shared with another equivalent plan.
 
-The `issue202_hash_shift_e2e` test executes both sides of the identity over
-independent copies of file-backed input streams. It compares the `matched`
-and `CC` artifacts byte for byte, compares their metadata after excluding
-the reserved header, checks the complete sequence against a reference
-derived from the `B,A,A` interleave period, and verifies equal tails
-(`origin=3` with a zero tail - \\(\tau_3\\) over an interleave of tail 2
-absorbs it entirely). Both sides are factored to the same shape here, so the
-comparison is exhaustive. Neither side emits placeholder records. Separately,
-`computeRequiredCapacities()` assigns `N+1+2` history records to a declared
-source: `N+1` for the read range itself and two for the declaration's head
-lead, which logical-index addressing does not shorten.
+The `issue202_hash_shift_e2e` test executes both sides of the identity over independent copies of file-backed input streams. It compares the `matched` and `CC` artifacts byte for byte, compares their metadata after excluding the reserved header, checks the complete sequence against a reference derived from the `B,A,A` interleave period, and verifies equal tails (`origin=3` with a zero tail - \\(\tau_3\\) over an interleave of tail 2 absorbs it entirely). Both sides are factored to the same shape here, so the comparison is exhaustive. Neither side emits placeholder records. Separately, `computeRequiredCapacities()` assigns `N+1+2` history records to a declared source: `N+1` for the read range itself and two for the declaration's head lead, which logical-index addressing does not shorten.
 
-The `r1_identity_nulls` test checks the same identity for
-\\(\Delta_a/\Delta_b=3/2\\), which requires the phase maximum
-\\(H_{a,b}=2\\) even though the first phase requires only one slot. It
-compares the rewritten plan, a left-hand side blocked from rewriting, and
-an explicit right-hand side. The rewritten plan and the explicit right-hand side
-are equal in full. The **blocked** left-hand side has the same logical origin and
-the same content but a strictly larger tail - the comparison therefore covers the
-common prefix of the payload and of the `NULL` map, with a separate assertion
-requiring the factored side to be strictly longer. A nonempty periodic
-all-`NULL` record prevents missing data from masking an incorrect tail. Compiler unit tests
-also cover the \\(3/5\\), \\(7/11\\), and \\(160/147\\) ratios.
+The `r1_identity_nulls` test checks the same identity for \\(\Delta_a/\Delta_b=3/2\\), which requires the phase maximum \\(H_{a,b}=2\\) even though the first phase requires only one slot. It compares the rewritten plan, a left-hand side blocked from rewriting, and an explicit right-hand side. The rewritten plan and the explicit right-hand side are equal in full. The **blocked** left-hand side has the same logical origin and the same content but a strictly larger tail - the comparison therefore covers the common prefix of the payload and of the `NULL` map, with a separate assertion requiring the factored side to be strictly longer. A nonempty periodic all-`NULL` record prevents missing data from masking an incorrect tail. Compiler unit tests also cover the \\(3/5\\), \\(7/11\\), and \\(160/147\\) ratios.
 
 ### The deduplication algorithm
 
@@ -310,13 +275,7 @@ Matched interleave-shift factorization and deduplication must happen after inter
 
 SELECT computation sharing runs only after field references and `[_]` have been expanded because it compares completed field programs. It must still precede field-offset localization so equivalent sources do not look different merely because of their order in the local input buffer.
 
-Every rewriting pass (`factorMatchedHashTimeMoves`,
-`deduplicateSubstrats`, and `shareEquivalentSelectComputations`) is wrapped
-in `verifyUserFieldNamesPreserved()`. Field names of public streams are part
-of the `.desc` descriptor and must not change because of optimization. The
-tail is computed only for the final plan. The final topological sort is
-unconditional because earlier interval sorting can place a faster `#`
-consumer before its producers.
+Every rewriting pass (`factorMatchedHashTimeMoves`, `deduplicateSubstrats`, and `shareEquivalentSelectComputations`) is wrapped in `verifyUserFieldNamesPreserved()`. Field names of public streams are part of the `.desc` descriptor and must not change because of optimization. The tail is computed only for the final plan. The final topological sort is unconditional because earlier interval sorting can place a faster `#` consumer before its producers.
 
 ### Effect on the dependency graph
 

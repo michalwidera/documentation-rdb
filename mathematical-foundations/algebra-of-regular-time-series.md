@@ -96,19 +96,13 @@ c_{\left\lceil \frac{n\Delta_{a}}{\Delta_{b}}\right\rceil } & \Delta_{b}<\Delta_
 
 We denote these operations with the symbols + and -.
 
-Causal execution augments the mathematical stream S = (s<sub>n</sub>, ∆)
-with a **logical origin** O<sub>S</sub> ∈ ℕ and a **startup tail**
-W<sub>S</sub> ∈ ℕ. The logical origin is the index of the first record that
-exists at all; the tail is the number of subsequent slots for which an existing
-record is not yet ready. Neither kind of slot is a record: the engine inserts
-neither zeros nor all-null placeholders.
+Causal execution augments the mathematical stream S = (s<sub>n</sub>, ∆) with a **logical origin** O<sub>S</sub> ∈ ℕ and a **startup tail** W<sub>S</sub> ∈ ℕ. The logical origin is the index of the first record that exists at all; the tail is the number of subsequent slots for which an existing record is not yet ready. Neither kind of slot is a record: the engine inserts neither zeros nor all-null placeholders.
 
 \\[
 \widehat{S} := \left((s_n,\Delta),O_S,W_S\right)
 \\]
 
-We define the shift as a read of an older index: output record \\(n\\) carries
-the contents of producer record \\(n-m\\). In the causal realization:
+We define the shift as a read of an older index: output record \\(n\\) carries the contents of producer record \\(n-m\\). In the causal realization:
 
 \\[
 O_{\tau_m(S)}=O_S+m,
@@ -117,13 +111,7 @@ W_{\tau_m(S)}=\max(0,W_S-m),
 \qquad m\in\mathbb{N}
 \\]
 
-A shift neither discards source elements nor creates a prefix. It moves delay
-into the logical origin, while reading an older record can absorb part of the
-producer's tail. The compiler reports both quantities as `origin=` and `tail=`.
-The runtime emits no records in any silent slot, of which there are
-`origin + tail`. Details:
-[Tails, logical origins and operator
-observability](operator-tails-and-observability.md).
+A shift neither discards source elements nor creates a prefix. It moves delay into the logical origin, while reading an older record can absorb part of the producer's tail. The compiler reports both quantities as `origin=` and `tail=`. The runtime emits no records in any silent slot, of which there are `origin + tail`. Details: [Tails, logical origins and operator observability](operator-tails-and-observability.md).
 
 
 I denote the shift operation with the symbol >.

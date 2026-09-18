@@ -10,9 +10,7 @@ Fig. 48 shows the control flow described above. A file with queries and directiv
 
 ### What can be attached at run time
 
-The ad hoc channel accepts **exactly one `SELECT`, `DECLARE`, or `RULE` statement**.
-Compiler directives and programs containing multiple statements are rejected without
-changing the active plan.
+The ad hoc channel accepts **exactly one `SELECT`, `DECLARE`, or `RULE` statement**. Compiler directives and programs containing multiple statements are rejected without changing the active plan.
 
 A new source can be declared without stopping a running engine:
 
@@ -20,55 +18,32 @@ A new source can be declared without stopping a running engine:
 $ xqry -a "DECLARE a BYTE STREAM C, 1 FILE 'data3.txt'"
 ```
 
-Exit code `0` with no message means that the declaration was accepted. The declaration
-receives its logical-index base in its first due slot. If a query attached later needs a
-window or a time shift, emission waits until the source has accumulated the complete
-required history. `HOLD` is not required; it remains an optional directive that delays
-the physical read. Repeating `DECLARE` for an existing name is rejected rather than
-treated as a configuration update.
+Exit code `0` with no message means that the declaration was accepted. The declaration receives its logical-index base in its first due slot. If a query attached later needs a window or a time shift, emission waits until the source has accumulated the complete required history. `HOLD` is not required; it remains an optional directive that delays the physical read. Repeating `DECLARE` for an existing name is rejected rather than treated as a configuration update.
 
-With multiple live instances, `DECLARE` alone cannot identify an owner because
-it has no `FROM` clause. The target must then be selected explicitly:
+With multiple live instances, `DECLARE` alone cannot identify an owner because it has no `FROM` clause. The target must then be selected explicitly:
 
 ```
 $ xqry --server measurements -a "DECLARE a BYTE STREAM C, 1 FILE 'data3.txt'"
 ```
 
-Attaching the first declaration to a server started with an empty plan is not
-yet supported; the ad hoc channel requires an active data model.
+Attaching the first declaration to a server started with an empty plan is not yet supported; the ad hoc channel requires an active data model.
 
-A rule attached at run time may execute only `DO DUMP`. `DO SYSTEM` remains available
-in a complete plan file because exposing it through IPC would let a client run arbitrary
-shell commands as the server account. The `ON` target must be an existing stream created
-by `SELECT`. The rule starts only after its complete required history has accumulated
-since attachment; if the in-memory stream retains too little history, the request is
-rejected.
+A rule attached at run time may execute only `DO DUMP`. `DO SYSTEM` remains available in a complete plan file because exposing it through IPC would let a client run arbitrary shell commands as the server account. The `ON` target must be an existing stream created by `SELECT`. The rule starts only after its complete required history has accumulated since attachment; if the in-memory stream retains too little history, the request is rejected.
 
 ```bash
 xqry --server measurements -a \
   "RULE alarm ON temperature WHEN temperature[0] > 80 DO DUMP -10 TO 5"
 ```
 
-With multiple instances, the client routes a `SELECT` according to the owners of streams
-in `FROM`, and a `RULE` according to the stream in `ON`. A query combining sources from
-several servers is rejected. New stream names and storage files are claimed on the bus
-before the active plan is changed, so ad hoc commands cannot overwrite another
-instance's resource.
+With multiple instances, the client routes a `SELECT` according to the owners of streams in `FROM`, and a `RULE` according to the stream in `ON`. A query combining sources from several servers is rejected. New stream names and storage files are claimed on the bus before the active plan is changed, so ad hoc commands cannot overwrite another instance's resource.
 
-Ad hoc commands extend the current plan. Use `xqry --reset file.rql` to replace it fully
-and atomically, including on an idle instance.
+Ad hoc commands extend the current plan. Use `xqry --reset file.rql` to replace it fully and atomically, including on an idle instance.
 
 ### Where an ad hoc stream begins
 
-A plan built from the start of system operation numbers records from the logical
-origin computed by the compiler. A query attached ad hoc has no such history -
-its first record is **the first slot in which the runtime saw it**, not slot zero
-of the plan. The import is atomic: the compiled tree and its stream instances are
-published under a common lock, and the execution loop rebuilds the timeline
-without rewinding, even when the new query introduces a new rate to the system.
+A plan built from the start of system operation numbers records from the logical origin computed by the compiler. A query attached ad hoc has no such history - its first record is **the first slot in which the runtime saw it**, not slot zero of the plan. The import is atomic: the compiled tree and its stream instances are published under a common lock, and the execution loop rebuilds the timeline without rewinding, even when the new query introduces a new rate to the system.
 
-> **_NOTE:_** This behavior is covered by the `issue227_join_alignment` test
-> (the `adhoc-origin` case).
+> **_NOTE:_** This behavior is covered by the `issue227_join_alignment` test (the `adhoc-origin` case).
 
 ### Example
 
@@ -128,9 +103,7 @@ To add another query to the system, we need to issue the command:
 $ xqry -a "SELECT * STREAM str2 FROM A#B"
 ```
 
-A command in this form sends a new query to the xretractor process. No message and exit
-code `0` mean that it was accepted. The system compiles it and merges it into the query
-plan tree; on rejection, `xqry` returns a non-zero code and writes the diagnostic reason.
+A command in this form sends a new query to the xretractor process. No message and exit code `0` mean that it was accepted. The system compiles it and merges it into the query plan tree; on rejection, `xqry` returns a non-zero code and writes the diagnostic reason.
 
 If we check the system's state again, we'll see the following picture:
 

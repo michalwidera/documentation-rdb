@@ -84,8 +84,7 @@ All of the above forms can be combined into arbitrarily complex expressions - li
 
 ## Coverage of examples in integration tests
 
-Each of the expression forms cited has a counterpart in the RetractorDB repository's
-shared `test/IntegrationTest` directory, executed on every project build:
+Each of the expression forms cited has a counterpart in the RetractorDB repository's shared `test/IntegrationTest` directory, executed on every project build:
 
 | Expression from this chapter | Form in the test | Integration test |
 |---|---|---|

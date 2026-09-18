@@ -21,8 +21,7 @@ $ xtrdb --storagemap file  # same as -s
 $ xtrdb -h                 # help and build information, then exit
 ```
 
-The `-n/--noprompt` mode removes highlighting, the `.` prompt, and the `ok` message - useful when input comes from a file or a pipe.
-The legacy positional variant `noprompt` still works too.
+The `-n/--noprompt` mode removes highlighting, the `.` prompt, and the `ok` message - useful when input comes from a file or a pipe. The legacy positional variant `noprompt` still works too.
 
 ```
 $ xtrdb -n < script.xtrdb

@@ -40,8 +40,7 @@ In another window we issue the following command:
 $ xqry -a "SELECT * STREAM ping FROM core VOLATILE"
 ```
 
-Exit code `0` with no message means that the query was accepted. At this point, in the
-window showing values from the core stream, the core values will appear:
+Exit code `0` with no message means that the query was accepted. At this point, in the window showing values from the core stream, the core values will appear:
 
 ```
 $ xqry -s core

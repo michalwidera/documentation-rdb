@@ -62,19 +62,11 @@ Finally, xretractor removes its response segment, command queue, mutex, and clie
 
 ### Fatal errors and emergency cleanup
 
-A fatal error during startup or in the communication thread follows the same final resource
-ownership policy but does not attempt to continue the processing cycle. The spdlog registry
-is flushed rather than destroyed before `atexit` handlers run. If the error originated in
-the communication thread itself, cleanup detaches that thread instead of attempting to join
-it from itself. It then removes IPC queues and shared memory and releases the service lock
-last.
+A fatal error during startup or in the communication thread follows the same final resource ownership policy but does not attempt to continue the processing cycle. The spdlog registry is flushed rather than destroyed before `atexit` handlers run. If the error originated in the communication thread itself, cleanup detaches that thread instead of attempting to join it from itself. It then removes IPC queues and shared memory and releases the service lock last.
 
-The process exits with status 1. A later start therefore finds neither orphaned IPC nor a
-stale service lock, and the primary failure is not masked by a secondary `SIGSEGV` or
-`SIGABRT` during shutdown.
+The process exits with status 1. A later start therefore finds neither orphaned IPC nor a stale service lock, and the primary failure is not masked by a secondary `SIGSEGV` or `SIGABRT` during shutdown.
 
-> **_NOTE:_** `fatal_exit_path` covers both startup failure and failure reported by the
-> communication thread.
+> **_NOTE:_** `fatal_exit_path` covers both startup failure and failure reported by the communication thread.
 
 #### What happens with multiple xqry processes
 

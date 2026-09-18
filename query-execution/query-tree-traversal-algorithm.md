@@ -81,8 +81,7 @@ The check `isThisDeltaAwaitCurrentTimeSlot(inDelta)` returns `true` when `ctSlot
 
 ## The zero step: `processZeroStep()`
 
-Before entering the `executorsm::run()` loop, `dataModel::processZeroStep()` is called. It
-processes **declarations only** (`DECLARE` input streams):
+Before entering the `executorsm::run()` loop, `dataModel::processZeroStep()` is called. It processes **declarations only** (`DECLARE` input streams):
 
 ```cpp
 for (auto &q : coreInstance_) {
@@ -152,17 +151,9 @@ Declarations are only unblocked once every dependent query has consumed their `o
 
 ### Record-history windows in the SELECT list
 
-If a query contains `MIN`/`MAX`/`AVG`/`SUMC(expression : W)`,
-`computeWindowAggregates()` runs after the `FROM` payload has been built but before output
-fields are evaluated. For logical index `n`, it reads records `n-(W-1)` through `n` from the
-named source. A bare field takes the direct flat-slot path; a general expression is evaluated
-separately against each historical payload.
+If a query contains `MIN`/`MAX`/`AVG`/`SUMC(expression : W)`, `computeWindowAggregates()` runs after the `FROM` payload has been built but before output fields are evaluated. For logical index `n`, it reads records `n-(W-1)` through `n` from the named source. A bare field takes the direct flat-slot path; a general expression is evaluated separately against each historical payload.
 
-NULL values are skipped, and a window with no present value stores NULL for all four
-statistics. Groups with the same source, expression program, and width share one history
-scan. Their results go to `streamInstance::windowValues` and become ordinary operands of
-`constructOutputPayload()`, so expressions such as `2*MIN(a : 5)+1` and
-`null2zero(AVG(a+b : 5))` are valid.
+NULL values are skipped, and a window with no present value stores NULL for all four statistics. Groups with the same source, expression program, and width share one history scan. Their results go to `streamInstance::windowValues` and become ordinary operands of `constructOutputPayload()`, so expressions such as `2*MIN(a : 5)+1` and `null2zero(AVG(a+b : 5))` are valid.
 
 ***
 

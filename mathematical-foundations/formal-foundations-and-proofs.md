@@ -275,25 +275,16 @@ Both streams carry ∆<sub>c</sub> = ∆<sub>a</sub>. They therefore coincide up
 
 The interleaving operation is not commutative in general: since 0 < z < 1, at n = 0 the equality branch of the interleaving definition always applies, so the stream φ(A, B) begins with element b₀, while the stream φ(B, A) begins with element a₀. Interleaving is, however, equivariant with respect to time shifts matched to the streams' rates - which is valuable for query-plan optimization.
 
-In the causal realization a stream has the form
-\\(\widehat{S}=((s_n,\Delta),W_S)\\), where \\(W_S\\) is its startup tail.
-We define conversion of a producer's tail into output slots as:
+In the causal realization a stream has the form \\(\widehat{S}=((s_n,\Delta),W_S)\\), where \\(W_S\\) is its startup tail. We define conversion of a producer's tail into output slots as:
 
 \\[
 \operatorname{conv}(w,\Delta_s,\Delta_o):=
 \left\lceil\frac{w\Delta_s}{\Delta_o}\right\rceil
 \\]
 
-The tail of an interleave with interval
-\\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\) follows directly from the
-operator definition, without going through a single phase term.
+The tail of an interleave with interval \\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\) follows directly from the operator definition, without going through a single phase term.
 
-Record \\(i\\) of \\(\varphi(A,B)\\) carries the content of record \\(j(i)\\)
-of exactly one component - the one the interleave definition selects in slot
-\\(i\\). Write \\(\Delta_{s(i)}\\) and \\(W_{s(i)}\\) for the interval and tail
-of the selected component. Record \\(j(i)\\) is determined at time
-\\(\bigl(j(i)+1+W_{s(i)}\bigr)\Delta_{s(i)}\\), while consumer slot \\(i\\) ends
-at \\((i+1+W)\Delta_c\\). The causality condition for every \\(i\\) is:
+Record \\(i\\) of \\(\varphi(A,B)\\) carries the content of record \\(j(i)\\) of exactly one component - the one the interleave definition selects in slot \\(i\\). Write \\(\Delta_{s(i)}\\) and \\(W_{s(i)}\\) for the interval and tail of the selected component. Record \\(j(i)\\) is determined at time \\(\bigl(j(i)+1+W_{s(i)}\bigr)\Delta_{s(i)}\\), while consumer slot \\(i\\) ends at \\((i+1+W)\Delta_c\\). The causality condition for every \\(i\\) is:
 
 \\[
 W\ge
@@ -301,10 +292,7 @@ W\ge
 -1-i
 \\]
 
-Let \\(\Delta_a/\Delta_b=p/q\\), where \\(p,q\in\mathbb{N}_{>0}\\)
-and \\(\gcd(p,q)=1\\). Both the component selection and the residue determining
-\\(j(i)\\) repeat with period \\(p+q\\), so the maximum of the right-hand side
-over **one** period is the maximum over all records:
+Let \\(\Delta_a/\Delta_b=p/q\\), where \\(p,q\in\mathbb{N}_{>0}\\) and \\(\gcd(p,q)=1\\). Both the component selection and the residue determining \\(j(i)\\) repeat with period \\(p+q\\), so the maximum of the right-hand side over **one** period is the maximum over all records:
 
 \\[
 W_{\varphi(A,B)}
@@ -314,10 +302,7 @@ W_{\varphi(A,B)}
 \right)
 \\]
 
-The formula is **exact**: it neither overshoots nor undershoots the event-model
-bound for any node. The period scan starts at zero - the logical origin shifts
-the consumer index and the component index by the same amount, so the window
-\\([0,\,p+q)\\) yields the same value as any shifted window.
+The formula is **exact**: it neither overshoots nor undershoots the event-model bound for any node. The period scan starts at zero - the logical origin shifts the consumer index and the component index by the same amount, so the window \\([0,\,p+q)\\) yields the same value as any shifted window.
 
 The earlier closed form
 
@@ -332,18 +317,9 @@ W_{\varphi(A,B)}
 H_{a,b}=\left\lceil\frac{p+q-1}{p}\right\rceil
 \\]
 
-protected the worst read phase of the second argument, but did not check whether
-that phase actually falls on the record that waits longest - hence it overshot
-the tail by one slot for some nodes. It survives in the implementation as the
-fallback for \\(p+q\\) above the scan threshold (`kHashPhaseScanLimit` in
-`SOperations.hpp`): overshooting costs one slot of latency, whereas
-undershooting would mean emitting a record before its dependency is determined.
-Tail slots are not records.
+protected the worst read phase of the second argument, but did not check whether that phase actually falls on the record that waits longest - hence it overshot the tail by one slot for some nodes. It survives in the implementation as the fallback for \\(p+q\\) above the scan threshold (`kHashPhaseScanLimit` in `SOperations.hpp`): overshooting costs one slot of latency, whereas undershooting would mean emitting a record before its dependency is determined. Tail slots are not records.
 
-The shift \\(\tau_m\\) does not change the emitted record sequence, but it does
-change the **index** at which that sequence appears: record \\(n\\) carries the
-content of record \\(n-m\\). Records with an index below \\(O_S+m\\) have no
-definition, hence
+The shift \\(\tau_m\\) does not change the emitted record sequence, but it does change the **index** at which that sequence appears: record \\(n\\) carries the content of record \\(n-m\\). Records with an index below \\(O_S+m\\) have no definition, hence
 
 \\[
 O_{\tau_m(S)}=O_S+m,
@@ -351,20 +327,11 @@ O_{\tau_m(S)}=O_S+m,
 W_{\tau_m(S)}=\max\left(0,\;W_S-m\right)
 \\]
 
-The tail **decreases**: record \\(n-m\\) is older than the current one and
-therefore all the more available - the slot deficit is \\(W_S-m\\) and is
-constant. Details and measurement: [Tails, logical origins and operator
-observability](operator-tails-and-observability.md).
+The tail **decreases**: record \\(n-m\\) is older than the current one and therefore all the more available - the slot deficit is \\(W_S-m\\) and is constant. Details and measurement: [Tails, logical origins and operator observability](operator-tails-and-observability.md).
 
 > **✅ Note**
 >
-> **Theorem (R1, commuting a shift with an interleave).** If numbers
-> i, k ∈ ℕ are chosen such that i·∆<sub>a</sub> = k·∆<sub>b</sub> (both arguments
-> shifted by the same amount of time), then interleaving the shifted streams and
-> the interleaving of the original streams shifted by the sum of these numbers
-> have **the same record sequence, the same interval and the same logical
-> origin**. Their tails satisfy an inequality - the factored side is never the
-> later one.
+> **Theorem (R1, commuting a shift with an interleave).** If numbers i, k ∈ ℕ are chosen such that i·∆<sub>a</sub> = k·∆<sub>b</sub> (both arguments shifted by the same amount of time), then interleaving the shifted streams and the interleaving of the original streams shifted by the sum of these numbers have **the same record sequence, the same interval and the same logical origin**. Their tails satisfy an inequality - the factored side is never the later one.
 
 Formally, with \\(L:=i+k\\):
 
@@ -378,15 +345,11 @@ Formally, with \\(L:=i+k\\):
 W_{\mathrm{RHS}}=\max\left(0,\;W_{\varphi(A,B)}-L\right)\le W_{\mathrm{LHS}}
 \\]
 
-where \\(\operatorname{Obs}\\) is the value part of the observation (interval,
-logical origin, record sequence with its `NULL` map, descriptor, gap trace,
-materialization policy) - see [Tails, logical origins and operator
-observability](operator-tails-and-observability.md).
+where \\(\operatorname{Obs}\\) is the value part of the observation (interval, logical origin, record sequence with its `NULL` map, descriptor, gap trace, materialization policy) - see [Tails, logical origins and operator observability](operator-tails-and-observability.md).
 
 **Proof.**
 
-*Interval.* Both sides arise from the same interleave, so both have
-\\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\).
+*Interval.* Both sides arise from the same interleave, so both have \\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\).
 
 *Auxiliary step.* From i·∆<sub>a</sub> = k·∆<sub>b</sub> it follows that
 
@@ -398,29 +361,11 @@ observability](operator-tails-and-observability.md).
 =L\in\mathbb{N},
 \\]
 
-and symmetrically \\(k\Delta_b/\Delta_c=L\\). Shifting each argument by its own
-number of slots therefore corresponds to **the same** number \\(L\\) of result
-slots.
+and symmetrically \\(k\Delta_b/\Delta_c=L\\). Shifting each argument by its own number of slots therefore corresponds to **the same** number \\(L\\) of result slots.
 
-*Record sequence and logical origin.* Within one period the interleave takes
-\\(i\\) records from A and \\(k\\) records from B, filling exactly \\(L=i+k\\)
-slots of C. Shifting A by \\(i\\) and B by \\(k\\) therefore moves the mapping
-threshold of both components by exactly \\(L\\) result slots without changing
-their relative phase: \\(O_{\mathrm{LHS}}=O_{\varphi(A,B)}+L=O_{\mathrm{RHS}}\\).
-The content of a record at a given logical index is the same on both sides,
-because the choice of component depends only on phase, which is unchanged.
+*Record sequence and logical origin.* Within one period the interleave takes \\(i\\) records from A and \\(k\\) records from B, filling exactly \\(L=i+k\\) slots of C. Shifting A by \\(i\\) and B by \\(k\\) therefore moves the mapping threshold of both components by exactly \\(L\\) result slots without changing their relative phase: \\(O_{\mathrm{LHS}}=O_{\varphi(A,B)}+L=O_{\mathrm{RHS}}\\). The content of a record at a given logical index is the same on both sides, because the choice of component depends only on phase, which is unchanged.
 
-*Tails.* Let \\(s(n)\in\\{A,B\\}\\) denote the component selected in phase
-\\(n\\), and \\(j(n)\\) its index. Write the shifts as
-\\(t_A=i\\) and \\(t_B=k\\). After shifting, the component tail is
-\\(W_s^{\prime}=\max(0,W_s-t_s)\ge W_s-t_s\\). The intervals and the choice of
-component and its index in each interleave phase remain unchanged. Let
-\\(R_n\\) be the availability requirement from the phase formula above
-for tails \\(W_A,W_B\\), and \\(R_n^{\prime}\\) the requirement for
-\\(W_A^{\prime},W_B^{\prime}\\). The auxiliary step gives
-\\(t_s\Delta_s/\Delta_c=L\in\mathbb{N}\\) for both components.
-Monotonicity of the ceiling and its compatibility with shifts by the
-integer \\(L\\) give, in every phase:
+*Tails.* Let \\(s(n)\in\\{A,B\\}\\) denote the component selected in phase \\(n\\), and \\(j(n)\\) its index. Write the shifts as \\(t_A=i\\) and \\(t_B=k\\). After shifting, the component tail is \\(W_s^{\prime}=\max(0,W_s-t_s)\ge W_s-t_s\\). The intervals and the choice of component and its index in each interleave phase remain unchanged. Let \\(R_n\\) be the availability requirement from the phase formula above for tails \\(W_A,W_B\\), and \\(R_n^{\prime}\\) the requirement for \\(W_A^{\prime},W_B^{\prime}\\). The auxiliary step gives \\(t_s\Delta_s/\Delta_c=L\in\mathbb{N}\\) for both components. Monotonicity of the ceiling and its compatibility with shifts by the integer \\(L\\) give, in every phase:
 
 \\[
 \begin{aligned}
@@ -435,9 +380,7 @@ R_n^{\prime}
 \end{aligned}
 \\]
 
-We take the maximum over the same full period \\(p+q\\), since the shifts
-do not change the interval ratio. Using nonnegativity of tails as well,
-we obtain:
+We take the maximum over the same full period \\(p+q\\), since the shifts do not change the interval ratio. Using nonnegativity of tails as well, we obtain:
 
 \\[
 W_{\mathrm{LHS}}
@@ -446,37 +389,17 @@ W_{\mathrm{LHS}}
 =W_{\mathrm{RHS}}.
 \\]
 
-Above the scan limit, the engine uses the \\(O(1)\\) fallback bound
-described earlier. For that bound, the same inequality follows from
-monotonicity of both \\(\operatorname{conv}\\) terms: a matched shift reduces
-each by at most \\(L\\), while the \\(H_{a,b}\\) term remains unchanged.
-Both sides use the same calculation variant because their intervals do not
-change. The fallback bound need not equal the exact phase maximum. ∎
+Above the scan limit, the engine uses the \\(O(1)\\) fallback bound described earlier. For that bound, the same inequality follows from monotonicity of both \\(\operatorname{conv}\\) terms: a matched shift reduces each by at most \\(L\\), while the \\(H_{a,b}\\) term remains unchanged. Both sides use the same calculation variant because their intervals do not change. The fallback bound need not equal the exact phase maximum. ∎
 
 > **⚠️ Scope of the theorem**
 >
-> Equality of tails **does not hold**. Counterexample: \\(\Delta_a=1/10\\),
-> \\(\Delta_b=1/5\\), \\(W_A=W_B=0\\), \\(H_{a,b}=2\\), \\(i=2\\), \\(k=1\\),
-> \\(L=3\\). Then \\(W_{\mathrm{LHS}}=2\\) while
-> \\(W_{\mathrm{RHS}}=\max(0,2-3)=0\\). The unfactored side reads its components
-> **after** their own shift, so it waits longer for the same content; the
-> factored side reads it directly from the interleave.
+> Equality of tails **does not hold**. Counterexample: \\(\Delta_a=1/10\\), \\(\Delta_b=1/5\\), \\(W_A=W_B=0\\), \\(H_{a,b}=2\\), \\(i=2\\), \\(k=1\\), \\(L=3\\). Then \\(W_{\mathrm{LHS}}=2\\) while \\(W_{\mathrm{RHS}}=\max(0,2-3)=0\\). The unfactored side reads its components **after** their own shift, so it waits longer for the same content; the factored side reads it directly from the interleave.
 >
-> Practical consequence: the rewrite rule
-> \\(\varphi(\tau_i(A),\tau_k(B))\to\tau_{i+k}(\varphi(A,B))\\) is a **latency
-> optimization**, not a neutral rewrite. It preserves the entire value part of
-> the observation and never emits a record before its dependencies are
-> determined, but the result is ready sooner.
+> Practical consequence: the rewrite rule \\(\varphi(\tau_i(A),\tau_k(B))\to\tau_{i+k}(\varphi(A,B))\\) is a **latency optimization**, not a neutral rewrite. It preserves the entire value part of the observation and never emits a record before its dependencies are determined, but the result is ready sooner.
 >
-> Previously both sides had the same tail solely because the realization
-> of \\(\tau_m\\) overestimated its own tail by \\(\min(W_S,m)\\). The
-> overestimate was removed by addressing the producer with a logical index
-> instead of a relative offset. Regressions guarding this scope:
-> `it_r1_identity_nulls`,
-> `it_optimizer_ablation-factor-name-collision-semantic`.
+> Previously both sides had the same tail solely because the realization of \\(\tau_m\\) overestimated its own tail by \\(\min(W_S,m)\\). The overestimate was removed by addressing the producer with a logical index instead of a relative offset. Regressions guarding this scope: `it_r1_identity_nulls`, `it_optimizer_ablation-factor-name-collision-semantic`.
 
-In the compiler, additional invariants preserve public stream field names, null
-value maps, and the materialization policy.
+In the compiler, additional invariants preserve public stream field names, null value maps, and the materialization policy.
 
 ## Why this matters
 

@@ -55,8 +55,7 @@ A generator-index expression is integral and may contain literals, `$`, parenthe
 
 Expansion is the compiler's first pass. Afterwards the plan is identical to one containing hand-written `cell$0`...`cell$3` streams; runtime has no separate generator mechanism.
 
-A generator may cover successive stages of the same pipeline. This lets one computation
-be written once and applied independently to every input channel:
+A generator may cover successive stages of the same pipeline. This lets one computation be written once and applied independently to every input channel:
 
 ```rql
 DECLARE sample INTEGER[8] STREAM samples, 1/1000 FILE 'samples.txt'
@@ -65,15 +64,9 @@ SELECT sample[$]^2 STREAM square[8] FROM samples
 SELECT *           STREAM energy[8] FROM SUMC(square[$]@(25,100))
 ```
 
-This creates eight pairs of `square$N` and `energy$N` streams, one per channel. The `$`
-symbol selects a family-instance ordinal while the template is expanded. Do not confuse
-it with `[_]`, which replicates a field expression within one query according to the
-flattened input schema.
+This creates eight pairs of `square$N` and `energy$N` streams, one per channel. The `$` symbol selects a family-instance ordinal while the template is expanded. Do not confuse it with `[_]`, which replicates a field expression within one query according to the flattened input schema.
 
-> **_NOTE:_** Generator syntax, including `[$]`, is checked by the `stream_generator`
-> integration test and by `ut_compiler` cases in `test/UnitTest/test_compiler.cpp`.
-> Record-window aggregates are checked by `window_aggregate`. Integration tests are
-> described in [Integration Tests](../../appendices/integration-tests.md).
+> **_NOTE:_** Generator syntax, including `[$]`, is checked by the `stream_generator` integration test and by `ut_compiler` cases in `test/UnitTest/test_compiler.cpp`. Record-window aggregates are checked by `window_aggregate`. Integration tests are described in [Integration Tests](../../appendices/integration-tests.md).
 
 The VOLATILE clause creates an ephemeral form of the query. Its data remains in an in-memory buffer whose capacity the compiler sets to meet the plan's needs; only the descriptor describing the data structure appears on disk.
 
@@ -93,10 +86,7 @@ The stream algebraic expression in the `FROM` clause can include:
 | AGSE window | `A @ (k, w)` | Builds a sliding data window - see [AGSE Sliding Data Window](../../query-execution/agse-sliding-window/) |
 | Reduction | `MIN(A)` / `MAX(A)` / `AVG(A)` / `SUMC(A)` | Reduces a multi-field record to one value - see [Aggregate Operators](aggregate-operators.md) |
 
-`MIN`/`MAX`/`AVG`/`SUMC(expression : W)` aggregates occur in the `SELECT` list rather than
-the `FROM` stream expression. They reduce W historical records and may be operands in a
-larger field expression, for example `2*MIN(a : 5)+1`. See
-[Aggregate Operators](aggregate-operators.md) for both aggregation axes.
+`MIN`/`MAX`/`AVG`/`SUMC(expression : W)` aggregates occur in the `SELECT` list rather than the `FROM` stream expression. They reduce W historical records and may be operands in a larger field expression, for example `2*MIN(a : 5)+1`. See [Aggregate Operators](aggregate-operators.md) for both aggregation axes.
 
 ### Precedence and associativity
 
@@ -115,10 +105,7 @@ Whitespace around `#` does not affect its meaning: `A # B` and `A#B` are the sam
 
 ## Field expressions
 
-The `SELECT` list and `RULE` conditions use scalar expressions containing field references,
-arithmetic operators, NULL values, and functions. The complete syntax, precedence, function
-list, and conversion rules are documented in
-[Field Expressions and Scalar Functions](field-expressions-and-scalar-functions.md).
+The `SELECT` list and `RULE` conditions use scalar expressions containing field references, arithmetic operators, NULL values, and functions. The complete syntax, precedence, function list, and conversion rules are documented in [Field Expressions and Scalar Functions](field-expressions-and-scalar-functions.md).
 
 ### Exponentiation
 
@@ -140,5 +127,4 @@ For integer and rational types, a non-negative integral power has exactly the se
 
 > **_NOTE:_** Null-value propagation through SELECT expressions is covered by the test: `issue121_null_propagation`, described in the appendix [Integration Tests](../../appendices/integration-tests.md).
 
-`DEFAULT VOLATILE` sets default volatility for the plan. `PERSISTENT` overrides
-it for one result. See [VOLATILE and PERSISTENT](volatile-clause.md).
+`DEFAULT VOLATILE` sets default volatility for the plan. `PERSISTENT` overrides it for one result. See [VOLATILE and PERSISTENT](volatile-clause.md).

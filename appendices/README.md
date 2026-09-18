@@ -6,18 +6,11 @@ The appendices contain documents not directly related to the system's constructi
 
 - **[Production Builds and Diagnostic Variants](production-builds-and-research-variants.md)**
 
-  A description of the production `release` safety contract and the isolated
-  `release-ablation` and `probe` modes. The chapter covers source-tree
-  cleanliness checks, explicit optimizer-switch values, separate CMake and Conan
-  directories, verification of the resulting binary configuration, and the
-  value-equivalence invariant across variants.
+  A description of the production `release` safety contract and the isolated `release-ablation` and `probe` modes. The chapter covers source-tree cleanliness checks, explicit optimizer-switch values, separate CMake and Conan directories, verification of the resulting binary configuration, and the value-equivalence invariant across variants.
 
 - **[Stream Monitoring API](stream-monitoring-api.md)**
 
-  A versioned JSON Lines contract and optional Python and C++ libraries for observing
-  streams from an explicitly named instance. This chapter describes type mappings,
-  subscription lifecycle, timeouts, bounded buffers, error handling, and the separate
-  targets used to build, install, and test the API.
+  A versioned JSON Lines contract and optional Python and C++ libraries for observing streams from an explicitly named instance. This chapter describes type mappings, subscription lifecycle, timeouts, bounded buffers, error handling, and the separate targets used to build, install, and test the API.
 
 - **[System Origin](system-origin/README.md)**
 
@@ -49,11 +42,7 @@ The appendices contain documents not directly related to the system's constructi
 
   A catalog of all the system's integration tests, with a description of the functionality each one verifies. Integration tests run the actual binaries (`xretractor`, `xqry`, `xtrdb`) and compare their results against patterns - unlike GTest unit tests, which test isolated library classes.
 
-  Scenarios live in the shared **`test/IntegrationTest`** tree. Tests that start a server
-  receive one of sixteen `RDB_NAMESPACE` namespaces and a CTest resource lock for their
-  directory, so most can run concurrently without stream-name, IPC, or working-file
-  collisions. Only scenarios that examine the production global identity remain
-  `RUN_SERIAL`.
+  Scenarios live in the shared **`test/IntegrationTest`** tree. Tests that start a server receive one of sixteen `RDB_NAMESPACE` namespaces and a CTest resource lock for their directory, so most can run concurrently without stream-name, IPC, or working-file collisions. Only scenarios that examine the production global identity remain `RUN_SERIAL`.
 
   Running them: `ninja test` or `ctest -R <name> -V` in the `build/Debug/` directory.
 

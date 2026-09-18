@@ -7,8 +7,7 @@ Four configuration directives are available:
 * ROTATION
 * DEFAULT VOLATILE
 
-`STORAGE`, `SUBSTRAT`, and `ROTATION` take a text argument in single quotes.
-`DEFAULT VOLATILE` takes no string. Example directives with arguments:
+`STORAGE`, `SUBSTRAT`, and `ROTATION` take a text argument in single quotes. `DEFAULT VOLATILE` takes no string. Example directives with arguments:
 
 ```rql
 STORAGE 'temp_folder'
@@ -38,9 +37,4 @@ The last directive - Rotation - indicates an alternative shutdown mode for the s
 DEFAULT VOLATILE
 ```
 
-This directive (the `default_statement` rule) selects default in-memory storage
-for both named `SELECT` results and compiler-generated substrates. It may appear
-once in the header, before `DECLARE`, `SELECT`, and `RULE`. Explicit `SUBSTRAT`
-takes precedence for substrates; `PERSISTENT` or explicit `STORAGE` on a `SELECT`
-overrides the default for its result. `DECLARE` sources remain unchanged.
-For examples and the complete rules, see [VOLATILE and PERSISTENT](select-command/volatile-clause.md).
+This directive (the `default_statement` rule) selects default in-memory storage for both named `SELECT` results and compiler-generated substrates. It may appear once in the header, before `DECLARE`, `SELECT`, and `RULE`. Explicit `SUBSTRAT` takes precedence for substrates; `PERSISTENT` or explicit `STORAGE` on a `SELECT` overrides the default for its result. `DECLARE` sources remain unchanged. For examples and the complete rules, see [VOLATILE and PERSISTENT](select-command/volatile-clause.md).

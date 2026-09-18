@@ -2,20 +2,11 @@
 
 Integration tests verify the system's behavior as a whole - they run the actual binaries (`xretractor`, `xqry`, `xtrdb`) and compare their output against patterns, or check specific properties of the output files. This differs from unit tests, which use the GTest framework to test isolated classes and functions of the `rdb` and `retractor` libraries (e.g. `payload`, `descriptor`, `crsMath`, `compiler`), don't require a running server, and don't produce artifacts on disk. Integration tests are run with the command `ninja test` (or `ctest`) in the `build/Debug/` directory; a single test can be run with `ctest -R <name> -V`.
 
-All scenarios live in one `test/IntegrationTest` directory. CMake assigns most directories
-one of sixteen `RDB_NAMESPACE` namespaces and its corresponding resource lock. This
-separates the bus, instance name, IPC objects, and log file without changing queries or
-patterns. Tests within one directory remain mutually exclusive, but different directories
-can run servers concurrently. Only scenarios that examine the production global identity
-or cooperation between several servers retain `RUN_SERIAL`.
+All scenarios live in one `test/IntegrationTest` directory. CMake assigns most directories one of sixteen `RDB_NAMESPACE` namespaces and its corresponding resource lock. This separates the bus, instance name, IPC objects, and log file without changing queries or patterns. Tests within one directory remain mutually exclusive, but different directories can run servers concurrently. Only scenarios that examine the production global identity or cooperation between several servers retain `RUN_SERIAL`.
 
 The tables below describe the **intent** of each scenario. They are not an executable inventory: one directory usually registers several `ctest` entries (`-run`, `-compile`, `-vg`, and named variants), and the list grows with every release. The current state is returned by `ctest -N` in the `build/Debug` directory.
 
-After the directory merge, all integration tests use the `it_` prefix; the former `pt_`
-prefix no longer denotes a separate class. Script tests use `st_`, while API tests also
-carry the `api` label and are skipped by `ninja test` by default. Two top-level guards -
-`harness_guard-selftest` and `harness_command_integrity` - verify that a wrapper actually
-ran the command under test and did not mask its exit status.
+After the directory merge, all integration tests use the `it_` prefix; the former `pt_` prefix no longer denotes a separate class. Script tests use `st_`, while API tests also carry the `api` label and are skipped by `ninja test` by default. Two top-level guards - `harness_guard-selftest` and `harness_command_integrity` - verify that a wrapper actually ran the command under test and did not mask its exit status.
 
 ## Execution and service scenarios
 
@@ -109,9 +100,7 @@ ran the command under test and did not mask its exit status.
 
 ## Compilation and offline scenarios
 
-The following directories primarily register compilation variants, plan presentation,
-or artifact operations. Some also occur in the execution table because one
-`CMakeLists.txt` can register several independent CTest entries.
+The following directories primarily register compilation variants, plan presentation, or artifact operations. Some also occur in the execution table because one `CMakeLists.txt` can register several independent CTest entries.
 
 | Test name | Description |
 |:--------|:----------------------------|

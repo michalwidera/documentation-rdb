@@ -75,14 +75,9 @@ xretractor diagnostics.rql --name diagnostics --noanykey &
 xqry --bus
 ```
 
-Each receives its own lock and IPC objects. The shared bus nevertheless rejects a plan
-that collides with a live instance by stream name, written storage file, or `:ROTATION`
-counter file. The check happens before artifacts are removed. Omitting `--name` preserves
-the historical unnamed instance.
+Each receives its own lock and IPC objects. The shared bus nevertheless rejects a plan that collides with a live instance by stream name, written storage file, or `:ROTATION` counter file. The check happens before artifacts are removed. Omitting `--name` preserves the historical unnamed instance.
 
-Service mode provides a separate guarantee: exactly one service instance may run in each
-`RDB_NAMESPACE`; in the default namespace it is named `service`. See
-[Multiple Instances and the Bus](../../data-processing-system-architecture/multiple-instances-and-bus.md).
+Service mode provides a separate guarantee: exactly one service instance may run in each `RDB_NAMESPACE`; in the default namespace it is named `service`. See [Multiple Instances and the Bus](../../data-processing-system-architecture/multiple-instances-and-bus.md).
 
 ### Clock-free batch processing
 
@@ -92,22 +87,13 @@ The simplest run over a complete input file without manually selecting an iterat
 xretractor query.rql --no-clock --until-eof --noanykey --quiet
 ```
 
-`--no-clock` removes sleeps only. It does not change slot order or artifact content, making
-it suitable for fast verification after completion. It can outrun an `xqry` client, however,
-so it is not intended for live observation.
+`--no-clock` removes sleeps only. It does not change slot order or artifact content, making it suitable for fast verification after completion. It can outrun an `xqry` client, however, so it is not intended for live observation.
 
-`--until-eof` prevents a sequential source from returning to the start of its file. EOF is
-checked after a slot has been processed, exactly before the first record that would otherwise
-have to use synthetic NULL beyond the input. With several sources, the first exhausted one
-stops the run so the plan does not continue with a missing input. It may be combined with
-`-m N`; whichever condition occurs first wins.
+`--until-eof` prevents a sequential source from returning to the start of its file. EOF is checked after a slot has been processed, exactly before the first record that would otherwise have to use synthetic NULL beyond the input. With several sources, the first exhausted one stops the run so the plan does not continue with a missing input. It may be combined with `-m N`; whichever condition occurs first wins.
 
-> **⚠️ Warning** Short options depend on the mode. During execution, `-f` means
-> `--no-clock` and `-u` means `--until-eof`. With `-c`, the same letters mean `--fields`
-> and `--rules`, respectively, and do not start processing.
+> **⚠️ Warning** Short options depend on the mode. During execution, `-f` means `--no-clock` and `-u` means `--until-eof`. With `-c`, the same letters mean `--fields` and `--rules`, respectively, and do not start processing.
 
-> **_NOTE:_** `noclock_offline` verifies equivalence between paced and offline execution;
-> `untileof_stop` verifies first-EOF termination and the non-wrapping control.
+> **_NOTE:_** `noclock_offline` verifies equivalence between paced and offline execution; `untileof_stop` verifies first-EOF termination and the non-wrapping control.
 
 ---
 
@@ -211,23 +197,15 @@ autoname = false
 
 ## Service and plan replacement
 
-Starting without an `.rql` file, or with an empty one, creates an idle instance with
-working IPC. The first or a later complete plan can be loaded without restarting:
+Starting without an `.rql` file, or with an empty one, creates an idle instance with working IPC. The first or a later complete plan can be loaded without restarting:
 
 ```bash
 xqry --server service --reset plan.rql
 ```
 
-The server parses and compiles the complete contents, checks resource collisions,
-reserves the new set, and then switches plans at a slot boundary. Rejection leaves the
-old plan unchanged. An empty reset file returns the server to idle. On a service instance,
-accepted contents are also written to the service's startup file.
+The server parses and compiles the complete contents, checks resource collisions, reserves the new set, and then switches plans at a slot boundary. Rejection leaves the old plan unchanged. An empty reset file returns the server to idle. On a service instance, accepted contents are also written to the service's startup file.
 
-The alternative `xretractor new-plan.rql` path detects a running systemd unit, validates
-the set, atomically overwrites its startup file, and requests a restart. Explicitly
-selecting another identity with `--name` or `--autoname` starts a separate instance
-instead. After a critical error, the service plan is cleared so systemd restarts the
-process safely in idle state.
+The alternative `xretractor new-plan.rql` path detects a running systemd unit, validates the set, atomically overwrites its startup file, and requests a restart. Explicitly selecting another identity with `--name` or `--autoname` starts a separate instance instead. After a critical error, the service plan is cleared so systemd restarts the process safely in idle state.
 
 ---
 
