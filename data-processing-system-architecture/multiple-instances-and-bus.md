@@ -22,13 +22,17 @@ An explicit `--name` takes precedence over configuration. A name must match `[a-
 
 Omitting the name preserves the historical identity: IPC object names and the lock file have no suffix. This instance is also published on the bus, as `(unnamed)`, and takes part in collision checks.
 
-The `RDB_NAMESPACE` environment variable creates a separate namespace for instances, the bus, and IPC. If neither `--name` nor `--autoname` is given, it also becomes the default server name and `xqry` target. It is used primarily by parallel integration tests. Explicit `--name`, `--autoname`, and `--server` options still take precedence. The one-service limit is also enforced separately in each namespace.
+The `RDB_NAMESPACE` environment variable selects a separate bus segment and, when neither `--name` nor `--autoname` is given, becomes the default server name and `xqry` target. It is used primarily by parallel integration tests. Explicit `--name`, `--autoname`, and `--server` options still take precedence. The one-service limit is enforced separately in each bus namespace. Different `RDB_NAMESPACE` values with the same explicit server name do not separate IPC objects: their names follow the selected instance identity.
+
+Before startup, an instance acquires its file lock in `paths.lock_dir` (the temporary directory by default) and an additional IPC identity lock at `/tmp/xretractor_ipc.<command-queue-name>.lock`. The latter location is fixed, independently of `TMPDIR` and `paths.lock_dir`. A held IPC identity blocks startup before artifacts are removed or IPC is created, even if the bus is unavailable. Changing the lock directory or bus namespace does not allow taking over a live server's objects.
 
 ## Private and shared resources
 
-Named instances have separate Boost.Interprocess objects. The base names of the command queue, response segment, and mutex receive the instance suffix; a subscriber queue also contains the client PID. Stopping one instance removes only its IPC and terminates only its subscriptions.
+Named instances have separate Boost.Interprocess objects. The base names of the command queue, response segment, and mutex receive the instance suffix; a subscriber queue also contains the client PID. Stopping an instance ends only its subscriptions and removes its IPC; it may also clean up resources abandoned by dead processes. Live instances remain protected.
 
 The bus is shared by the host or `RDB_NAMESPACE`. Every live server publishes its name, PID, operating modes, plan file, and stream names. A slot is considered live only when both the PID and process start time match `/proc`; a zombie process does not retain resources.
+
+The current layout uses the `xrdbbus_v6` segment, or `xrdbbus_v6_<RDB_NAMESPACE>` in a test namespace. Segment users hold a presence lock through `flock`; the last one leaving can remove the unused segment. Layout versions have separate registries: concurrently running binaries using v5 and v6 does not provide collision checks between their streams and storage paths. Stop older instances before upgrading.
 
 Before starting or replacing a plan, the bus checks that the following do not overlap:
 
@@ -42,7 +46,7 @@ For `xqry --reset`, the new plan's resources are reserved first. Only after the 
 
 > **⚠️ Warning**
 >
-> An unavailable or corrupted bus does not stop an individual server. Startup is allowed with a warning, but global collision protection is then not enforced. This is an emergency mode, not a valid multi-server configuration.
+> An unavailable or corrupted bus does not stop an individual server if it can acquire its instance and IPC identity locks. Startup is allowed with a warning, but global stream-name and storage-path protection is then not enforced. The IPC identity lock still applies. This is an emergency mode, not a valid multi-server configuration.
 
 ## Routing `xqry` commands
 

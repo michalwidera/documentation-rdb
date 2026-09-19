@@ -42,8 +42,12 @@ The appendices contain documents not directly related to the system's constructi
 
   A catalog of all the system's integration tests, with a description of the functionality each one verifies. Integration tests run the actual binaries (`xretractor`, `xqry`, `xtrdb`) and compare their results against patterns - unlike GTest unit tests, which test isolated library classes.
 
-  Scenarios live in the shared **`test/IntegrationTest`** tree. Tests that start a server receive one of sixteen `RDB_NAMESPACE` namespaces and a CTest resource lock for their directory, so most can run concurrently without stream-name, IPC, or working-file collisions. Only scenarios that examine the production global identity remain `RUN_SERIAL`.
+  Scenarios live in the shared **`test/IntegrationTest`** tree. Tests that start a server receive one of sixteen `RDB_NAMESPACE` namespaces and a CTest resource lock for their directory, so most can run concurrently without stream-name, IPC, or working-file collisions. Scenarios examining global identity, cooperation between multiple servers, or leftover cleanup may require `RUN_SERIAL`.
 
   Running them: `ninja test` or `ctest -R <name> -V` in the `build/Debug/` directory.
+
+- **[Installation Process](installation-process.md)**
+
+  Installing a Linux release through `curl` or apt, upgrades and removal, building from source, and configuration checks. A separate section covers Apple solely as a development environment.
 
 </div>

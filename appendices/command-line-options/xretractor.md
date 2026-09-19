@@ -30,6 +30,7 @@ Available options:
   -q [ --queryfile ] arg      query set file
   -r [ --quiet ]              no output on screen, skip presenter
   -s [ --status ]             check service status
+  --cleanup                   remove leftovers of dead instances and exit
   -v [ --verbose ]            verbose mode (show stream params)
   -x [ --xqrywait ]           wait with processing for first query
   -n [ --name ] arg           instance name; own IPC area and lock
@@ -53,6 +54,7 @@ Available options:
 | `queryfile` | The name of the query file to compile and run. |
 | `quiet` | Skips displaying results on screen. Processing runs normally, but the result presenter isn't started. |
 | `status` | Checks the instance lock selected by `--name`, `RDB_NAMESPACE`, or the historical empty name. `Running` means another process holds the same identity. |
+| `cleanup` | Removes recognized leftovers of dead instances and exits without starting a plan. Live owners remain protected; scope and limitations are described below. |
 | `verbose` | An increased-verbosity mode - shows stream parameters. A leftover from the development phase; likely to be kept. |
 | `xqrywait` | Compiles the queries and holds off the processing loop until the first query arrives from an `xqry` process. Required when using `-m N` at the same time in scripts and tests: without this flag, the server may process all N cycles before the client manages to connect, resulting in no data and `xqry` waiting until it times out. The first command received from `xqry` (e.g. `-d` or `-s`) unblocks the processing loop. |
 | `name arg` | Gives the instance a stable name. The name selects a separate lock file and IPC area and lets commands be routed through `xqry --server`. It may contain at most 32 lowercase letters, digits, `_`, and `-`, and its first character must be a letter. |
@@ -78,6 +80,30 @@ xqry --bus
 Each receives its own lock and IPC objects. The shared bus nevertheless rejects a plan that collides with a live instance by stream name, written storage file, or `:ROTATION` counter file. The check happens before artifacts are removed. Omitting `--name` preserves the historical unnamed instance.
 
 Service mode provides a separate guarantee: exactly one service instance may run in each `RDB_NAMESPACE`; in the default namespace it is named `service`. See [Multiple Instances and the Bus](../../data-processing-system-architecture/multiple-instances-and-bus.md).
+
+### Cleaning up leftovers
+
+```bash
+xretractor --cleanup
+```
+
+The command does not start a plan. It attempts to acquire locks on recognized resources and removes only those without a live owner holding the lock. The same mechanism runs when an instance exits.
+
+| Scope | Action |
+| --- | --- |
+| Instance lock files | Scans `paths.lock_dir` selected by configuration, defaulting to the process's temporary directory. |
+| IPC identities | Scans the shared `/tmp`; removes an abandoned lock and its command queue, response segment, and map mutex. |
+| Bus | Removes unused segments of the current `xrdbbus_v6` layout protected by presence locks. |
+
+The scope is not restricted to an instance selected with `--name` or a single `RDB_NAMESPACE`. Filesystem permissions still control access to resources. The command does not enumerate or remove client response queues; it also leaves v5 and older segments untouched because they do not participate in the presence-lock protocol.
+
+The output counts removed instance locks, IPC identity sets, and segments, for example:
+
+```text
+Removed leftovers of dead instances: 1 instance lock(s), 1 IPC identity set(s), 1 bus segment(s).
+```
+
+The IPC-set count is not a count of individual queues. Completion does not establish that resources outside the command's scope were removed. For a custom lock directory, select the appropriate TOML using `--config`.
 
 ### Clock-free batch processing
 
@@ -166,7 +192,7 @@ The absence of any file is a **valid state** - the program starts with default v
 | `timing.server_startup_poll_ms` | `100` | Polling interval while waiting for the server to start. |
 | `timing.query_no_data_timeout_ms` | `10000` | No-data timeout after which the `xqry` client considers the server dead. |
 | `scheduling.rt_priority` | `50` | `SCHED_FIFO` priority in `--realtime` mode; allowed range 1–99. |
-| `paths.lock_dir` | _(system temp directory)_ | Directory for instance lock files. For systemd services, `/var/run/retractor` or `$XDG_RUNTIME_DIR` is recommended. The path must be absolute. |
+| `paths.lock_dir` | _(system temp directory)_ | Directory for instance lock files. For systemd services, `/var/run/retractor` or `$XDG_RUNTIME_DIR` is recommended. The path must be absolute. It does not change the fixed `/tmp` directory for IPC identity locks. |
 | `server.autoname` | `false` | Generates a name when neither `--name` nor `--autoname` was given. An explicit `--name` wins. `false` preserves the historical unnamed instance. |
 | `service.query_file` | _(value from the build configuration)_ | The query file overwritten when a set is handed to a running service. Used only as a fallback, when the service did not report its own `QUERYFILE` in the lock file. It must match the `ExecStart` argument of the systemd unit - configuration does not change `ExecStart`. |
 

@@ -170,6 +170,8 @@ Mutating commands, `--bus`, YAML, other output formats, `--null`, and `--wait-se
 
 `--wait-server` polls IPC availability according to `timing.server_startup_wait_s` and `timing.server_startup_poll_ms`. With an explicit name, it waits for that instance. Without a name it repeats routing: historically it waits for an unnamed instance, but after one named instance appears, it selects that instance automatically. Ambiguity with several servers is reported immediately. `--bus` needs no server and ignores waiting.
 
+Readiness requires openable IPC objects and a live instance on the bus. If the bus is unavailable, the held IPC identity lock is checked instead. Objects left behind after a crash alone do not mean the server is ready.
+
 Typical test pattern:
 
 ```bash

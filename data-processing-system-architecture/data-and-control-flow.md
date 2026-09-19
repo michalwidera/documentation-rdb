@@ -58,7 +58,9 @@ Every xqry subscription has its own queue containing the server name and client 
 
 **6. IPC resource cleanup**
 
-Finally, xretractor removes its response segment, command queue, mutex, and client queues, then releases its lock file and bus slot. Other instances' resources remain untouched.
+Finally, xretractor removes its response segment, command queue, mutex, and client queues, and releases its bus slot and locks. The owner removes lock files before releasing their locks. Additional cleanup at exit removes accessible resources abandoned by dead instances; live processes remain untouched. The last user of a bus segment can remove it after acquiring the exclusive presence lock.
+
+After `SIGKILL`, exit handlers do not run and resources may remain. `xretractor --cleanup` removes recognized leftovers without starting a plan. Its scope, limitations, and counters are described in the [xretractor options](../appendices/command-line-options/xretractor.md#cleaning-up-leftovers). It does not remove client response queues or older bus-layout segments.
 
 ### Fatal errors and emergency cleanup
 

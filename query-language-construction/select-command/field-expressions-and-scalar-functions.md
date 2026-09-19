@@ -46,7 +46,7 @@ Every function takes one expression argument. The only exception is the optional
 
 ### Conversions
 
-`to_integer`, `to_float`, and `to_double` convert a numeric or textual value to the named type. NULL passes through unchanged. `to_integer` truncates toward zero rather than flooring: `to_integer(-8/3)` yields `-2`.
+`to_integer`, `to_float`, and `to_double` convert a numeric or textual value to the named type. NULL passes through unchanged. `to_integer` truncates toward zero rather than flooring: `to_integer(-8/3)` yields `-2`. A floating-point value that `INTEGER` cannot hold - NaN and infinity included - yields `NULL`, exactly like arithmetic overflow. The same rule covers mathematical functions over an integer field whose result returns to the argument type: `Sqrt(-4)` and `log(0)` over an `INTEGER` field yield `NULL`. The range is checked after truncating the fractional part: for a `DOUBLE` argument, the value `2147483647.5` yields `2147483647`, whereas `2147483648.0` yields `NULL`.
 
 `to_string` creates a text field. Without a second part its width is 32 bytes; `to_string(x : N)` declares N bytes. The separator is a colon because a comma separates fields in the `SELECT` list:
 
