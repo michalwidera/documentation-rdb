@@ -113,7 +113,7 @@ Turns references to fields from source schemas into flat indices in the output s
 
 #### resolveWindowAggregates
 
-Extracts the argument program of each `MIN`/`MAX`/`AVG`/`SUMC(expression : W)` in the `SELECT` list into `query::windowGroups`. It validates positive width, numeric type, one history source, at least one field read, and the bans on nesting and `RULE` use. Identical source–expression–width triples share a group and one history scan. The aggregate token becomes a zero-argument operand that points to the computed group result.
+Extracts the argument program of each window aggregate - `MIN`, `MAX`, `AVG` or `SUMC(expression : W)` - in the `SELECT` list into `query::windowGroups`. It validates positive width, numeric type, one history source, at least one field read, and the bans on nesting and `RULE` use. Identical source–expression–width triples share a group and one history scan. The aggregate token becomes a zero-argument operand that points to the computed group result.
 
 #### inferFieldShapes
 

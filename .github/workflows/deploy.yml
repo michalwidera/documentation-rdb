@@ -96,7 +96,8 @@ jobs:
           \tcbuselibrary{breakable}
           \usepackage{mdframed}
           \usepackage{fvextra}
-          \RecustomVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\},breaklines=true,breakanywhere=true}
+          \RecustomVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\},breaklines=true,breakanywhere=true,breaknonspaceingroup=true}
+          \AtBeginDocument{\RecustomVerbatimEnvironment{verbatim}{Verbatim}{breaklines=true,breakanywhere=true}}
           \captionsetup{labelformat=empty,labelsep=none}
           \newtcolorbox{calloutNote}{breakable,colback=green!8,colframe=green!45!black,fonttitle=\bfseries,title={Note}}
           \newtcolorbox{calloutInfo}{breakable,colback=cyan!6,colframe=cyan!55!black,fonttitle=\bfseries,title={Info}}
@@ -181,13 +182,15 @@ jobs:
 
           cat > /tmp/table_breaks.lua << 'TABLELUAEOF'
           local function break_long_code(el)
-            if not el.text:match('[._]') then return nil end
+            if not el.text:match('[._/:]') then return nil end
 
             local result = pandoc.List()
             local start = 1
             for i = 1, #el.text do
               local char = el.text:sub(i, i)
-              if char == '.' or char == '_' then
+              local next_char = el.text:sub(i + 1, i + 1)
+              if (char == '.' or char == '_' or char == '/' or char == ':')
+                  and next_char ~= ':' then
                 result:insert(pandoc.Code(el.text:sub(start, i), el.attr))
                 result:insert(pandoc.RawInline('latex', '\\allowbreak{}'))
                 start = i + 1
@@ -217,6 +220,8 @@ jobs:
             elseif #element.colspecs == 2 and first_heading == "Option"
                 and pandoc.utils.stringify(element):find("xqrywait", 1, true) then
               widths = {0.25, 0.75}
+            elseif #element.colspecs == 2 and first_heading == "Area" then
+              widths = {0.23, 0.77}
             else
               return
             end
@@ -239,10 +244,15 @@ jobs:
             end
           end
 
+          function Code(element)
+            if not FORMAT:match('latex') then return nil end
+            return break_long_code(element)
+          end
+
           function Table(element)
             if not FORMAT:match('latex') then return nil end
             customize_table_layout(element)
-            return element:walk({ Code = break_long_code })
+            return element
           end
           TABLELUAEOF
 

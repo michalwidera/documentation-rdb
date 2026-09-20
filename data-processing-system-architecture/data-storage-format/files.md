@@ -432,7 +432,7 @@ _Fig. 19. Persistence and state recovery after a restart_
 ### Query interface
 
 | Method | Description  |
-| ----   | ------------ |
+| -------- | ----------------- |
 | `getNullBitset(i)` | Returns the null pattern for record `i`. Virtual: in the `storageShadow` variant it first checks overrides in `metaShadow` (from the end - the most recent wins), and only falls back to the main index if there's no entry. |
 | `nullBitsetFor(i)` | As above, but for a record outside the index range it returns an all-false pattern instead of throwing. Lets `storage::read()` apply null metadata without range checks. |
 | `isGapBefore(i)` | Returns `true` if, in the RLE index, an entry with `isGap=true` sits immediately before record `i`. Record 0 never has a gap before it. |
@@ -447,7 +447,7 @@ _Fig. 19. Persistence and state recovery after a restart_
 Methods of the `storageShadow` class - the index variant injected by `makeMetaIndex()` for stores that maintain a data shadow file. The base `metaData` does not have them, and there is no mode switch: the presence of a shadow is decided by the choice of class at store initialization.
 
 | Method | Description  |
-| ----   | ------------ |
+| -------- | ----------------- |
 | constructor | Loads existing overrides from the `.meta.shadow` file (`metaShadow::load()`), restoring the shadow state after a process restart. |
 | `mergeShadow()` | Merges the shadow overrides into the main index (applying each override in write order - the last one wins), then deletes the `.meta.shadow` file. The counterpart to `merge()` for the data shadow file. |
 | `discardShadow()` | Clears the in-memory list of overrides and deletes the `.meta.shadow` file. Called when discarding the data shadow (purge, reset, rotation). |
