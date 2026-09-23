@@ -172,6 +172,27 @@ $ xtrdb
 > quit
 ```
 
+### The dump contract: values only, no NULL and no gaps
+
+A dump is a **headless block of bytes**. `dumpManager` writes `payload->span()` directly, record after record, and creates no companion file beside it: there is no `.desc`, so the schema has to be known from outside, and no `.meta`, so the `NULL` map and the transmission gaps have nowhere to go. The `.tmp` extension suggests a working file, but this is the final artifact - no rename follows once the descriptor is closed.
+
+One consequence follows, and it has to be known before a dump is used as input for anything:
+
+| What the engine knows about the record | What the reader of the dump sees |
+| -------------------------------------- | -------------------------------- |
+| a field holds `NULL` - from nullfill, from a transmission gap, from arithmetic overflow, from division by zero | the substitute value of its type: `0` for `BYTE`, `INTEGER`, `UINT`, `FLOAT` and `DOUBLE`, `0/1` for `RATIONAL`, zero bytes for `STRING` |
+| a transmission gap preceded the record (a `gap` entry in the `.meta` index) | nothing - records lie one after another, with no marker |
+| the record does not exist at all, because the requested window reaches deeper than the accumulated history | a zeroed record, indistinguishable from a record whose values are zero |
+
+A zero in a dump file is therefore **indistinguishable** from a genuine zero, from `NULL`, and from a record the engine never had. This is not an implementation oversight but the boundary of the format: `NULL` and the gap are notions of the **engine's interior** - they live in the payload's `NULL` map and in the `.meta` index accompanying an artifact, they are stored there and processed there - and the system has, as of today, no uniform way of writing them down on the outside. A dump is a snapshot of values, not a record of what the engine knew.
+
+Where fidelity is required, two other routes do carry the information about absence:
+
+* the **stream artifact** (`SELECT … STREAM`) together with its `.meta` file - `xtrdb` prints the `NULL` map and the gaps through the `meta` and `metaraw` commands (→ [Files](../data-processing-system-architecture/data-storage-format/files.md));
+* the **client channel** `xqry --jsonl`, where an absent value is a separate JSON `null`, per element of an array field (→ [Stream monitoring API](../appendices/stream-monitoring-api.md)).
+
+The `null2zero` function in a query is not a third route: it turns absence into a zero explicitly and inside the query, which makes it a lossy conversion rather than a way of exporting the information about absence (→ [Aggregate operators](../query-language-construction/select-command/aggregate-operators.md)).
+
 ***
 
 ## Multiple rules - evaluation order

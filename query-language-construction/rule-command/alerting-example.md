@@ -78,6 +78,8 @@ $ xtrdb
 > quit
 ```
 
+The printed values are everything the file carries: a dump has no `.meta` file either, so `NULL` and a transmission gap have no representation in it, and a zero may be a genuine zero, a `NULL` field, or a record the engine did not have (→ [Alerting implementation](../../query-execution/alerting-implementation.md#the-dump-contract-values-only-no-null-and-no-gaps)).
+
 ## Example 3: rotating dumps (DO DUMP with RETENTION)
 
 Without `RETENTION`, each successive trigger of the rule overwrites the same file. When events repeat, use `RETENTION N` to keep the last N dumps in separate files.

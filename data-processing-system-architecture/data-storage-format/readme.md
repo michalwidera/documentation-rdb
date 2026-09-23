@@ -63,6 +63,8 @@ The shadow files and the metadata file are optional. With continuous, gap-free, 
 
 Ephemerides **have no data file of their own** - their source is an external object (a text file, a device) that the system neither creates nor deletes. A `.desc` descriptor describing the read schema is created for them, however. No `.meta` index appears: declared sources get an inert metadata-index variant that works purely in memory.
 
+The dump file produced by a `DO DUMP` rule does **not** belong to this set, although its records have the same layout. No `.desc`, no `.meta` and no header accompany it, so it carries values only: the information about `NULL` and about a transmission gap stays inside the engine and never reaches the dump. The dump contract is described in [Alerting implementation](../../query-execution/alerting-implementation.md#the-dump-contract-values-only-no-null-and-no-gaps).
+
 ***
 
 ## Chapters

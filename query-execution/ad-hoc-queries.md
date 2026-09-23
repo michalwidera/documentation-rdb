@@ -28,7 +28,7 @@ $ xqry --server measurements -a "DECLARE a BYTE STREAM C, 1 FILE 'data3.txt'"
 
 Attaching the first declaration to a server started with an empty plan is not yet supported; the ad hoc channel requires an active data model.
 
-A rule attached at run time may execute only `DO DUMP`. `DO SYSTEM` remains available in a complete plan file because exposing it through IPC would let a client run arbitrary shell commands as the server account. The `ON` target must be an existing stream created by `SELECT`. The rule starts only after its complete required history has accumulated since attachment; if the in-memory stream retains too little history, the request is rejected.
+A rule attached at run time may execute only `DO DUMP`. `DO SYSTEM` remains available only in the plan file the instance starts from, because exposing it through IPC would let a client run arbitrary shell commands as the server account. The same boundary holds on the `xqry --reset` channel, which also carries a complete plan but carries no authorship either: a plan with a `DO SYSTEM` rule is refused there as a whole, unless the operator deliberately sets `service.unrestricted = true` (→ [xqry](../appendices/command-line-options/xqry.md#the-do-system-rule-does-not-pass-through-this-channel)). The ad-hoc channel refuses unconditionally and does not read that key. The `ON` target must be an existing stream created by `SELECT`. The rule starts only after its complete required history has accumulated since attachment; if the in-memory stream retains too little history, the request is rejected.
 
 ```bash
 xqry --server measurements -a \

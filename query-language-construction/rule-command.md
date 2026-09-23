@@ -104,6 +104,8 @@ DO SYSTEM 'curl -s http://monitoring/alert'
 
 Any program available on `PATH` can be used in the command: shell scripts, Python programs, REST calls, sending notifications, etc.
 
+A `DO SYSTEM` rule may be asked for **only in the plan file** the instance starts from - the author of that file is whoever runs the service. Both IPC channels refuse it: `xqry --adhoc` accepts only `DO DUMP` from a rule, and `xqry --reset` rejects the whole plan carrying `DO SYSTEM`, because that channel carries no authorship (→ [xqry](../appendices/command-line-options/xqry.md#the-do-system-rule-does-not-pass-through-this-channel)). An operator who deliberately hands the reset channel over sets `service.unrestricted = true` in the TOML configuration (→ [xretractor](../appendices/command-line-options/xretractor.md#configuration-file-toml)).
+
 ## The DO DUMP action
 
 The `DO DUMP` action writes a window of stream samples to a binary file the moment the condition is satisfied. It lets you preserve the context of an event: data before it occurred and data after it.
@@ -135,6 +137,8 @@ Files are created in the directory configured by the `STORAGE` directive. Naming
 ```
 
 The file format is raw binary data matching the stream descriptor (no header). The `xtrdb` tool can be used to read the file.
+
+A dump carries **values only**. Neither a `.desc` nor a `.meta` file accompanies it, so the schema has to be supplied from outside, and the `NULL` map and the transmission gaps have no representation in it whatsoever: a `NULL` field is written as the substitute value of its type, and a record the engine did not have is written as zeros. Absence and gaps are notions of the engine's interior and do not leave it - the full contract, together with the routes that do preserve fidelity, is described in [Alerting implementation](../query-execution/alerting-implementation.md#the-dump-contract-values-only-no-null-and-no-gaps).
 
 ### The RETENTION option
 

@@ -147,6 +147,19 @@ Before changing the active model, the server parses and compiles the set and res
 
 When the target is a service instance, accepted contents are also written to its startup file so they survive a process restart.
 
+### The `DO SYSTEM` rule does not pass through this channel
+
+A plan carrying a `DO SYSTEM` rule is refused as a **whole**, naming the rule and the reason:
+
+```
+$ xqry --reset with-system-rule.rql --server service
+xqry: plan reload refused at reset-commit: Rejected: rule 'evil' on stream 'alpha' uses DO SYSTEM; ...
+```
+
+The reason is the same one that makes the ad-hoc channel refuse it: `DO SYSTEM` runs an arbitrary shell command under the instance's account, and the IPC channel carries no authorship, so it does not make the sender of a reset the operator of the service. Such a rule may only be asked for in the plan file the instance starts from. The refusal covers the whole set rather than the single rule, because accepted contents are written to the service's startup file, whose start-up passes no such check - a rule cut out in flight would come back armed after the next restart.
+
+An operator who deliberately hands this channel over sets `service.unrestricted = true` in the TOML configuration (→ [xretractor](xretractor.md#configuration-file-toml)). The instance then leaves a warning in the log at every start, and the ad-hoc channel stays closed regardless of that value.
+
 ## JSON Lines for applications
 
 `--jsonl` exposes versioned machine-readable output for `--hello`, `--dir`, `--detail`, and `--select`. It requires an unambiguous server; applications should always specify it.

@@ -108,7 +108,9 @@ The value is always stored in **lowest terms**, and the denominator is always **
 
 * zero is stored as `0/1`, never as `0/0` or `0/5`;
 * a whole number is stored as `n/1` - a `RATIONAL` field with denominator 1 is exactly an integer, with no rounding involved (the slot-divisibility test in the [query tree traversal algorithm](../../query-execution/query-tree-traversal-algorithm.md) relies on the same invariant);
-* the denominator is never zero, so a reader need not handle that case.
+* the denominator is never zero - no write path in the system produces such a pair.
+
+The invariant describes writing, however, not every file that can be handed to the engine. Since 23 September 2026 the read path checks it at the bytes-to-value boundary: a pair whose denominator is less than or equal to zero yields `NULL`, not a rational number. This covers a zeroed record (`0/0`), a denominator equal to `INT_MIN`, and the pair `INT_MIN/-1` - exactly the bytes on which the previous version terminated the process with `SIGFPE`. The read also passes through normalization, so a pair stored in a corrupted file in reducible form comes back reduced (`2/4` as `1/2`, `1/-2` as `-1/2`). For a file written by the system this changes nothing - it contains no such pairs.
 
 `RATIONAL` fields are produced by the `MIN`, `MAX`, `AVG`, and `SUMC` reducers when the input value has type `BYTE`, `INTEGER`, `UINT`, or `RATIONAL`. This covers current-record reducers in `FROM`, the deprecated `.min`/`.max`/`.avg`/`.sumc` notation, and record-history `AGG(expression : W)` in the `SELECT` list. `FLOAT` and `DOUBLE` inputs preserve their types (→ [Aggregate Operators](../../query-language-construction/select-command/aggregate-operators.md)). A reducer over integer or rational input is, in practice, the main source of `RATIONAL` in an artifact.
 
@@ -180,6 +182,14 @@ DECLARE a INTEGER, b FLOAT STREAM str1, 0.1 FILE 'data.dat'
 ```
 
 Record size: INTEGER (4 B) + FLOAT (4 B) = **8 bytes**. After 5 seconds of data arriving (10 Hz), the file `data.dat` is 5 × 10 × 8 = **400 bytes**.
+
+### Reading a record that does not exist
+
+A request for an index past the last record - or a read from an empty store - is not a successful read. Since 23 September 2026 `storage::read()` and `storage::revRead()` return a separate `NoSuchRecord` status, zero the destination buffer, and set the **entire null pattern to true**: a record that does not exist is an undetermined value, not a zero record. This is the same convention `dataModel::fetchBack()` and `fetchForward()` apply to a read beyond the accumulated history.
+
+This matters for the result, not only for diagnostics. Previously that branch returned success and marked the zeroed record explicitly as **not** null, so `NULL` absorption did not kick in and the `MIN`, `MAX`, `SUMC`, and `AVG` reducers folded a fabricated zero into the result instead of skipping the missing record (→ [Aggregate Operators](../../query-language-construction/select-command/aggregate-operators.md)). The `xtrdb` tool now tells this case apart from data: `read` leaves the payload in the `error` state, and `list` prints `fetch error` (→ [xtrdb](../../appendices/command-line-options/xtrdb.md)).
+
+The null pattern lives in the payload and in the `.meta` index, that is, inside the engine. A `DO DUMP` dump does not carry it - a non-existent record is written there as zeros indistinguishable from data (→ [Alerting implementation](../../query-execution/alerting-implementation.md#the-dump-contract-values-only-no-null-and-no-gaps)).
 
 ---
 
@@ -434,7 +444,7 @@ _Fig. 19. Persistence and state recovery after a restart_
 | Method | Description  |
 | -------- | ----------------- |
 | `getNullBitset(i)` | Returns the null pattern for record `i`. Virtual: in the `storageShadow` variant it first checks overrides in `metaShadow` (from the end - the most recent wins), and only falls back to the main index if there's no entry. |
-| `nullBitsetFor(i)` | As above, but for a record outside the index range it returns an all-false pattern instead of throwing. Lets `storage::read()` apply null metadata without range checks. |
+| `nullBitsetFor(i)` | As above, but for a record outside the index range it returns an all-false pattern instead of throwing. Lets `storage::read()` apply null metadata to a record that is present in the data file but not yet in the index. It does not cover a record absent from the data file itself - `storage::read()` then reports no such record and sets an all-true pattern of its own (→ [Reading a record that does not exist](#reading-a-record-that-does-not-exist)). |
 | `isGapBefore(i)` | Returns `true` if, in the RLE index, an entry with `isGap=true` sits immediately before record `i`. Record 0 never has a gap before it. |
 | `segments()` | Returns all RLE segments: committed (from disk) plus the current one (from memory), if non-empty. Does not include overrides from `.meta.shadow`. Used for inspection and tests. |
 | `totalRecords()` | The sum of records across all segments (committed + pending). |

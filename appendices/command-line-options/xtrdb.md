@@ -124,6 +124,8 @@ Examples:
 | `append`  | Append the current payload as a new record at the end of the file.    |
 | `purge`   | Delete all records from the file (truncate the file to 0 records). |
 
+A record the store does not hold - an index past the last record, or a read from an empty file - is not a successful read: `read` and `rread` leave the payload in the `error` state (visible through `status`), while `list` and `rlist` print `fetch error` on that line and move on to the next one. Earlier the tool showed a zeroed record in such a place, indistinguishable from data.
+
 ---
 
 ## Browsing content
@@ -202,6 +204,8 @@ $ xtrdb
 .list 6
 .quit
 ```
+
+A dump has no `.meta` file either, so the `meta` and `metaraw` commands have nothing to show for it. This means the printed values are everything the file carries: a zero in a dump may be a genuine zero, a `NULL` field, or a record the engine did not have, and a transmission gap leaves no marker there at all. The dump contract is described in [Alerting implementation](../../query-execution/alerting-implementation.md#the-dump-contract-values-only-no-null-and-no-gaps).
 
 ### Batch script
 
