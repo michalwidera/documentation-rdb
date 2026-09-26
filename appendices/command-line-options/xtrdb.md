@@ -4,7 +4,7 @@ The `xtrdb` program is an interactive tool for analyzing artifacts and substrate
 
 > **⚠️ Warning**
 >
-> Running `xtrdb` blocks a concurrently running `xretractor` - stop the server, or wait for the system to finish, before using `xtrdb`. The tool detects the lock itself and reports an error if `xretractor` is running.
+> Interactive and batch `xtrdb` modes refuse to run while any `xretractor` instance in the lock directory is running, including named instances. Stop those instances or wait for them to finish. The tool reads the same `paths.lock_dir` TOML setting as the engine (by default, the process temporary directory), scans the `xretractor_service*.lock` family, and checks whether a lock is held. A stale lock file alone does not cause refusal. For a custom lock directory, run `xtrdb` with the same configuration as the server. The `--help` and `--storagemap` options return before this check; `--storagemap` only reads storage state.
 
 
 ---

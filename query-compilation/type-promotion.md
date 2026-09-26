@@ -41,9 +41,9 @@ A **pure field read** preserves the field's type and length. Reading one element
 
 A **binary operator** (`+`, `-`, `*`, `/`, `^`) yields the type that ranks higher in the order `BYTE < INTEGER < UINT < RATIONAL < FLOAT < DOUBLE` - with one exception: **`BYTE` with `BYTE` yields `INTEGER`**. This is not a design decision but a reflection of the language: `uint8_t + uint8_t` promotes to `int` in C++, and `int` is what ends up in the result. The same promotion applies to exact-type exponentiation, because `a^k` is computed by the same multiplication as the product written out.
 
-A **unary operator** (`-x`, `NOT x`) preserves the argument's type - there is no promotion here.
+A **unary operator** (`-x`, `NOT x`) preserves the argument's type, except that `NOT` over a string yields an `INTEGER` logical result.
 
-**Comparisons** yield the operand type after normalization, without the `BYTE` promotion. They do not reach the `SELECT` list: they live in the `RULE` condition.
+**Numeric comparisons** yield the operand type after normalization, without the `BYTE` promotion. String comparisons and `NOT` over a string yield `INTEGER` 1 or 0. `AND` and `OR` take their result type from the left operand, or from the right when the left is `NULL`; if the selected operand is a string, the result is `INTEGER`. These operators do not reach the `SELECT` list: they live in the `RULE` condition.
 
 **Functions** share one policy:
 

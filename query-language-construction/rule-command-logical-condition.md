@@ -21,6 +21,8 @@ The `WHEN` clause of the `RULE` command takes a logical expression, which is eva
 | `OR`     | disjunction - one condition is enough            |
 | `NOT`    | negation - the condition must not be satisfied   |
 
+A bare `STRING` field is true when its value is nonempty. String comparisons and `NOT` over a string return `INTEGER` 1 or 0. `AND` and `OR` use the left operand's type, or the right operand's type if the left is `NULL`; a result based on a string is `INTEGER`. Thus `WHEN NOT status[0]` is true for an empty string, and a false string comparison does not trigger a rule through `OR`. `NULL` still follows the condition's three-valued logic.
+
 ## Expression structure
 
 A condition is built from the fields of the stream schema specified in the `ON` clause. Fields are identified the same way as in `SELECT` - by the stream name with an index:

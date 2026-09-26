@@ -187,7 +187,7 @@ The absence of any file is a **valid state** - the program starts with default v
 | `storage.dir` | _(none)_ | Default artifact directory. Applied **only** when the RQL set contains no `:STORAGE` directive - RQL wins. The directory must exist and be writable, otherwise the program exits with `Configuration error: storage.dir …`. |
 | `ipc.queue_buffer_seconds` | `10` | IPC queue depth expressed in seconds of stream; the element count is `seconds / interval`. |
 | `ipc.min_queue_elements` | `100` | Lower bound on queue capacity, independent of the stream interval. |
-| `ipc.client_response_max_fails` | `300` | Number of attempts `xqry` makes to read a response from shared memory. The effective wait is this value times the polling interval. |
+| `ipc.client_response_max_fails` | `300` | Multiplier for the `xqry` response time budget. A monotonic-clock deadline is set to this value times the polling interval (10 ms) and covers both waiting for space in the command queue and waiting for the response. |
 | `timing.server_startup_wait_s` | `30` | Maximum time `xqry --wait-server` waits for server readiness. |
 | `timing.server_startup_poll_ms` | `100` | Polling interval while waiting for the server to start. |
 | `timing.query_no_data_timeout_ms` | `10000` | No-data timeout after which the `xqry` client considers the server dead. |

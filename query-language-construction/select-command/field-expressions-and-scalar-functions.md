@@ -18,6 +18,8 @@ For integer and rational types, a non-negative integral power has the semantics 
 
 NULL propagates through ordinary arithmetic. Division by zero yields NULL for every numeric type and does not stop later stream processing. Comparison and three-valued logic in a `RULE` condition are documented in [Logical Condition](../rule-command-logical-condition.md).
 
+Addition, subtraction, and multiplication on `UINT` fields are checked: a sum or product outside the unsigned 32-bit range, or a negative difference, yields `NULL` instead of a wrapped value. The same representability rule applies during operand promotion: a negative `INTEGER` promoted to `UINT` yields `NULL`. `INTEGER` and `RATIONAL` arithmetic also yields `NULL` on overflow.
+
 > **⚠️ Warning** After an interleave `A#B`, do not refer to its components as `A[0]`, `A.field`, `A[_]`, or `A.*`. An interleave has one shared schema; use the output stream name or recover a component with `&` or `%`. See [Aliasing](../../query-compilation/aliasing.md).
 
 ## Available scalar functions
@@ -47,6 +49,8 @@ Every function takes one expression argument. The only exception is the optional
 ### Conversions
 
 `to_integer`, `to_float`, and `to_double` convert a numeric or textual value to the named type. NULL passes through unchanged. `to_integer` truncates toward zero rather than flooring: `to_integer(-8/3)` yields `-2`. A floating-point value that `INTEGER` cannot hold - NaN and infinity included - yields `NULL`, exactly like arithmetic overflow. The same rule covers mathematical functions over an integer field whose result returns to the argument type: `Sqrt(-4)` and `log(0)` over an `INTEGER` field yield `NULL`. The range is checked after truncating the fractional part: for a `DOUBLE` argument, the value `2147483647.5` yields `2147483647`, whereas `2147483648.0` yields `NULL`. The rule does not stop at integer types: `NaN` and infinity have no rational approximation, so a floating-point value written into a `RATIONAL` field yields `NULL` just as it does for `INTEGER`, not zero.
+
+Converting an integer or rational value to a narrower integer type also yields `NULL` if the result does not fit: this includes a negative value directed to `UINT`, a `UINT` above `INT_MAX` directed to `INTEGER` or `RATIONAL`, and a value outside 0..255 directed to `BYTE`. Conversion from `RATIONAL` to an integer type first truncates toward zero, then checks the range. Invalid numeric text yields `NULL`. Approximation of a finite floating-point number as `RATIONAL` stops at the last fraction whose numerator and denominator both fit in `int`.
 
 `to_string` creates a text field. Without a second part its width is 32 bytes; `to_string(x : N)` declares N bytes. The separator is a colon because a comma separates fields in the `SELECT` list:
 

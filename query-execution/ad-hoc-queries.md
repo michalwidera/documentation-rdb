@@ -12,6 +12,8 @@ Fig. 48 shows the control flow described above. A file with queries and directiv
 
 The ad hoc channel accepts **exactly one `SELECT`, `DECLARE`, or `RULE` statement**. Compiler directives and programs containing multiple statements are rejected without changing the active plan.
 
+A syntax error or invalid value is returned to the client with its reason, and the server continues to accept commands. The parser rejects, among other cases, out-of-range numeric literals, a zero denominator, a zero interval (in `DECLARE` and with `&`, `%`, or `-`), and an empty `FILE` name. If attachment fails after import, the server restores the previous plan and releases newly claimed stream names and storage files on the bus. The same command can be retried after the cause is fixed.
+
 A new source can be declared without stopping a running engine:
 
 ```

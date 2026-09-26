@@ -89,6 +89,10 @@ Example: `core0(1/10) # core1(1/5)` gives a delta of `1/15` (the harmonic mean),
 
 ## Common compilation errors
 
+### Invalid literal or interval
+
+A number outside the target type's range stops parsing with `numeric literal ... is out of range` in `Parse result:`. A zero denominator produces `fraction ... has a zero denominator`, and a zero interval produces `interval ... must be greater than zero`. This applies to startup files and ad hoc requests; in the latter case the refusal leaves the server running. Correct the number or choose a positive interval. A `Circular dependency` message indicates a dependency cycle, not a zero interval.
+
 ### A cycle in the dependency graph
 
 ```

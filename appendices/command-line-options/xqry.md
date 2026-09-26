@@ -100,6 +100,8 @@ str1  | 1/30     | 0    | 0     |               | 0
 
 `--detail stream` shows the original query and its fields. The `--yaml` modifier switches `--dir`, `--detail`, and `--bus` to an `apiVersion: xqry/v1` document; it is not a command on its own. An unknown stream exits with code `2`.
 
+Command responses are matched to the client's specific request. The `ipc.client_response_max_fails` time budget covers sending the command and receiving its response; a full command queue causes a refusal when that deadline expires. A response abandoned by a killed client can be reclaimed without blocking later clients.
+
 ## Receiving data
 
 | Option | Meaning |
