@@ -18,7 +18,7 @@ For integer and rational types, a non-negative integral power has the semantics 
 
 NULL propagates through ordinary arithmetic. Division by zero yields NULL for every numeric type and does not stop later stream processing. Comparison and three-valued logic in a `RULE` condition are documented in [Logical Condition](../rule-command-logical-condition.md).
 
-Addition, subtraction, and multiplication on `UINT` fields are checked: a sum or product outside the unsigned 32-bit range, or a negative difference, yields `NULL` instead of a wrapped value. The same representability rule applies during operand promotion: a negative `INTEGER` promoted to `UINT` yields `NULL`. `INTEGER` and `RATIONAL` arithmetic also yields `NULL` on overflow.
+Addition, subtraction, and multiplication on `UINT` fields are checked: a sum or product outside the unsigned 32-bit range, or a negative difference, yields `NULL` instead of a wrapped value. An operation on an `INTEGER` and a `UINT` operand is computed on the exact values, and only the result is narrowed to `UINT`: it yields `NULL` only when the result does not fit. With `u = 10` and `i = -2`, `u + i` yields `8` while `u * i` yields `NULL`; comparing such a pair, for example `i < u`, is exact as well. `INTEGER` and `RATIONAL` arithmetic also yields `NULL` on overflow.
 
 > **⚠️ Warning** After an interleave `A#B`, do not refer to its components as `A[0]`, `A.field`, `A[_]`, or `A.*`. An interleave has one shared schema; use the output stream name or recover a component with `&` or `%`. See [Aliasing](../../query-compilation/aliasing.md).
 
