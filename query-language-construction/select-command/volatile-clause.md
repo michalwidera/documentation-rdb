@@ -39,6 +39,8 @@ The compiler then determines the capacity required by the plan. If another strea
 * data never reaches disk,
 * the `.desc` descriptor is still created - other processes can learn the stream's schema.
 
+The ring has capacity `max(RETENTION n, plan need, 1)` and counts against `[limits] history_memory_mib`. When attaching an ad-hoc `DO DUMP` rule, the server rejects a range beyond the existing ring; its capacity cannot be increased in a running plan. See [Plan Size Limits](../../query-compilation/plan-size-limits.md#ram-history-budget).
+
 ## Difference from `STORAGE MEMORY`
 
 | Property           | `VOLATILE`                                      | `STORAGE MEMORY`                         |

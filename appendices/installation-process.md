@@ -137,6 +137,18 @@ The portable installer copies the default TOML only if the file is absent: to `/
 
 Installation through `cmake --install` places the default TOML in `<prefix>/share/retractordb/retractor.toml`; it does not activate it as user configuration. You can copy it to your configuration location or select it with `--config`.
 
+An operator can bound RAM history and growth of `DEFAULT`/`DIRECT` file streams without their own retention:
+
+```toml
+[limits]
+history_memory_mib = 1024
+
+[storage]
+default_retention = [1000, 4]
+```
+
+`history_memory_mib` is a positive MiB budget for sources and `MEMORY` rings; a larger plan is rejected at compilation. `default_retention` requires two positive numbers `[capacity, segments]`, also applies to file-based substrates, and does not override explicit `RETENTION`. Without it, file streams without retention still grow; `xretractor` lists them at startup and in `-c`. The TOML file may also contain `server.autoname` (default `false`) and `service.unrestricted` (default `false`, allowing `DO SYSTEM` through `xqry --reset`); their effects and precedence are explained in the [xretractor options](command-line-options/xretractor.md#configuration-file-toml).
+
 ## Apple development environment
 
 The macOS port is for development and testing. The system's general contract, service description, and production procedures in this manual apply to Linux. The `curl` installer described above supports Linux; Apple requires a source build.

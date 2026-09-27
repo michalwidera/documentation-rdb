@@ -54,6 +54,8 @@ Converting an integer or rational value to a narrower integer type also yields `
 
 `to_string` creates a text field. Without a second part its width is 32 bytes; `to_string(x : N)` declares N bytes. The separator is a colon because a comma separates fields in the `SELECT` list:
 
+`N` must be in `1..65536`. `to_string(x : 0)` is a parser error (`to_string width 0 must be greater than zero`), and the resulting string concatenation must also fit the field limit. See [Plan Size Limits](../../query-compilation/plan-size-limits.md).
+
 ```rql
 SELECT to_string(value : 10), Length(label), null2zero(optional) \
 STREAM converted FROM source

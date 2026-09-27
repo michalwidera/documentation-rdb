@@ -31,7 +31,7 @@ The subchapters on substrates and the `_` symbol use extended variants of the sa
 
 ## The chain of stages
 
-The chain of twenty-three stages is defined by the `compiler::compile()` function:
+The chain of twenty-five stages is defined by the `compiler::compile()` function:
 
 <div class="timeline compact">
 
@@ -57,6 +57,8 @@ The chain of twenty-three stages is defined by the `compiler::compile()` functio
 - `computeRequiredCapacities` - required buffer history
 - `validateConstraints` - semantic validation of the plan
 - `applyCapacitiesToStreams` - capacity application
+- `checkHistoryMemory` - RAM history budget
+- `applyDiskRetention` - default file retention and available history
 - `topologicalSort` - final producer–consumer order
 
 </div>
@@ -74,6 +76,8 @@ Rejects a stream reducer (`MIN`, `MAX`, `AVG`, `SUMC` without a window width) us
 #### expandStreamGenerators
 
 Expands every `SELECT ... STREAM name[N] ...` template into `N` ordinary queries named `name$0`...`name$(N-1)` and substitutes the instance ordinal for `$` in fields, values, and `FROM` references. It is the first pass that rewrites the plan (only the `checkFunctionCalls` and `checkStreamReducerFieldRefs` checks precede it): everything after it receives a plan indistinguishable from hand-written queries. See [SELECT Command](../query-language-construction/select-command/README.md#stream-generators) for syntax and constraints.
+
+Before copying a template it also checks the number of streams after expansion: at most 128. See [Plan Size Limits](plan-size-limits.md) for the other bounds.
 
 #### snapshotNamedSourceRefs
 
@@ -167,7 +171,7 @@ Verifies semantic correctness of the compiled plan: type and flat-width compatib
 
 #### applyCapacitiesToStreams
 
-Applies the computed capacities to the stream objects.
+Applies the computed capacities to the stream objects. A `MEMORY` store keeps the greater of `RETENTION n` and the plan's need; declared sources take their capacity from consumer needs.
 
 For an interleave, the compiler reduces \\(\Delta_a/\Delta_b=p/q\\) to coprime positive \\(p,q\\) and scans **one full phase period** \\(p+q\\). For each slot \\(i\\) of that period it determines which component the interleave selects and at which index \\(j(i)\\), then takes the maximum of the required latency:
 
@@ -182,6 +186,14 @@ W_{\\#}
 The result is exact - it neither undershoots nor overshoots the causal bound. The arithmetic runs in 64 bits, because the product \\((j+1+W)\cdot\text{numerator}\cdot\text{denominator}\\) exceeds `int` range already for moderate intervals. Above the `kHashPhaseScanLimit` threshold (`SOperations.hpp`) the scan stops being affordable and the former closed form \\(\lceil(p+q-1)/p\rceil\\) takes over; it overshoots the tail by one slot - a safe choice, since undershooting would mean emitting a record before its dependency is determined.
 
 Regressions cover ratios including \\(3/5\\), \\(3/2\\), \\(7/11\\), and \\(160/147\\), including periodic all-`NULL` records in the blocked, non-rewritten left-hand side of the R1 identity; the operator formula itself is guarded by `ut_h10aGate`.
+
+#### checkHistoryMemory
+
+Sums the history cost of `DECLARE` sources and `MEMORY` rings after their capacities are fixed. If it exceeds `[limits] history_memory_mib`, it returns an error with the byte count and the stream with the largest share. File stores are excluded.
+
+#### applyDiskRetention
+
+Applies `[storage] default_retention` to `DEFAULT` and `DIRECT` streams without explicit retention, including substrates. For a bounded segment count, it checks that the plan's required history fits the shortest state just after rotation: `(segments - 1) * capacity + 1` records. Otherwise compilation fails with the stream, retention, and required depth. `segments = 0` means unbounded history and is exempt from this check.
 
 #### topologicalSort
 

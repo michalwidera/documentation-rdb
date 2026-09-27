@@ -40,6 +40,7 @@
   * [Summary](data-processing-system-architecture/summary.md)
 * [Query Compilation](query-compilation/README.md)
   * [Compilation Passes](query-compilation/compilation-passes.md)
+  * [Plan Size Limits](query-compilation/plan-size-limits.md)
   * [Dependency Tree Construction](query-compilation/dependency-tree-construction.md)
   * [Substrates](query-compilation/substrates.md)
   * [Asterisk Expansion](query-compilation/asterisk-expansion.md)

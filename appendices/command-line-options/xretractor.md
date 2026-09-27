@@ -147,6 +147,7 @@ Available options:
   -p [ --transparent ]   make dot background transparent
   -w [ --diagram ] arg   create diagram output
   -z [ --shmbudget ]     show shared memory budget of the compiled plan
+  -g [ --config ] arg    config file (TOML); overrides search
 ```
 
 In this mode, options for creating diagrams and diagnostic dumps, described in more detail elsewhere in this work, are available.
@@ -170,12 +171,13 @@ In this mode, options for creating diagrams and diagnostic dumps, described in m
 | `transparent` | Generates the graph with a transparent background. |
 | `diagram` | Generates marble diagrams. The argument takes the form `type:cycle_count`: `type` (`0` or `1`) determines whether the diagrams show timestamps; `cycle_count` sets the number of cycles shown in the diagram. |
 | `shmbudget` | Reports the fixed IPC reservation, capacity, and free space of the `shm_open` filesystem (usually `/dev/shm`), plus the cost of one client queue for each plan interval. This lets an operator estimate the number of concurrent subscriptions before starting a server. |
+| `config` | Selects an explicit TOML file in `-c` mode as well; retention and history budget settings apply during compilation. |
 
 ---
 
 ## Configuration file (TOML)
 
-The `--config` option points at a configuration file; without it the program searches two locations in layered fashion, in the order given, each later layer overriding keys from the previous one:
+The `--config` option (short form `-g`) points at a configuration file, including in `-c` mode; without it the program searches two locations in layered fashion, in the order given, each later layer overriding keys from the previous one:
 
 1. `/etc/retractor/retractor.toml` - system layer,
 2. `$XDG_CONFIG_HOME/retractor/retractor.toml` (or `~/.config/retractor/retractor.toml`) - user layer.
@@ -185,6 +187,7 @@ The absence of any file is a **valid state** - the program starts with default v
 | Key | Default | Meaning |
 | --- | ------- | ------- |
 | `storage.dir` | _(none)_ | Default artifact directory. Applied **only** when the RQL set contains no `:STORAGE` directive - RQL wins. The directory must exist and be writable, otherwise the program exits with `Configuration error: storage.dir …`. |
+| `storage.default_retention` | _(none)_ | Pair `[capacity, segments]`, both positive. Sets bounded retention on `DEFAULT` and `DIRECT` file streams without their own `RETENTION`, including substrates. It does not change `MEMORY`, stores without retention, or explicit retention. An invalid value logs a warning and leaves default retention unset. |
 | `ipc.queue_buffer_seconds` | `10` | IPC queue depth expressed in seconds of stream; the element count is `seconds / interval`. |
 | `ipc.min_queue_elements` | `100` | Lower bound on queue capacity, independent of the stream interval. |
 | `ipc.client_response_max_fails` | `300` | Multiplier for the `xqry` response time budget. A monotonic-clock deadline is set to this value times the polling interval (10 ms) and covers both waiting for space in the command queue and waiting for the response. |
@@ -196,6 +199,7 @@ The absence of any file is a **valid state** - the program starts with default v
 | `server.autoname` | `false` | Generates a name when neither `--name` nor `--autoname` was given. An explicit `--name` wins. `false` preserves the historical unnamed instance. |
 | `service.query_file` | _(value from the build configuration)_ | The query file overwritten when a set is handed to a running service. Used only as a fallback, when the service did not report its own `QUERYFILE` in the lock file. It must match the `ExecStart` argument of the systemd unit - configuration does not change `ExecStart`. |
 | `service.unrestricted` | `false` | Allows a `DO SYSTEM` rule in a plan accepted over the `xqry --reset` channel. The default value refuses such a plan as a whole (→ [xqry](xqry.md#the-do-system-rule-does-not-pass-through-this-channel)). With `true` the instance leaves a warning in the log at every start, and anyone able to open its IPC objects runs shell commands under its account. The key is read at process start-up, so it is set by the same authority that writes the service's plan file; it never opens the ad-hoc channel. |
+| `limits.history_memory_mib` | `1024` | Combined history budget for `DECLARE` sources and `MEMORY` stores in MiB. Exceeding it rejects the plan at startup, in `-c`, ad hoc, and during `--reset`. It must be positive; an invalid value logs a warning and restores the default. See [Plan Size Limits](../../query-compilation/plan-size-limits.md#ram-history-budget). |
 
 Every IPC object the server creates - the response-map segment, the map mutex, the command queue, the response queues, and the bus segment - is given an explicit `0600` mode, so the trust boundary is the account the instance runs under, not the umask of the systemd unit. The client loses nothing by it: `xqry` opens all of these objects through `open_only` only, so it has to run under that account anyway.
 
@@ -206,6 +210,10 @@ Example file:
 ```toml
 [storage]
 dir = "/var/lib/retractor"
+default_retention = [1000, 4]
+
+[limits]
+history_memory_mib = 1024
 
 [ipc]
 queue_buffer_seconds = 30
