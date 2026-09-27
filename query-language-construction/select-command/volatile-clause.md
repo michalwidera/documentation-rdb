@@ -17,7 +17,7 @@ SELECT scaled[0]     STREAM history FROM scaled PERSISTENT
 
 The directive may appear once, before the first `DECLARE`, `SELECT`, or `RULE`. It does not change `DECLARE` sources. Programs without it retain their existing settings. `VOLATILE` and `PERSISTENT` are mutually exclusive clauses.
 
-An explicit `STORAGE profile` on a `SELECT` overrides the default; for example, `STORAGE DEFAULT` selects ordinary file storage. Explicit `VOLATILE` retains its precedence over `STORAGE`. Combining `PERSISTENT STORAGE MEMORY` is an error. Explicit `SUBSTRAT 'profile'` selects substrate storage regardless of the order of the two directives in the header. `FILE` or `RETENTION` alone does not disable default volatility: add `PERSISTENT` to store history.
+An explicit `STORAGE profile` on a `SELECT` overrides the default; for example, `STORAGE DEFAULT` selects ordinary file storage. Explicit `VOLATILE` retains its precedence over `STORAGE`. Combining `PERSISTENT STORAGE MEMORY` is an error. Explicit `SUBSTRAT 'profile'` selects substrate storage regardless of the order of the two directives in the header. `FILE` or `RETENTION` alone does not disable default volatility: add `PERSISTENT` to store history. `RETENTION capacity segments` on an in-memory stream is a compilation error with that hint.
 
 ## Behavior
 
@@ -25,11 +25,11 @@ An explicit `STORAGE profile` on a `SELECT` overrides the default; for example, 
 SELECT expression STREAM name FROM source VOLATILE
 ```
 
-The parser initially sets the storage type to `MEMORY` with a capacity of `1`:
+The parser initially sets the storage type to `MEMORY` with a capacity of `1`, or `n` from a `RETENTION n` clause:
 
 ```cpp
-if (ctx->VOLATILE()) {
-    qry.policy = std::make_pair("MEMORY", 1);
+if (ctx->VOLATILE() != nullptr || inheritVolatile) {
+    qry.policy = std::make_pair("MEMORY", std::max<size_t>(qry.policy.second, 1));
 }
 ```
 
@@ -43,8 +43,10 @@ The compiler then determines the capacity required by the plan. If another strea
 
 | Property           | `VOLATILE`                                      | `STORAGE MEMORY`                         |
 | ------------------ | ----------------------------------------------- | ---------------------------------------- |
-| Buffer capacity    | initially 1 record; may grow to meet plan needs | depends on `RETENTION` and plan needs    |
-| `RETENTION` clause | ignored                                         | applied                                  |
+| Buffer capacity    | 1 record or `RETENTION n`; may grow to meet plan needs | 1 record or `RETENTION n`; may grow to meet plan needs |
+| `RETENTION n` clause | ring size                                     | ring size                                |
+| `RETENTION n s` clause | compilation error                           | compilation error                        |
+| Precedence over `STORAGE` | yes                                      | -                                        |
 | Descriptor on disk | yes                                             | yes                                      |
 | Data on disk       | no                                              | no                                       |
 
