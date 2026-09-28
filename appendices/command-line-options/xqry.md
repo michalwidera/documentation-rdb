@@ -50,39 +50,54 @@ xqry --server measurements --select temperature
 xqry --server measurements --kill
 ```
 
-Without this option, the client reads the `xrdbbus` bus. When exactly one instance is live, it is selected automatically. With several instances, `--select` and `--detail` are routed to the owner of the named stream. Instance-wide commands (`--hello`, `--dir`, `--kill`, and `--reset`) are ambiguous and require `--server`.
+Without this option, the client reads the bus in the current namespace: the default `xrdbbus_v6`, or `xrdbbus_v6_<namespace>` when `RDB_NAMESPACE` is set. When exactly one instance is live, it is selected automatically. With several instances, `--select` and `--detail` are routed to the owner of the named stream. Instance-wide commands (`--hello`, `--dir`, `--kill`, and `--reset`) are ambiguous and require `--server`. The combined `--bus` listing described below does not change this routing.
 
 Ad hoc routing examines sources in `FROM`, or the stream in `ON` for a `RULE`. They must all belong to one server. A `DECLARE` has no addressee, so with several instances it also requires `--server`. A misspelled name and a query crossing server boundaries are rejected before a command is sent.
 
 ## Listing instances: `--bus`
 
-`xqry --bus` reads the bus without contacting the servers. Rows are sorted by name, and `(unnamed)` denotes a backward-compatible instance started without a name.
+`xqry --bus` discovers accessible buses of the current version without requiring `RDB_NAMESPACE` and prints a separate `NAMESPACE:` section for each bus with at least one live instance. It behaves the same way when `RDB_NAMESPACE` is set: the listing covers all accessible namespaces, while other commands still use the current namespace. `(default)` denotes the bus without a namespace, and `(unnamed)` denotes a backward-compatible instance started without a name. Sections are ordered by bus name, with the default first; instances within a section are sorted by name.
+
+The client reads the shared-memory registries without contacting servers. It omits segments with no live instances. Shared-memory permissions limit discovery to buses accessible to the current account.
 
 ```text
 $ xqry --bus
+NAMESPACE: (default)
 SERVER | PID    | MODE | QUERY               | STREAMS
--------+--------+------+---------------------+-----------
-alpha  | 249247 | N    | .../plans/alpha.rql | srca, dsta
-beta   | 249248 | FS   | .../plans/beta.rql  | srcb, dstb
+-------+--------+------+---------------------+--------
+alpha  | 249247 | N    | .../plans/alpha.rql | srca
+       |        |      |                     | dsta
+MODE: N=normal, R=realtime, F=no-clock, U=until-eof, M=llimitqry, X=xqrywait, S=service
+
+NAMESPACE: bus_probe
+SERVER | PID    | MODE | QUERY | STREAMS
+-------+--------+------+-------+--------
+probe  | 249249 | N    | -     | -
 MODE: N=normal, R=realtime, F=no-clock, U=until-eof, M=llimitqry, X=xqrywait, S=service
 ```
 
-The table shortens paths for readability. `--bus --yaml` preserves the complete path:
+The table shortens paths for readability. `--bus --yaml` preserves the complete path and keeps one `servers` list. Each entry has a `namespace` field: `null` means the default bus, and a named namespace is a quoted string.
 
 ```yaml
 ---
 apiVersion: xqry/v1
 servers:
   - name: alpha
+    namespace: null
     pid: 249247
     modes: N
     query: "/home/user/plans/alpha.rql"
     streams:
       - srca
       - dsta
+  - name: probe
+    namespace: "bus_probe"
+    pid: 249249
+    modes: N
+    streams: []
 ```
 
-An empty bus produces a valid `servers: []` YAML document. The diagnostic that there are no instances is written to `stderr`.
+When no accessible bus has a live instance, table output on `stdout` is empty and YAML contains `servers: []`. The `xqry: no live xretractor instance` message goes to `stderr`.
 
 ## Stream list and details
 

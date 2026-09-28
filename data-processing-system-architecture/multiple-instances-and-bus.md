@@ -34,7 +34,7 @@ Every IPC object a server creates - the command queue, the response queues, the 
 
 The bus is shared by the host or `RDB_NAMESPACE`. Every live server publishes its name, PID, operating modes, plan file, and stream names. A slot is considered live only when both the PID and process start time match `/proc`; a zombie process does not retain resources.
 
-The current layout uses the `xrdbbus_v6` segment, or `xrdbbus_v6_<RDB_NAMESPACE>` in a test namespace. Segment users hold a presence lock through `flock`; the last one leaving can remove the unused segment. Layout versions have separate registries: concurrently running binaries using v5 and v6 does not provide collision checks between their streams and storage paths. Stop older instances before upgrading.
+The current layout uses the `xrdbbus_v6` segment, or `xrdbbus_v6_<RDB_NAMESPACE>` when `RDB_NAMESPACE` is set. Each namespace has its own registry and collision checks. Segment users hold a presence lock through `flock`; the last one leaving can remove the unused segment. Layout versions have separate registries: concurrently running binaries using v5 and v6 does not provide collision checks between their streams and storage paths. Stop older instances before upgrading.
 
 Before starting or replacing a plan, the bus checks that the following do not overlap:
 
@@ -52,7 +52,7 @@ For `xqry --reset`, the new plan's resources are reserved first. Only after the 
 
 ## Routing `xqry` commands
 
-`xqry` resolves its target from a single bus snapshot, without probing servers in turn or waiting for their timeouts.
+`xqry` resolves its target from a single snapshot of the bus in the current `RDB_NAMESPACE`, without probing servers in turn or waiting for their timeouts. The combined `--bus` listing does not expand the routing scope of other commands.
 
 | Situation | Result |
 | --- | --- |
@@ -68,7 +68,7 @@ An ad hoc query cannot combine sources from different instances. RetractorDB doe
 
 ## Inspecting the bus
 
-`xqry --bus` does not contact any server. It shows the name, PID, mode, query file, and streams of every live instance. The `--yaml` modifier produces an `apiVersion: xqry/v1` document suitable for scripts.
+`xqry --bus` does not contact any server. Without setting `RDB_NAMESPACE`, it discovers every bus of the current version that is accessible to the current account and has live instances. Each bus gets a separate `NAMESPACE:` section with instance names, PIDs, modes, query files, and streams; `(default)` denotes the bus without a namespace. The `--yaml` modifier produces one `apiVersion: xqry/v1` document with a `servers` list. Every entry has a `namespace` field: `null` for the default bus or a quoted namespace name. With no live instances, table output is empty and YAML contains `servers: []`.
 
 The `MODE` column can contain several letters:
 
