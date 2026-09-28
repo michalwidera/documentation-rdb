@@ -30,7 +30,7 @@ Allowed options:
   -f [ --influxdb ]              influxDB output mode
   -p [ --gnuplot ] arg           x,y - gnuplot output mode
   -z [ --gnuplot-rtl ]           gnuplot output: newest samples on the right
-  --gnuplot-ohlc                 gnuplot output: row = open, high, low, close,
+  -o [ --gnuplot-ohlc ]          gnuplot output: row = open, high, low, close,
                                  then the samples of that candle
   -e [ --config ] arg            config file (TOML); overrides search
   -h [ --help ]                  produce help message
@@ -137,9 +137,9 @@ Each subscription creates its own response queue. When the server stops or repla
 | `-f` / `--influxdb` | InfluxDB line protocol. |
 | `-p` / `--gnuplot x,y` | Data and commands for feeding gnuplot directly. |
 | `-z` / `--gnuplot-rtl` | A gnuplot modifier that puts the newest samples on the right. |
-| `--gnuplot-ohlc` | A gnuplot modifier that draws a candlestick chart: the record is open, high, low, close, followed by that candle's samples. |
+| `-o` / `--gnuplot-ohlc` | A gnuplot modifier that draws a candlestick chart: the record is open, high, low, close, followed by that candle's samples. |
 
-Only one format may be selected. `--gnuplot-rtl` and `--gnuplot-ohlc` require `--gnuplot` and can be combined. In `--gnuplot-ohlc` mode the first `-p` parameter counts samples, not candles; the record layout and the drawing rules are described in the [Candlestick Chart (OHLC)](../../usage-examples/candlestick-chart-ohlc.md) example. Raw format sends all array-field elements and preserves the `NULL` map per element.
+Only one format may be selected. `--gnuplot-rtl` and `-o` / `--gnuplot-ohlc` require `--gnuplot` and can be combined. In `--gnuplot-ohlc` mode the first `-p` parameter counts samples, not candles; the record layout and the drawing rules are described in the [Candlestick Chart (OHLC)](../../usage-examples/candlestick-chart-ohlc.md) example. Raw format sends all array-field elements and preserves the `NULL` map per element.
 
 ## Ad hoc commands
 
