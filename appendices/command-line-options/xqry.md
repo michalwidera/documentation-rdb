@@ -141,6 +141,8 @@ Each subscription creates its own response queue. When the server stops or repla
 
 Only one format may be selected. `--gnuplot-rtl` and `-o` / `--gnuplot-ohlc` require `--gnuplot` and can be combined. In `--gnuplot-ohlc` mode the first `-p` parameter counts samples, not candles; the record layout and the drawing rules are described in the [Candlestick Chart (OHLC)](../../usage-examples/candlestick-chart-ohlc.md) example. Raw format sends all array-field elements and preserves the `NULL` map per element.
 
+In OHLC output, records without valid candle values do not produce candles, but may still produce a sample line. If the current window has no valid candles, `xqry` sends only the sample series; if it has no valid samples, only the candle series. A window with no valid points sends no empty `plot` command to gnuplot.
+
 ## Ad hoc commands
 
 `--adhoc` attaches exactly one `SELECT`, `DECLARE`, or `RULE` to the active plan:
@@ -160,7 +162,9 @@ Compiler directives and several statements in one request are rejected. Logical 
 xqry --server service --reset plan.rql
 ```
 
-Before changing the active model, the server parses and compiles the set and reserves its stream names, storage files, and rotation counter. Rejection does not stop the old plan. An accepted plan becomes active at the end of the current slot, old subscriptions receive an end marker, and artifacts from the previous epoch are cleaned up according to startup and rotation rules. An empty file switches the server to idle state.
+Before changing the active model, the server parses and compiles the set, checks whether its disk output files can be opened, and reserves its stream names, storage files, and rotation counter. File validation does not create them; a refusal, such as `cannot open output file`, does not stop the old plan. An accepted plan becomes active at the end of the current slot, old subscriptions receive an end marker, and artifacts from the previous epoch are cleaned up according to startup and rotation rules. An empty file switches the server to idle state.
+
+The file check is preliminary: a path may change between the `OK` response to `--reset` and the actual storage open. A late open failure during the plan swap is not currently returned to the client as a refusal and may stop the server; `OK` does not guarantee that this later operation will succeed.
 
 When the target is a service instance, accepted contents are also written to its startup file so they survive a process restart.
 

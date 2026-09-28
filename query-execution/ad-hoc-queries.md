@@ -14,6 +14,8 @@ The ad hoc channel accepts **exactly one `SELECT`, `DECLARE`, or `RULE` statemen
 
 A syntax error or invalid value is returned to the client with its reason, and the server continues to accept commands. The parser rejects, among other cases, out-of-range numeric literals, a zero denominator, a zero interval (in `DECLARE` and with `&`, `%`, or `-`), and an empty `FILE` name. If attachment fails after import, the server restores the previous plan and releases newly claimed stream names and storage files on the bus. The same command can be retried after the cause is fixed.
 
+Before attaching a `SELECT` whose output is stored on disk, the server checks whether it can open the data file and, for the applicable storage profiles, the `.shadow` file. This check does not create new files; for a missing file, it checks the parent directory. A refusal returns the reason to the client, such as `cannot open output file`, without changing the plan. If the directory becomes unavailable after this check, a later failure to open a POSIX or POSIXSHD accessor, or a DEFAULT/DIRECT segment, is also returned as a refusal: the server rolls back the import and new claims on the bus, stays running, and allows the command to be retried. This handling of late open failures does not cover the `STORAGE GENERIC` profile.
+
 A new source can be declared without stopping a running engine:
 
 ```
@@ -43,7 +45,7 @@ Ad hoc commands extend the current plan. Use `xqry --reset file.rql` to replace 
 
 ### Where an ad hoc stream begins
 
-A plan built from the start of system operation numbers records from the logical origin computed by the compiler. A query attached ad hoc has no such history - its first record is **the first slot in which the runtime saw it**, not slot zero of the plan. The import is atomic: the compiled tree and its stream instances are published under a common lock, and the execution loop rebuilds the timeline without rewinding, even when the new query introduces a new rate to the system.
+A plan built from the start of system operation numbers records from the logical origin computed by the compiler. A query attached ad hoc has no such history - its first record is **the first slot in which the runtime saw it**, not slot zero of the plan. The import is atomic: the compiled tree and its stream instances are published under a common lock, and the execution loop rebuilds the timeline without rewinding, even when the new query introduces a new rate to the system. The same lock protects the zero step from collecting declaration names through publishing the first records, so an ad hoc import waits until that step finishes.
 
 > **_NOTE:_** This behavior is covered by the `issue227_join_alignment` test (the `adhoc-origin` case).
 

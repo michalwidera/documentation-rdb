@@ -102,6 +102,8 @@ open file_name { TYPE field TYPE field ... }
 
 If a `.desc` file exists, the schema is read from it. If not, the schema must be given in `{}`.
 
+If the data file cannot be opened, `open` prints the reason (such as `cannot open output file`) and leaves the storage unopened instead of terminating the process. If the attempt created a new `.desc` file but failed to open the data file, that descriptor file is removed. After fixing the cause, `open` can be retried.
+
 Array field types: `STRING name[8]` means a text field 8 bytes long (array multiplicity = 8).
 
 Examples:

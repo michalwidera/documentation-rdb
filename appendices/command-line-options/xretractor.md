@@ -30,7 +30,7 @@ Available options:
   -q [ --queryfile ] arg      query set file
   -r [ --quiet ]              no output on screen, skip presenter
   -s [ --status ]             check service status
-  --cleanup                   remove leftovers of dead instances and exit
+  -o [ --cleanup ]            remove leftovers of dead instances and exit
   -v [ --verbose ]            verbose mode (show stream params)
   -x [ --xqrywait ]           wait with processing for first query
   -n [ --name ] arg           instance name; own IPC area and lock
@@ -54,8 +54,8 @@ Available options:
 | `queryfile` | The name of the query file to compile and run. |
 | `quiet` | Skips displaying results on screen. Processing runs normally, but the result presenter isn't started. |
 | `status` | Checks the instance lock selected by `--name`, `RDB_NAMESPACE`, or the historical empty name. `Running` means another process holds the same identity. |
-| `cleanup` | Removes recognized leftovers of dead instances and exits without starting a plan. Live owners remain protected; scope and limitations are described below. |
-| `verbose` | An increased-verbosity mode - shows stream parameters. A leftover from the development phase; likely to be kept. |
+| `cleanup` | Removes recognized leftovers of dead instances and exits without starting a plan. Also available as `-o`. Live owners remain protected; scope and limitations are described below. |
+| `verbose` | Shows stream parameters and adds a message on `stderr` about streams growing without bound on disk. A separate log entry depends on the logging level. |
 | `xqrywait` | Compiles the queries and holds off the processing loop until the first query arrives from an `xqry` process. Required when using `-m N` at the same time in scripts and tests: without this flag, the server may process all N cycles before the client manages to connect, resulting in no data and `xqry` waiting until it times out. The first command received from `xqry` (e.g. `-d` or `-s`) unblocks the processing loop. |
 | `name arg` | Gives the instance a stable name. The name selects a separate lock file and IPC area and lets commands be routed through `xqry --server`. It may contain at most 32 lowercase letters, digits, `_`, and `-`, and its first character must be a letter. |
 | `autoname` | Generates a container-style instance name and prints it at startup. Mutually exclusive with `--name`. |
@@ -137,6 +137,7 @@ Available options:
   -c [ --onlycompile ]   compile only mode
   -q [ --queryfile ] arg query set file
   -r [ --quiet ]         no output on screen, skip presenter
+  -v [ --verbose ]       verbose mode (show stream params)
   -d [ --dot ]           create dot output
   -m [ --csv ]           create csv output
   -f [ --fields ]        show fields in dot file
@@ -150,7 +151,7 @@ Available options:
   -g [ --config ] arg    config file (TOML); overrides search
 ```
 
-In this mode, options for creating diagrams and diagnostic dumps, described in more detail elsewhere in this work, are available.
+In this mode, options for creating diagrams and diagnostic dumps, described in more detail elsewhere in this work, are available. `-v` is also available when compiling without running the plan.
 
 ### Visualization and diagnostic options
 
@@ -271,5 +272,7 @@ Log: /tmp/xretractor.log
 ```
 
 The file `/tmp/xretractor.log` records the history of invocations and the system's internal events. In a production environment, this file should be cleaned up or rotated regularly.
+
+The `Config: Defaults` line means that no TOML files were loaded. If configuration was loaded, `Config:` lists the file paths in load order. For a syntax error in a plan loaded from a file, the parser's log entry also includes that file's path.
 
 The last line contains MIT license information, which allows safe use of the code in corporate applications.
