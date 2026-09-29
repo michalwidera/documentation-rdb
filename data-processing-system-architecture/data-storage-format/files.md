@@ -218,6 +218,8 @@ Each entry describes a run of consecutive records with an identical null pattern
 | `bitsetSize`  | 8 B (size\_t) | number of fields (N)                    |
 | `bitset`      | ⌈N/8⌉ B       | bit i = field i is null                 |
 
+The null pattern belongs to a particular record: a bit set for one field does not change the other fields or other records described by the same descriptor. A numeric array field `T[N]` is one descriptor entry and has one shared null bit for all N elements; a set bit means the entire field is null. When N scalar fields are converted into one `T[N]` field, a null in any of them sets that shared bit.
+
 ### RLE compression
 
 Consecutive records with the same null pattern are merged into a single entry by incrementing `recordCount`. A new entry is only created once the pattern changes.
