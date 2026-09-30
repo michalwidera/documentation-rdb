@@ -241,9 +241,11 @@ Starting without an `.rql` file, or with an empty one, creates an idle instance 
 xqry --server service --reset plan.rql
 ```
 
-The server parses and compiles the complete contents, checks resource collisions, reserves the new set, and then switches plans at a slot boundary. Rejection leaves the old plan unchanged. An empty reset file returns the server to idle. On a service instance, accepted contents are also written to the service's startup file.
+The server parses and compiles the complete contents, checks retained `.desc` files, storage compatibility under `:ROTATION`, and resource collisions, reserves the new set, and then switches plans at a slot boundary. A malformed, empty, or incompatible descriptor causes a refusal with a reason; the old plan and the service startup file remain unchanged. An empty reset file returns the server to idle. On a service instance, accepted contents are also written to the service's startup file.
 
-The alternative `xretractor new-plan.rql` path detects a running systemd unit, validates the set, atomically overwrites its startup file, and requests a restart. Explicitly selecting another identity with `--name` or `--autoname` starts a separate instance instead. After a critical error, the service plan is cleared so systemd restarts the process safely in idle state.
+The alternative `xretractor new-plan.rql` path detects a running systemd unit and validates the set, retained stores, and descriptors **before** atomically overwriting its startup file and requesting a restart. A refusal returns code `71` with `nothing was changed`; the running service keeps its plan. Explicitly selecting another identity with `--name` or `--autoname` starts a separate instance instead.
+
+On a normal start, a bad `.desc` produces a diagnostic naming the file; a syntax error also identifies the line and column. The plan is refused before processing starts. Existing descriptors of `DECLARE` sources are always checked; descriptors of `SELECT` outputs and substrates are checked when `:ROTATION` preserves their files. In a systemd unit, refusing a plan before startup because of parsing, compilation, an incompatible retained store, or a bad `.desc` clears the service query file. The next unit start enters idle mode instead of retrying that plan; a critical `FatalError` clears the file as well. Outside a unit, the operator's `.rql` file is left untouched. Compile-only mode (`-c`) neither reads retained `.desc` files nor clears the query file, even inside a unit.
 
 ---
 
