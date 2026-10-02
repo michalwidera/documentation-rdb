@@ -12,8 +12,16 @@ The `STORAGE` clause in the `SELECT` command, and the `SUBSTRAT` directive, acce
 | `POSIX`        | `posixBinaryFile`                     | no       | no     | A single binary file; no retention              |
 | `POSIXSHD`     | `posixBinaryFileWithShadow`           | no       | yes    | A single file with shadow protection; no retention |
 | `GENERIC`      | `genericBinaryFile`                   | no       | no     | Generic binary file                             |
-| `DEVICE`       | `binaryDeviceRO`                      | no       | no     | Binary device; read-only; looping depends on `ONESHOT` |
-| `TEXTSOURCE`   | `textSourceRO`                        | no       | no     | Text file; read-only; looping depends on `ONESHOT` |
+
+Any other value in `STORAGE` or `SUBSTRAT` is a compile error. The `DECLARE` source types - `BINFILE`, `TEXTSOURCE` and `DEVICE`, written to the `TYPE` field of the source descriptor - are not storage profiles: their accessors (`binaryDeviceRO`, `textSourceRO`) are read-only, so a `SELECT` result cannot be created in them. The source kind is chosen by the keyword in [DECLARE](../declare-command.md#source-kinds).
+
+The refusal names the stream and the allowed profiles:
+
+```
+STORAGE DEVICE of stream dst is not a storage profile but a source kind of DECLARE; use DEFAULT, MEMORY, DIRECT, POSIX, POSIXSHD or GENERIC
+```
+
+In the `STORAGE` clause a profile, like every keyword, has two spellings - upper case or lower case (`MEMORY`, `memory`); `Memory` is an error. The value of the `SUBSTRAT` directive is a string and its case does not matter.
 
 **Retention** - artifacts are rotated, older files are deleted automatically (requires `RETENTION capacity segments` on `SELECT`).\
 **Shadow** - every modification is written to a separate `.shadow` file; historical data is protected from being overwritten.
@@ -43,7 +51,7 @@ The choice depends on the environment's requirements:
 * **Production environment, critical data** → `DEFAULT` (retention + shadow)
 * **Production environment, historically insignificant data** → `MEMORY` (zero disk usage, retention in RAM)
 * **Development and debugging** → `DEFAULT` or `DIRECT` (data visible on disk)
-* **Reading from a device or a text file** → `DEVICE` / `TEXTSOURCE` (respectively)
+* **Reading from a binary file, a text file or a device** → not through `STORAGE`, but through the source kind in `DECLARE` (`BINFILE`, `TEXTFILE`, `DEVICE`)
 
 ## Example
 

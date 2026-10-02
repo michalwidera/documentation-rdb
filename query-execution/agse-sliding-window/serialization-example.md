@@ -3,7 +3,7 @@
 Let's start by creating a file qplan3.rql with the following content:
 
 ```rql
-DECLARE a BYTE, b BYTE STREAM A, 1 FILE 'data3.txt'
+DECLARE a BYTE, b BYTE STREAM A, 1 TEXTFILE 'data3.txt'
 SELECT * STREAM str3 FROM A@(1,1)
 ```
 

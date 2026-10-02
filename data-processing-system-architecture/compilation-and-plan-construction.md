@@ -7,7 +7,7 @@ The compilation process happens before every run of the xretractor process, prov
 As an example file for compilation, we'll use a file query.rql with the following content:
 
 ```rql
-DECLARE a INTEGER STREAM core0, 0.1 FILE 'datafile1.dat'
+DECLARE a INTEGER STREAM core0, 0.1 BINFILE 'datafile1.dat'
 
 SELECT str1[0]+1 STREAM str1 FROM core0>2
 ```

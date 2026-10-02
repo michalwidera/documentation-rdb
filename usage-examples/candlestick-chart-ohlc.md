@@ -12,7 +12,7 @@ The file `examples/candlestick/candlestick.rql`:
 STORAGE 'temp'
 DEFAULT VOLATILE
 
-DECLARE v BYTE STREAM source, 0.02 FILE '/dev/random'
+DECLARE v BYTE STREAM source, 0.02 DEVICE '/dev/random'
 
 SELECT int(AVG(source[0] : 25)) STREAM price FROM source
 SELECT * STREAM bar FROM price@(10,-10)

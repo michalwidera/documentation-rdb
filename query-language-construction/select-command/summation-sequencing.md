@@ -5,8 +5,8 @@ Data flows into the system and is processed within it. The order in which it arr
 Let's start by analyzing the following query:
 
 ```rql
-DECLARE a BYTE STREAM A, 1 FILE 'data1.txt'
-DECLARE a BYTE STREAM B, 2 FILE 'data2.txt'
+DECLARE a BYTE STREAM A, 1 TEXTFILE 'data1.txt'
+DECLARE a BYTE STREAM B, 2 TEXTFILE 'data2.txt'
 SELECT * STREAM str1 FROM A+B
 ```
 
@@ -69,7 +69,7 @@ In the diagram shown in Fig. 6, you can see which marbles were joined and which 
 A stream may appear in a `FROM` expression more than once - directly and under another operator, e.g. `bar + MAX(bar)` or `src + src>1`, or twice under different operators, e.g. `src@(1,5) + src@(2,3)`. The input record then holds a separate block of fields for each occurrence, and a reference by name (`bar[0]`, `src[4]`) as well as the `SELECT *` expansion must point to one of them. The compiler picks the first occurrence in a fixed order: first the direct operands of the expression in the order they are written, only then the streams nested under operators (a reducer, a shift, a window), also in the order they are written. The index range check uses the same order, so the bound of `src[k]` is measured on the occurrence the reference will actually read.
 
 ```rql
-DECLARE v INTEGER[3] STREAM bar, 1/50 FILE 'a.txt'
+DECLARE v INTEGER[3] STREAM bar, 1/50 TEXTFILE 'a.txt'
 SELECT * STREAM chk FROM bar + MAX(bar)
 ```
 

@@ -19,7 +19,7 @@
             keywords: {
                 keyword: "REF TYPE RETENTION RETMEMORY",
                 type: "BYTE STRING UINT INTEGER FLOAT DOUBLE RATIONAL",
-                literal: "DEFAULT MEMORY DIRECT POSIX POSIXSHD GENERIC DEVICE TEXTSOURCE",
+                literal: "DEFAULT MEMORY DIRECT POSIX POSIXSHD GENERIC BINFILE DEVICE TEXTSOURCE",
             },
             contains: [
                 {

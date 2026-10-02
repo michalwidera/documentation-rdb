@@ -9,9 +9,9 @@ Query compilation in RetractorDB proceeds through multiple stages. Each stage tr
 Throughout the chapter we follow a single query - `query.rql` - through the successive stages:
 
 ```rql
-DECLARE a BYTE, b INTEGER STREAM core0, 0.1 FILE 'sensor_a.txt'
-DECLARE c INTEGER, d FLOAT STREAM core1, 0.2 FILE 'sensor_b.txt'
-DECLARE e INTEGER STREAM core2, 0.3 FILE 'sensor_c.txt'
+DECLARE a BYTE, b INTEGER STREAM core0, 0.1 TEXTFILE 'sensor_a.txt'
+DECLARE c INTEGER, d FLOAT STREAM core1, 0.2 TEXTFILE 'sensor_b.txt'
+DECLARE e INTEGER STREAM core2, 0.3 TEXTFILE 'sensor_c.txt'
 
 SELECT *                    STREAM merged FROM core0 + core1
 SELECT merged[0], merged[2] STREAM result FROM merged

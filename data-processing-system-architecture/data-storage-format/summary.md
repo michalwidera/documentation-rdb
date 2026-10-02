@@ -4,7 +4,7 @@ This chapter draws together the conclusions from every part of the data-storage-
 
 ## The file set and accessor types
 
-Every artifact or substrate consists of up to five files - the binary data file, the `.desc` descriptor, the `.meta` index, the `.shadow` data shadow, and the `.meta.shadow` index shadow. The last two form a pair: the data shadow preserves the originally recorded content, and the index shadow preserves the null patterns that go with it, so correcting a record does not desynchronize data from metadata. The `TYPE` field in the descriptor selects the `FileInterface` implementation: `DEFAULT` (data + shadow + retention), `MEMORY` (RAM only, ephemerides), `DEVICE` / `TEXTSOURCE` (read-only external sources), and intermediate variants. The accessor is chosen once, when `storage` is initialized - the RQL query logic knows nothing about storage details.
+Every artifact or substrate consists of up to five files - the binary data file, the `.desc` descriptor, the `.meta` index, the `.shadow` data shadow, and the `.meta.shadow` index shadow. The last two form a pair: the data shadow preserves the originally recorded content, and the index shadow preserves the null patterns that go with it, so correcting a record does not desynchronize data from metadata. The `TYPE` field in the descriptor selects the `FileInterface` implementation: `DEFAULT` (data + shadow + retention), `MEMORY` (RAM only, ephemerides), `BINFILE` / `TEXTSOURCE` / `DEVICE` (read-only external sources), and intermediate variants. The accessor is chosen once, when `storage` is initialized - the RQL query logic knows nothing about storage details.
 
 ## Artifact files
 

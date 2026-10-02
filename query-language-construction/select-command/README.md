@@ -37,7 +37,7 @@ A query built this way assumes that someone has declared streams A and B. This c
 An optional size after the name in the `STREAM` clause expands one template into that many queries. The `$` symbol denotes a zero-based instance ordinal:
 
 ```rql
-DECLARE cell INTEGER[4] STREAM cells, 1/10 FILE 'cells.txt'
+DECLARE cell INTEGER[4] STREAM cells, 1/10 TEXTFILE 'cells.txt'
 
 SELECT cells[$] STREAM cell[4] FROM cells
 SELECT *        STREAM grouped FROM cell[0]#cell[1]#cell[2]#cell[3]
@@ -58,7 +58,7 @@ Expansion is the compiler's first pass. Afterwards the plan is identical to one 
 A generator may cover successive stages of the same pipeline. This lets one computation be written once and applied independently to every input channel:
 
 ```rql
-DECLARE sample INTEGER[8] STREAM samples, 1/1000 FILE 'samples.txt'
+DECLARE sample INTEGER[8] STREAM samples, 1/1000 TEXTFILE 'samples.txt'
 
 SELECT sample[$]^2 STREAM square[8] FROM samples
 SELECT *           STREAM energy[8] FROM SUMC(square[$]@(25,100))

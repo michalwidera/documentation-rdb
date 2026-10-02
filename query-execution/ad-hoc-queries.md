@@ -19,7 +19,7 @@ Before attaching a `SELECT` whose output is stored on disk, the server checks wh
 A new source can be declared without stopping a running engine:
 
 ```
-$ xqry -a "DECLARE a BYTE STREAM C, 1 FILE 'data3.txt'"
+$ xqry -a "DECLARE a BYTE STREAM C, 1 TEXTFILE 'data3.txt'"
 ```
 
 Exit code `0` with no message means that the declaration was accepted. The declaration receives its logical-index base in its first due slot. If a query attached later needs a window or a time shift, emission waits until the source has accumulated the complete required history. `HOLD` is not required; it remains an optional directive that delays the physical read. Repeating `DECLARE` for an existing name is rejected rather than treated as a configuration update.
@@ -27,7 +27,7 @@ Exit code `0` with no message means that the declaration was accepted. The decla
 With multiple live instances, `DECLARE` alone cannot identify an owner because it has no `FROM` clause. The target must then be selected explicitly:
 
 ```
-$ xqry --server measurements -a "DECLARE a BYTE STREAM C, 1 FILE 'data3.txt'"
+$ xqry --server measurements -a "DECLARE a BYTE STREAM C, 1 TEXTFILE 'data3.txt'"
 ```
 
 Attaching the first declaration to a server started with an empty plan is not yet supported; the ad hoc channel requires an active data model.
@@ -54,8 +54,8 @@ A plan built from the start of system operation numbers records from the logical
 We'll start the example by preparing a simple query:
 
 ```rql
-DECLARE a BYTE STREAM A, 1 FILE 'data1.txt'
-DECLARE a BYTE STREAM B, 2 FILE 'data2.txt'
+DECLARE a BYTE STREAM A, 1 TEXTFILE 'data1.txt'
+DECLARE a BYTE STREAM B, 2 TEXTFILE 'data2.txt'
 SELECT * STREAM str1 FROM A+B
 ```
 

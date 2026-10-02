@@ -90,7 +90,7 @@ The inverse operations of `#` - they determine what interval one of the input st
 In a query with multiple output streams, one stream may depend on another:
 
 ```rql
-DECLARE a INTEGER STREAM core0, 0.1 FILE 'data.dat'
+DECLARE a INTEGER STREAM core0, 0.1 BINFILE 'data.dat'
 SELECT str1[0] STREAM str1 FROM core0
 SELECT str2[0] STREAM str2 FROM str1
 ```

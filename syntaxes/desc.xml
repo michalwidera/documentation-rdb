@@ -23,6 +23,7 @@
       <item>POSIX</item>
       <item>POSIXSHD</item>
       <item>GENERIC</item>
+      <item>BINFILE</item>
       <item>DEVICE</item>
       <item>TEXTSOURCE</item>
     </list>

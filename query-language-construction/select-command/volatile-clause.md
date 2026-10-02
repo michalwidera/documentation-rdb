@@ -8,7 +8,7 @@ The `VOLATILE` clause in the `SELECT` command creates a stream stored in memory.
 
 ```rql
 DEFAULT VOLATILE
-DECLARE a INTEGER STREAM sensor, 0.1 FILE '/dev/sensor0'
+DECLARE a INTEGER STREAM sensor, 0.1 DEVICE '/dev/sensor0'
 SELECT sensor[0]*100 STREAM scaled  FROM sensor
 SELECT scaled[0]     STREAM history FROM scaled PERSISTENT
 ```
@@ -57,7 +57,7 @@ The ring has capacity `max(RETENTION n, plan need, 1)` and counts against `[limi
 ## Example
 
 ```rql
-DECLARE a INTEGER STREAM sensor, 0.1 FILE '/dev/sensor0'
+DECLARE a INTEGER STREAM sensor, 0.1 DEVICE '/dev/sensor0'
 
 SELECT sensor[0] * 100 STREAM scaled FROM sensor VOLATILE
 ```

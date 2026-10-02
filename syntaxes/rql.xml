@@ -8,6 +8,9 @@
       <item>DECLARE</item><item>declare</item>
       <item>RETENTION</item><item>retention</item>
       <item>FILE</item><item>file</item>
+      <item>BINFILE</item><item>binfile</item>
+      <item>TEXTFILE</item><item>textfile</item>
+      <item>DEVICE</item><item>device</item>
       <item>STORAGE</item><item>storage</item>
       <item>ROTATION</item><item>rotation</item>
       <item>SUBSTRAT</item><item>substrat</item>
@@ -43,8 +46,6 @@
       <item>POSIX</item><item>posix</item>
       <item>POSIXSHD</item><item>posixshd</item>
       <item>GENERIC</item><item>generic</item>
-      <item>DEVICE</item><item>device</item>
-      <item>TEXTSOURCE</item><item>textsource</item>
     </list>
     <list name="aggregators">
       <item>MIN</item><item>min</item>

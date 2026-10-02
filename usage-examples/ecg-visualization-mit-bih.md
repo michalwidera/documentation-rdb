@@ -75,12 +75,12 @@ The result is three files in the `examples/ecg/rec205/` directory:
 The file `rec205-replay.rql` defines two streams:
 
 ```rql
-DECLARE MLII INTEGER, V1 INTEGER STREAM ecg, 1/360 FILE 'rec205'
+DECLARE MLII INTEGER, V1 INTEGER STREAM ecg, 1/360 BINFILE 'rec205'
 
 SELECT ecg.MLII, ecg.V1 STREAM s205out FROM ecg VOLATILE
 ```
 
-The `STREAM ecg, 1/360` clause sets the time interval of a single sample to 1/360 s, matching the actual sampling rate of 360 Hz. The `TYPE DEVICE` clause in the descriptor causes the `rec205` file to be read sequentially in a loop (after the last sample, reading returns to the beginning), enabling continuous playback of the recording.
+The `STREAM ecg, 1/360` clause sets the time interval of a single sample to 1/360 s, matching the actual sampling rate of 360 Hz. The `BINFILE` keyword (`TYPE BINFILE` in the descriptor) causes the `rec205` file to be read as raw binary records, sequentially in a loop (after the last sample, reading returns to the beginning), enabling continuous playback of the recording.
 
 The output stream `s205out` is declared `VOLATILE`, so it is not written to disk - the data only reaches the consumer process (`xqry`).
 
@@ -211,9 +211,9 @@ The file `rec205-detect.rql` implements the complete five-stage pipeline for bot
 # Keep windows extracted automatically from FROM in memory
 SUBSTRAT 'memory'
 
-DECLARE MLII INTEGER, V1 INTEGER STREAM ecg, 1/360 FILE 'rec205'
-DECLARE bp_coef INTEGER[25] STREAM bpf, 1 FILE 'bp_coef.txt'
-DECLARE d_coef INTEGER[5]   STREAM df,  1 FILE 'd_coef.txt'
+DECLARE MLII INTEGER, V1 INTEGER STREAM ecg, 1/360 BINFILE 'rec205'
+DECLARE bp_coef INTEGER[25] STREAM bpf, 1 TEXTFILE 'bp_coef.txt'
+DECLARE d_coef INTEGER[5]   STREAM df,  1 TEXTFILE 'd_coef.txt'
 
 # Extracting the channels
 SELECT ecg.MLII            STREAM mlii    FROM ecg VOLATILE

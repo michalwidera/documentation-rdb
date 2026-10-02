@@ -13,7 +13,7 @@ $ seq 1 12 > data.txt
 The source declaration - one record per second, one field:
 
 ```rql
-DECLARE val INTEGER STREAM src, 1 FILE 'data.txt'
+DECLARE val INTEGER STREAM src, 1 TEXTFILE 'data.txt'
 ```
 
 ## Tumbling window - non-overlapping windows
@@ -112,7 +112,7 @@ Compare this with `src@(2,2)`, which would give `1 2`, `3 4`, `5 6`… - order m
 All four variants can be run at once by placing them in a single `.rql` file:
 
 ```rql
-DECLARE val INTEGER STREAM src, 1 FILE 'data.txt'
+DECLARE val INTEGER STREAM src, 1 TEXTFILE 'data.txt'
 
 SELECT * STREAM tumbling FROM src@(4,4)
 SELECT * STREAM sliding  FROM src@(1,4)

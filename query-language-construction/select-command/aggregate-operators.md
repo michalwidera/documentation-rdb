@@ -45,7 +45,7 @@ SELECT m[0]*2 STREAM o FROM m
 A numeric declaration `T[N]` is one descriptor entry but occupies `N` flat record slots. The reducer visits every one of them. This query therefore finds the minimum across all 24 cells in the current record, not just `cells[0]`:
 
 ```rql
-DECLARE cells INTEGER[24] STREAM battery, 1 FILE 'cells.txt'
+DECLARE cells INTEGER[24] STREAM battery, 1 TEXTFILE 'cells.txt'
 SELECT * STREAM cell_min FROM MIN(battery)
 ```
 
@@ -76,7 +76,7 @@ A consumer of a `RATIONAL` field must know its numerator-denominator layout (→
 ### Example: mean of an AGSE-window record
 
 ```rql
-DECLARE val INTEGER STREAM src, 1 FILE 'data.txt'
+DECLARE val INTEGER STREAM src, 1 TEXTFILE 'data.txt'
 
 # AGSE builds a five-sample record; AVG reduces its five fields
 SELECT * STREAM ma5 FROM AVG(src@(1,5))
@@ -98,7 +98,7 @@ The window appears directly in `FROM`, so it does not require a separate query. 
 ### Example: MIN and MAX
 
 ```rql
-DECLARE v INTEGER STREAM src, 0.1 FILE '/dev/urandom'
+DECLARE v INTEGER STREAM src, 0.1 DEVICE '/dev/urandom'
 SELECT * STREAM min10 FROM MIN(src@(1,10))
 SELECT * STREAM max10 FROM MAX(src@(1,10))
 ```
@@ -127,7 +127,7 @@ FROM src
 Only nesting a history aggregate inside another history aggregate is forbidden. `width` is a positive number of records. For an output record with logical index `n`, the aggregate evaluates `record_value` separately on source records `n-(width-1)` through `n`, then reduces exactly those values. The window is end-stamped and advances by one record. The output interval stays equal to the source interval, logical origin advances by `width-1`, and the startup tail is inherited from the source.
 
 ```rql
-DECLARE a INTEGER, b INTEGER STREAM src, 1 FILE 'data.txt'
+DECLARE a INTEGER, b INTEGER STREAM src, 1 TEXTFILE 'data.txt'
 
 SELECT MIN(a : 5), MAX(a : 5), AVG(a+b : 5), SUMC(a : 5) \
 STREAM stats \
@@ -154,7 +154,7 @@ For `DECLARE a INTEGER[3]`, select one channel, for example `MIN(a[0] : 5)`. `MI
 The two axes can be composed without serializing the array or manually creating a separate stream for every channel:
 
 ```rql
-DECLARE value INTEGER[24] STREAM sensors, 1/10 FILE 'sensors.txt'
+DECLARE value INTEGER[24] STREAM sensors, 1/10 TEXTFILE 'sensors.txt'
 
 SELECT *                    STREAM row_min      FROM MIN(sensors)
 SELECT MIN(row_min[0] : 10) STREAM interval_min FROM row_min
@@ -204,7 +204,7 @@ The `width` parameter (a natural number after the colon `:`) specifies the outpu
 ### Example
 
 ```rql
-DECLARE v INTEGER STREAM src, 1 FILE 'data.txt'
+DECLARE v INTEGER STREAM src, 1 TEXTFILE 'data.txt'
 
 SELECT to_string(src[0]:10) STREAM labels FROM src
 ```

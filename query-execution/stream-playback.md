@@ -13,7 +13,7 @@ We'll play back a file prepared this way in RetractorDB.
 Next, let's create the following file filled with queries for the system - query.rql, containing only a single declaration ending in HOLD.
 
 ```rql
-DECLARE a INTEGER STREAM core, 1 FILE 'data.txt' HOLD
+DECLARE a INTEGER STREAM core, 1 TEXTFILE 'data.txt' HOLD
 ```
 
 In one window, we run the command:

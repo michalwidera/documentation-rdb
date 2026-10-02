@@ -18,8 +18,9 @@ The `TYPE` field in the descriptor (or the `STORAGE` directive in RQL) selects t
 | `POSIXSHD`            | `posixBinaryFileWithShadow`            | POSIX with a shadow file                                     |
 | `MEMORY`              | `memoryFile`                           | RAM-only storage (ephemerides)                               |
 | `GENERIC`             | `genericBinaryFile`                    | Generic binary accessor                                      |
-| `DEVICE`              | `binaryDeviceRO`                       | External binary input-data device (read-only)                |
-| `TEXTSOURCE`          | `textSourceRO`                         | Text input-data source (read-only)                           |
+| `BINFILE`             | `binaryDeviceRO`                       | Regular binary input-data file, `DECLARE ... BINFILE` (read-only) |
+| `DEVICE`              | `binaryDeviceRO`                       | Character device or FIFO, `DECLARE ... DEVICE` (read-only)   |
+| `TEXTSOURCE`          | `textSourceRO`                         | Text input-data source, `DECLARE ... TEXTFILE` (read-only)   |
 
 ***
 

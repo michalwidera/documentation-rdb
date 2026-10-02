@@ -7,7 +7,7 @@ Such a construction is a directed graph - a graph with multiple roots and multip
 Let's start by considering the following trivial query:
 
 ```rql
-DECLARE a UINT STREAM core0, 0.1 FILE 'datafile1.txt'
+DECLARE a UINT STREAM core0, 0.1 TEXTFILE 'datafile1.txt'
 SELECT str1[0] STREAM str1 FROM core0
 ```
 
@@ -24,8 +24,8 @@ For a full description of the `-d -f -s` flags and how to interpret the output -
 Let's make this graph a bit more complex by adding two ephemeris declarations and an additional artifact.
 
 ```rql
-DECLARE a UINT STREAM core0, 0.1 FILE 'datafile1.txt'
-DECLARE a UINT STREAM core1, 0.1 FILE 'datafile2.txt'
+DECLARE a UINT STREAM core0, 0.1 TEXTFILE 'datafile1.txt'
+DECLARE a UINT STREAM core1, 0.1 TEXTFILE 'datafile2.txt'
 SELECT str1[0] STREAM str1 FROM core0
 SELECT str2[0] STREAM str2 FROM core0 + core1
 ```

@@ -119,7 +119,7 @@ The invariant describes writing, however, not every file that can be handed to t
 A plan computing the mean over a window of three samples:
 
 ```rql
-DECLARE v INTEGER STREAM src, 1 FILE 'data.txt'
+DECLARE v INTEGER STREAM src, 1 TEXTFILE 'data.txt'
 
 SELECT * STREAM ravg FROM AVG(src@(1,3))
 ```
@@ -178,7 +178,7 @@ The **append** operation (adding a new record) writes data to the end of the fil
 ### Example
 
 ```rql
-DECLARE a INTEGER, b FLOAT STREAM str1, 0.1 FILE 'data.dat'
+DECLARE a INTEGER, b FLOAT STREAM str1, 0.1 BINFILE 'data.dat'
 ```
 
 Record size: INTEGER (4 B) + FLOAT (4 B) = **8 bytes**. After 5 seconds of data arriving (10 Hz), the file `data.dat` is 5 × 10 × 8 = **400 bytes**.

@@ -45,7 +45,7 @@ We create a `query.rql` file:
 ```rql
 STORAGE 'temp'
 
-DECLARE a INTEGER STREAM core0, 1 FILE 'datafile1.txt'
+DECLARE a INTEGER STREAM core0, 1 TEXTFILE 'datafile1.txt'
 SELECT str1[0] STREAM str1 FROM core0
 
 RULE anomaly_log ON str1 WHEN str1[0] > 24 DO DUMP -3 TO 3
@@ -87,7 +87,7 @@ Without `RETENTION`, each successive trigger of the rule overwrites the same fil
 ```rql
 STORAGE 'temp'
 
-DECLARE a INTEGER STREAM core0, 1 FILE 'datafile1.txt'
+DECLARE a INTEGER STREAM core0, 1 TEXTFILE 'datafile1.txt'
 SELECT str1[0] STREAM str1 FROM core0
 
 RULE anomaly_log ON str1 WHEN str1[0] > 24 DO DUMP -3 TO 3 RETENTION 5
@@ -112,7 +112,7 @@ Any number of rules can be attached to a single stream. The example below combin
 ```rql
 STORAGE 'temp'
 
-DECLARE a INTEGER STREAM core0, 1 FILE 'datafile1.txt'
+DECLARE a INTEGER STREAM core0, 1 TEXTFILE 'datafile1.txt'
 SELECT str1[0] STREAM str1 FROM core0
 
 RULE lower_threshold \

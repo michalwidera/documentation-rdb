@@ -5,8 +5,8 @@ Everyone who has written SQL knows the magic `*` character in that language. Inv
 The example uses the canonical declarations used throughout the chapter:
 
 ```rql
-DECLARE a BYTE, b INTEGER STREAM core0, 0.1 FILE 'sensor_a.txt'
-DECLARE c INTEGER, d FLOAT STREAM core1, 0.2 FILE 'sensor_b.txt'
+DECLARE a BYTE, b INTEGER STREAM core0, 0.1 TEXTFILE 'sensor_a.txt'
+DECLARE c INTEGER, d FLOAT STREAM core1, 0.2 TEXTFILE 'sensor_b.txt'
 
 SELECT *         STREAM merged FROM core0 + core1
 SELECT merged[2] STREAM result FROM merged

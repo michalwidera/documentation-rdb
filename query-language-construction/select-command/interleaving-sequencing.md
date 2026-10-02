@@ -3,8 +3,8 @@
 Let's now analyze the interleaving operation. Let's create a file qplan2.rql with the following content:
 
 ```rql
-DECLARE a BYTE STREAM A, 1 FILE 'data1.txt'
-DECLARE a BYTE STREAM B, 2 FILE 'data2.txt'
+DECLARE a BYTE STREAM A, 1 TEXTFILE 'data1.txt'
+DECLARE a BYTE STREAM B, 2 TEXTFILE 'data2.txt'
 SELECT * STREAM str1 FROM A#B
 ```
 
