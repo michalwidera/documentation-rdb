@@ -50,7 +50,7 @@ xqry --server measurements --select temperature
 xqry --server measurements --kill
 ```
 
-Without this option, the client reads the bus in the current namespace: the default `xrdbbus_v6`, or `xrdbbus_v6_<namespace>` when `RDB_NAMESPACE` is set. When exactly one instance is live, it is selected automatically. With several instances, `--select` and `--detail` are routed to the owner of the named stream. Instance-wide commands (`--hello`, `--dir`, `--kill`, and `--reset`) are ambiguous and require `--server`. The combined `--bus` listing described below does not change this routing.
+Without this option, the client reads the bus in the current namespace: the default `xrdbbus_v7`, or `xrdbbus_v7_<namespace>` when `RDB_NAMESPACE` is set. When exactly one instance is live, it is selected automatically. With several instances, `--select` and `--detail` are routed to the owner of the named stream. Instance-wide commands (`--hello`, `--dir`, `--kill`, and `--reset`) are ambiguous and require `--server`. The combined `--bus` listing described below does not change this routing.
 
 Ad hoc routing examines sources in `FROM`, or the stream in `ON` for a `RULE`. They must all belong to one server. A `DECLARE` has no addressee, so with several instances it also requires `--server`. A misspelled name and a query crossing server boundaries are rejected before a command is sent.
 

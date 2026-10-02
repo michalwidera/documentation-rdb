@@ -77,7 +77,7 @@ Rejects a stream reducer (`MIN`, `MAX`, `AVG`, `SUMC` without a window width) us
 
 Expands every `SELECT ... STREAM name[N] ...` template into `N` ordinary queries named `name$0`...`name$(N-1)` and substitutes the instance ordinal for `$` in fields, values, and `FROM` references. It is the first pass that rewrites the plan (only the `checkFunctionCalls` and `checkStreamReducerFieldRefs` checks precede it): everything after it receives a plan indistinguishable from hand-written queries. See [SELECT Command](../query-language-construction/select-command/README.md#stream-generators) for syntax and constraints.
 
-Before copying a template it also checks the number of streams after expansion: at most 128. See [Plan Size Limits](plan-size-limits.md) for the other bounds.
+Before copying a template it also checks the number of streams after expansion: at most 148. See [Plan Size Limits](plan-size-limits.md) for the other bounds.
 
 #### snapshotNamedSourceRefs
 

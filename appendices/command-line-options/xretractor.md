@@ -93,7 +93,7 @@ The command does not start a plan. It attempts to acquire locks on recognized re
 | --- | --- |
 | Instance lock files | Scans `paths.lock_dir` selected by configuration, defaulting to the process's temporary directory. |
 | IPC identities | Scans the shared `/tmp`; removes an abandoned lock and its command queue, response segment, and map mutex. |
-| Bus | Removes unused segments of the current `xrdbbus_v6` layout protected by presence locks. |
+| Bus | Removes unused segments of the current `xrdbbus_v7` layout protected by presence locks. |
 
 The scope is not restricted to an instance selected with `--name` or a single `RDB_NAMESPACE`. Filesystem permissions still control access to resources. The command does not enumerate or remove client response queues; it also leaves v5 and older segments untouched because they do not participate in the presence-lock protocol.
 

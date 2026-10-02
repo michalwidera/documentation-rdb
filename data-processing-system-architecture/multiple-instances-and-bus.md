@@ -34,7 +34,7 @@ Every IPC object a server creates - the command queue, the response queues, the 
 
 The bus is shared by the host or `RDB_NAMESPACE`. Every live server publishes its name, PID, operating modes, plan file, and stream names. A slot is considered live only when both the PID and process start time match `/proc`; a zombie process does not retain resources.
 
-The current layout uses the `xrdbbus_v6` segment, or `xrdbbus_v6_<RDB_NAMESPACE>` when `RDB_NAMESPACE` is set. Each namespace has its own registry and collision checks. Segment users hold a presence lock through `flock`; the last one leaving can remove the unused segment. Layout versions have separate registries: concurrently running binaries using v5 and v6 does not provide collision checks between their streams and storage paths. Stop older instances before upgrading.
+The current layout uses the `xrdbbus_v7` segment, or `xrdbbus_v7_<RDB_NAMESPACE>` when `RDB_NAMESPACE` is set. Each namespace has its own registry and collision checks. Segment users hold a presence lock through `flock`; the last one leaving can remove the unused segment. Layout versions have separate registries: concurrently running binaries using v6 and v7 does not provide collision checks between their streams and storage paths. Stop older instances before upgrading.
 
 Before starting or replacing a plan, the bus checks that the following do not overlap:
 

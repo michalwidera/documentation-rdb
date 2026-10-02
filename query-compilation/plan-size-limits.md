@@ -9,7 +9,7 @@ RetractorDB rejects a plan whose dimensions exceed the safe range of the parser,
 | Field length | `1..65536` | `TYPE[N]`, `STRING[N]`, and `to_string(x : N)`; the DESC parser uses the same field limit. |
 | History reach | up to `65536` | The step and absolute window width of `@(step, window)`, record-window width, `>N` shift, and `DUMP -L TO R` bounds. Steps and widths must be positive; shifts and `DUMP` bounds may be zero. |
 | `DUMP ... RETENTION` | `0..256` | Number of concurrently retained dump tasks; `0` means no task retention. |
-| Generator size | `1..128` | `STREAM name[N]`; after generator expansion, the whole plan may have at most 128 streams. |
+| Generator size | `1..148` | `STREAM name[N]`; after generator expansion, the whole plan may have at most 148 streams. |
 
 A storage `RETENTION` capacity must be positive. In its two-part form, the segment count may be `0`, meaning no limit on disk segments. A literal outside its numeric type is a parser error; exceeding one of the bounds above produces a message such as `AGSE step 65537 exceeds the limit 65536`. `to_string(x : 0)` produces `to_string width 0 must be greater than zero`; it does not create a zero-width field.
 
@@ -23,7 +23,7 @@ A storage `RETENTION` capacity must be positive. In its two-part form, the segme
 | Sum of flat record elements across the plan | `2^18` (`262144`) | Bounds descriptor construction and execution cost, including many small fields. |
 | Logical origin and startup tail | `INT_MAX` (`2147483647`) slots each | Compiler results must fit the `int` representation used in the plan. |
 
-The 128-stream check after expansion applies to plans with a generator and runs before copying its instances. A plan without a generator may pass that stage, but the bus slot limit is checked when the plan is registered or replaced. Record and field sizes are checked before building potentially large descriptors.
+The 148-stream check after expansion applies to plans with a generator and runs before copying its instances. A plan without a generator may pass that stage, but the bus slot limit is checked when the plan is registered or replaced. Record and field sizes are checked before building potentially large descriptors.
 
 The compiler names the stream and the exceeded dimension, for example `Stream 'x' reads an input record of 1048577 bytes; the limit is 1048576`, `Plan needs 262145 record elements; the limit is 262144 (reached at stream 'x')`, `Stream 'x' has a logical origin of ... slots; the limit is 2147483647`, or the corresponding `startup latency` message.
 
