@@ -10,7 +10,8 @@ The query-tree traversal algorithm is carried out by two cooperating components:
 flowchart TD
     A([Initialization]) --> B
     B["processZeroStep()<br/>DECLARE only: revRead(0) → fire()"] --> C
-    C["TimeLine::getNextTimeSlot()<br/>Determine the next time slot"] --> D
+    C["TimeLine::getNextTimeSlot()<br/>Determine the next time slot"] --> W
+    W["rtAbsoluteSleep()<br/>Wait for the deadline: anchor + slot time"] --> D
     D["getAwaitedStreamsSet()<br/>Filter: rInterval divides the current slot"] --> E
     E["dataModel::processRows(inSet)<br/>Pass 1: non-declarations → input → SELECT windows → output → write<br/>Pass 2: declarations → unblock"] --> F
     F["broadcast(inSet)<br/>Boost IPC queues → xqry clients"] --> C
@@ -98,6 +99,23 @@ After this step, every declaration has `bufferState = armed` - the data from the
 ***
 
 ## The main loop: filtering and processing
+
+### Slot schedule
+
+Before processing a slot, the loop waits for its deadline \\(T_k = T_0 + t_k\\). \\(T_0\\) is the epoch anchor, read from the monotonic clock (`CLOCK_MONOTONIC`) just before the first slot, and \\(t_k\\) is the logical time of the slot returned by `TimeLine::getNextTimeSlot()`. The loop sleeps only for the time remaining until the deadline (`rtAbsoluteSleep()`), in every clocked mode - with the `--realtime` option and without it. The deadline is derived anew from the rational axis of the plan with millisecond precision: the fraction of a millisecond is truncated in each deadline separately, so the rounding error does not add up.
+
+- **The work time of a slot does not shift the schedule.** Computation, rules, and waiting for a `DEVICE` source use part of the period. As long as they fit in the period, the next slot starts at its deadline and the delay does not grow.
+- **A temporary delay is made up.** If a slot ends after the deadline of the next one (e.g. a long wait for a `DEVICE` or a `DO SYSTEM` rule), the overdue slots are processed in order and without sleeping until execution catches up with the schedule. The loop then sleeps again until the deadlines of the original grid. No slot or record is skipped, and the processing order does not change.
+- **Sustained overload is not hidden.** When the average work time of a slot exceeds its period, the backlog grows without bound: all slots are still computed, in the same order, but later and later relative to their deadlines. The anchor is never moved, so the delay stays visible (e.g. in the `wake_lag_ns` probe). Execution catches up only once the work of the slots again fits in the period with a margin.
+- **Suspending the process leaves a backlog.** A process resumed after `SIGSTOP` immediately processes the overdue slots in bursts. On Linux `CLOCK_MONOTONIC` does not advance while the system is suspended; on macOS it does, so there a machine sleep also leaves a backlog to make up.
+
+The anchor belongs to the plan epoch. Accepting a new plan (`xqry --reset`) builds a new time axis and reads a new anchor, so the new epoch does not inherit the backlog of the previous one. An ad hoc import does not rewind the axis: new intervals join the current axis from their first occurrence after the current slot, and their deadlines count from the same anchor.
+
+The `TIMEOUT` deadline of a `DEVICE` source counts from the actual wake-up of the slot, not from its deadline. In `--no-clock` mode the loop does not sleep at all. The `--realtime` option does not change the schedule; it only adds `SCHED_FIFO` scheduling, memory page locking, and CPU affinity (see *Command-Line Options - xretractor*).
+
+A stop signal (`SIGINT`, `SIGTERM`, `SIGHUP`) that interrupts the loop's sleep ends the run before the slot whose deadline has not yet come. A sleep interrupted in any other way is resumed until the same deadline, without determining a new period. On Linux a signal sent to the process interrupts the loop's sleep; on macOS it may reach the communication thread, and then, as with `xqry -k`, the run ends only after the current period.
+
+> **_NOTE:_** The slot schedule is covered by the `slot_schedule` integration test and by the `ut_executor_rt` unit test.
 
 ### Query filtering: `getAwaitedStreamsSet()`
 

@@ -24,7 +24,7 @@ The xretractor process handles system signals and shuts down in a controlled man
 | `SIGTERM` | `kill <pid>`          | standard process termination              |
 | `SIGHUP`  | `kill -HUP <pid>`     | termination on terminal close             |
 
-All three signals produce the same effect: a graceful shutdown - the processing loop finishes the current cycle and stops. This allows xretractor, running as a service, to be shut down safely without risking corruption of artifact files.
+All three signals produce the same effect: a graceful shutdown - the processing loop finishes the current cycle and stops. A signal that finds the loop waiting for the deadline of the next slot ends it immediately, and the slot whose deadline has not yet come is no longer computed (see [Slot schedule](../query-execution/query-tree-traversal-algorithm.md#slot-schedule)). This allows xretractor, running as a service, to be shut down safely without risking corruption of artifact files.
 
 ### Stopping via xqry
 

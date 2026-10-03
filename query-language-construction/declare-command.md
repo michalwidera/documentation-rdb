@@ -88,7 +88,8 @@ The effective deadline of every `DEVICE` source and its origin (`RQL`, `config`,
 >
 > * Reading without blocking does not protect against a driver that blocks inside the read call despite the non-blocking mode. Such a device needs isolation in a separate process or thread.
 > * A deadline longer than the stream rate overruns the slot. Compilation then prints a warning, e.g. `DECLARE s1: TIMEOUT 0.05 s (RQL) is longer than the interval 0.02 s; waiting overruns the slot`, taking the value from `retractor.toml` into account as well.
-> * Without the `--realtime` option the next slot is scheduled relative to the end of the previous one, so the time spent waiting for a `DEVICE` source shifts all following slots - just like the computation time does. The `--realtime` option schedules slots against a fixed anchor of the time axis, and waiting that fits in the slot does not shift it.
+> * Every clocked mode, with the `--realtime` option and without it, schedules slots against a fixed anchor of the time axis. Waiting for a `DEVICE` source that fits in the slot together with the computation does not shift the following slots. A longer wait delays the next slots, which are then made up without sleeping; if waiting and computation persistently exceed the period, the backlog grows - see [Slot schedule](../query-execution/query-tree-traversal-algorithm.md#slot-schedule).
+> * The schedule does not synchronize the device clock. A producer persistently faster than the plan still builds a backlog in the source buffer. A persistently slower one lacks samples: this gives `NULL` records in the ticks in which a record did not arrive in time, and `TIMEOUT` can at most turn them into a delay growing together with the shortfall.
 
 > **_NOTE:_** Reading a `DEVICE` source, `TIMEOUT` and the end of data are covered by the `device_timeout` test and by the `ut_faccbindev` unit test.
 
