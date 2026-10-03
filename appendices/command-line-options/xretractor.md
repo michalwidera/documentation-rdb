@@ -62,8 +62,8 @@ Available options:
 | `noanykey` | No keypress interrupts the processing loop. Without this option, pressing any key stops the system. |
 | `service` | Service mode: the log goes to `stderr` (captured by journald), with no log file in the temporary directory, no timestamp of its own, and no ANSI codes. The mode can also be enabled through the `XRETRACTOR_SERVICE` environment variable set to any value other than empty or `0` - convenient in a systemd unit via `Environment=`. |
 | `realtime` | Enables real-time scheduling: `SCHED_FIFO`, `mlockall`, and absolute sleep for the processing thread. Requires `CAP_SYS_NICE` and `CAP_IPC_LOCK` capabilities (or root). Recommended in production environments requiring deterministic response time. |
-| `no-clock` | Offline mode: retains the rational timeline, logical indices, origins, and plan tails, but skips wall-clock waiting. It cannot be combined with `--realtime`. |
-| `until-eof` | Makes declared file sources non-wrapping and stops when the first one runs out of data. A `DEVICE` source has no end of file. |
+| `no-clock` | Offline mode: retains the rational timeline, logical indices, origins, and plan tails, but skips wall-clock waiting. The `TIMEOUT` deadline of every `DEVICE` source is then 0. It cannot be combined with `--realtime`. |
+| `until-eof` | Switches declared sources to `ONESHOT` mode and stops when the first one runs out of data. For a `DEVICE` source exhaustion is the first end of data after data was received, that is, the writer leaving. |
 | `config` | Path to a configuration file in TOML format. It overrides the standard search order (`/etc/retractor/retractor.toml`, then `$XDG_CONFIG_HOME/retractor/retractor.toml` or `~/.config/retractor/retractor.toml`). A missing configuration file is a valid state - the program starts with built-in defaults. |
 | `llimitqry` | Limits the number of iterations in the query-execution loop. A value of `0` means no limit. |
 
@@ -115,7 +115,7 @@ xretractor query.rql --no-clock --until-eof --noanykey --quiet
 
 `--no-clock` removes sleeps only. It does not change slot order or artifact content, making it suitable for fast verification after completion. It can outrun an `xqry` client, however, so it is not intended for live observation.
 
-`--until-eof` prevents a sequential source from returning to the start of its file. EOF is checked after a slot has been processed, exactly before the first record that would otherwise have to use synthetic NULL beyond the input. With several sources, the first exhausted one stops the run so the plan does not continue with a missing input. It may be combined with `-m N`; whichever condition occurs first wins.
+`--until-eof` prevents a sequential source from returning to the start of its file. EOF is checked after a slot has been processed, exactly before the first record that would otherwise have to use synthetic NULL beyond the input. A `DEVICE` source is read at the start of the slot, so its exhaustion is checked before the slot - with the same effect. With several sources, the first exhausted one stops the run so the plan does not continue with a missing input. It may be combined with `-m N`; whichever condition occurs first wins.
 
 > **⚠️ Warning** Short options depend on the mode. During execution, `-f` means `--no-clock` and `-u` means `--until-eof`. With `-c`, the same letters mean `--fields` and `--rules`, respectively, and do not start processing.
 
@@ -189,6 +189,7 @@ The absence of any file is a **valid state** - the program starts with default v
 | --- | ------- | ------- |
 | `storage.dir` | _(none)_ | Default artifact directory. Applied **only** when the RQL set contains no `:STORAGE` directive - RQL wins. The directory must exist and be writable, otherwise the program exits with `Configuration error: storage.dir …`. |
 | `storage.default_retention` | _(none)_ | Pair `[capacity, segments]`, both positive. Sets bounded retention on `DEFAULT` and `DIRECT` file streams without their own `RETENTION`, including substrates. It does not change `MEMORY`, stores without retention, or explicit retention. An invalid value logs a warning and leaves default retention unset. |
+| `sources.timeout_s` | _(none, i.e. 0)_ | Read deadline in seconds for `DEVICE` sources without a `TIMEOUT` clause (→ [Reading a DEVICE source and TIMEOUT](../../query-language-construction/declare-command.md#reading-a-device-source-and-timeout)). An explicit clause in RQL wins, including `TIMEOUT 0`. In `--no-clock` mode the deadline is 0. It does not change `BINFILE`, `TEXTFILE` or `timing.query_no_data_timeout_ms`. A negative, non-numeric value or one above 86400 stops the start with `Configuration error: sources.timeout_s …`. |
 | `ipc.queue_buffer_seconds` | `10` | IPC queue depth expressed in seconds of stream; the element count is `seconds / interval`. |
 | `ipc.min_queue_elements` | `100` | Lower bound on queue capacity, independent of the stream interval. |
 | `ipc.client_response_max_fails` | `300` | Multiplier for the `xqry` response time budget. A monotonic-clock deadline is set to this value times the polling interval (10 ms) and covers both waiting for space in the command queue and waiting for the response. |
@@ -204,7 +205,7 @@ The absence of any file is a **valid state** - the program starts with default v
 
 Every IPC object the server creates - the response-map segment, the map mutex, the command queue, the response queues, and the bus segment - is given an explicit `0600` mode, so the trust boundary is the account the instance runs under, not the umask of the systemd unit. The client loses nothing by it: `xqry` opens all of these objects through `open_only` only, so it has to run under that account anyway.
 
-Out-of-range values do not stop the service: the program logs a warning and uses the default. The exception is `storage.dir`, whose invalidity is a hard error - it would mean results landing somewhere unintended, or nowhere.
+Out-of-range values do not stop the service: the program logs a warning and uses the default. The exceptions are `storage.dir`, whose invalidity would mean results landing somewhere unintended, or nowhere, and `sources.timeout_s`, whose silent replacement with the default would change how sources are waited for - both are hard errors of `xretractor`. `xqry` does not check `sources.timeout_s`.
 
 Example file:
 
@@ -212,6 +213,9 @@ Example file:
 [storage]
 dir = "/var/lib/retractor"
 default_retention = [1000, 4]
+
+[sources]
+timeout_s = 0.01
 
 [limits]
 history_memory_mib = 1024
@@ -229,7 +233,7 @@ lock_dir = "/var/run/retractor"
 autoname = false
 ```
 
-> **_NOTE:_** Layer loading and validation are covered by the `ut_appConfig` unit test; hard rejection of an invalid `storage.dir` by the `config_storage_validation` integration test.
+> **_NOTE:_** Layer loading and validation are covered by the `ut_appConfig` unit test; hard rejection of an invalid `storage.dir` by the `config_storage_validation` integration test, and the precedence and rejection of `sources.timeout_s` by the `device_timeout` integration test.
 
 ---
 

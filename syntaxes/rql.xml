@@ -18,6 +18,7 @@
       <item>DISPOSABLE</item><item>disposable</item>
       <item>ONESHOT</item><item>oneshot</item>
       <item>HOLD</item><item>hold</item>
+      <item>TIMEOUT</item><item>timeout</item>
       <item>VOLATILE</item><item>volatile</item>
       <item>PERSISTENT</item><item>persistent</item>
       <item>DEFAULT</item><item>default</item>

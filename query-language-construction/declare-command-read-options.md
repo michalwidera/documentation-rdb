@@ -9,7 +9,7 @@ DECLARE field type STREAM name, rate BINFILE | TEXTFILE source
     [HOLD]
 ```
 
-The directives are independent and can be combined freely. They apply only to replayed files (`BINFILE`, `TEXTFILE`). The live source `DEVICE` takes none of them - see the [matrix](#options-and-source-kinds-matrix) at the end of the chapter.
+The directives are independent and can be combined freely. They apply to replayed files (`BINFILE`, `TEXTFILE`). The live source `DEVICE` takes only `ONESHOT` of them, with the meaning described below - see the [matrix](#options-and-source-kinds-matrix) at the end of the chapter. The read deadline of `DEVICE` is set by the separate `TIMEOUT` clause, described in the [DECLARE Command](declare-command.md#reading-a-device-source-and-timeout) chapter.
 
 ## ONESHOT
 
@@ -21,7 +21,13 @@ DECLARE measurement INTEGER STREAM burst, 0.1 BINFILE 'data.dat' ONESHOT
 
 Use case: one-off loading of historical data into the system.
 
-The `--until-eof` (`-u`) option of `xretractor` reads all files as if every declaration carried `ONESHOT`, and stops processing once the first of them is exhausted.
+A `DEVICE` source has no file to rewind, so `ONESHOT` changes only the meaning of the end of data. Without `ONESHOT` the end of data means there is no writer: the slot gets a `NULL` record, and a writer connecting again resumes the data. With `ONESHOT` exhaustion is the first end of data after at least one byte was received; from then on the source returns only `NULL` records, also when another writer connects.
+
+```rql
+DECLARE sample INTEGER STREAM recording, 1/100 DEVICE '/tmp/recording.fifo' ONESHOT
+```
+
+The `--until-eof` (`-u`) option of `xretractor` reads all sources as if every declaration carried `ONESHOT`, and stops processing once the first of them is exhausted. For a `DEVICE` source exhaustion is checked before the slot that would get a `NULL` record from beyond the end of data, so such a record reaches no stream.
 
 ## DISPOSABLE
 
@@ -56,10 +62,10 @@ Use case: keeping the start of a recording until it is first needed, e.g. on use
 
 | Option       | `BINFILE` | `TEXTFILE` | `DEVICE` |
 | ------------ | :-------: | :--------: | :------: |
-| `ONESHOT`    | yes       | yes        | no       |
+| `ONESHOT`    | yes       | yes        | yes      |
 | `DISPOSABLE` | yes       | yes        | no       |
 | `HOLD`       | yes       | yes        | no       |
 
-`DEVICE` with any of these directives is a compile error naming the stream and the option, e.g. `DECLARE s: DEVICE does not take HOLD`. The reasons: a live source has no beginning to return to; holding the reads does not stop the producer, it only builds up a backlog; and `DISPOSABLE` would delete the path of the device or FIFO, whose lifecycle does not belong to the reader.
+`DEVICE` with `DISPOSABLE` or `HOLD` is a compile error naming the stream and the option, e.g. `DECLARE s: DEVICE does not take HOLD`. The reasons: holding the reads does not stop the producer, it only builds up a backlog, and `DISPOSABLE` would delete the path of the device or FIFO, whose lifecycle does not belong to the reader. `ONESHOT` on `DEVICE` does not rewind a file, it only marks the end of data - see [ONESHOT](#oneshot).
 
-The deprecated `FILE` form resolved as `DEVICE` (a `/dev/...` path) refuses `DISPOSABLE` and `HOLD`, and accepts `ONESHOT` unchanged - see [Deprecated FILE form](declare-command.md#deprecated-file-form).
+The deprecated `FILE` form resolved as `DEVICE` (a `/dev/...` path) behaves the same: it refuses `DISPOSABLE` and `HOLD` and accepts `ONESHOT` - see [Deprecated FILE form](declare-command.md#deprecated-file-form).

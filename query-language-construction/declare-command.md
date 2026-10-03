@@ -8,6 +8,7 @@ Its syntax is described as follows:
 DECLARE field type[N] [, field type[N]]
 STREAM name, rate
 BINFILE | TEXTFILE | DEVICE source
+[TIMEOUT time]
 [DISPOSABLE]
 [ONESHOT]
 [HOLD]
@@ -17,7 +18,7 @@ BINFILE | TEXTFILE | DEVICE source
 
 _Fig. 3. DECLARE command syntax diagram_
 
-The railroad diagram in Fig. 3 was generated from the `declare_statement` rule in the system's ANTLR4 grammar (`RQL.g4`). The diagram is read by following the lines from left to right: rounded green boxes are keywords and symbols entered literally, rectangles are values supplied by the user. A loop looping back through a comma means multiple field declarations are possible; the branch at the rate shows it can be written as a fraction (numerator/denominator) or as a single number; the branch before the source is the choice of the source kind (`BINFILE`, `TEXTFILE`, `DEVICE` or the deprecated `FILE`); tracks bypassing DISPOSABLE, ONESHOT, and HOLD mean each of these directives is optional.
+The railroad diagram in Fig. 3 was generated from the `declare_statement` rule in the system's ANTLR4 grammar (`RQL.g4`). The diagram is read by following the lines from left to right: rounded green boxes are keywords and symbols entered literally, rectangles are values supplied by the user. A loop looping back through a comma means multiple field declarations are possible; the branch at the rate shows it can be written as a fraction (numerator/denominator) or as a single number; the branch before the source is the choice of the source kind (`BINFILE`, `TEXTFILE`, `DEVICE` or the deprecated `FILE`); the track bypassing TIMEOUT means the read deadline is optional, and its value - like the rate - is written as a fraction or a number; tracks bypassing DISPOSABLE, ONESHOT, and HOLD mean each of these directives is optional.
 
 ## Source kinds
 
@@ -27,7 +28,7 @@ The data format follows from the keyword, never from the name or extension of th
 | ---------- | ----------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------ |
 | `BINFILE`  | raw binary records whose size follows from the fields                                           | regular file only                  | back to the beginning (loop), with `ONESHOT` end of source |
 | `TEXTFILE` | text: values separated by whitespace, the `NULL` token marks a missing value                    | regular file only                  | as `BINFILE`                                           |
-| `DEVICE`   | raw binary records from a live source; it interprets neither text nor the `NULL` token, a zero byte is zero | character device or FIFO           | -                                                      |
+| `DEVICE`   | raw binary records from a live source; it interprets neither text nor the `NULL` token, a zero byte is zero | character device or FIFO           | no writer: `NULL` records until data comes back; with `ONESHOT` end of source |
 
 ```rql
 DECLARE MLII INTEGER, V1 INTEGER STREAM ecg, 1/360 BINFILE 'rec205'
@@ -37,9 +38,9 @@ DECLARE sample BYTE STREAM sensor, 0.02 DEVICE '/dev/urandom'
 
 The extension selects nothing: `BINFILE 'bytes.txt'` reads raw bytes, and `TEXTFILE 'values.dat'` parses text.
 
-`DEVICE` is a live source, so it takes neither `DISPOSABLE`, `ONESHOT` nor `HOLD` - these directives apply to replayed files (`BINFILE`, `TEXTFILE`), see [Read Options](declare-command-read-options.md). Opening a FIFO declared as `DEVICE` waits for a writer, so the writer must appear before the plan starts.
+`DEVICE` is a live source, so it takes neither `DISPOSABLE` nor `HOLD` - these directives apply to replayed files (`BINFILE`, `TEXTFILE`), see [Read Options](declare-command-read-options.md). It does take `ONESHOT` and its own `TIMEOUT` clause, described in [Reading a DEVICE source and TIMEOUT](#reading-a-device-source-and-timeout). Opening a FIFO declared as `DEVICE` does not wait for a writer - the plan starts, and the writer may connect later.
 
-The words `BINFILE`, `TEXTFILE` and `DEVICE` are reserved - no stream may be named that way (in lowercase either).
+The words `BINFILE`, `TEXTFILE`, `DEVICE` and `TIMEOUT` are reserved - no stream or field may be named that way (in lowercase either).
 
 ### File kind check
 
@@ -50,6 +51,46 @@ xretractor: stream 'src': BINFILE 'feed.fifo' is a FIFO, not a regular file
 ```
 
 A path that does not exist is not a refusal: the stream then yields `NULL` records and the log gets a warning. Compilation with `-c` does not perform this check - it does not have to run on the machine with the data.
+
+## Reading a DEVICE source and TIMEOUT
+
+Reading a `DEVICE` source never waits without end and never holds up the rest of the system. The device or FIFO is opened and read without blocking, and the only waiting happens before the slot is computed, outside the data model locks. An `xqry` client therefore gets its answer also while the engine waits for device data, and the waiting time does not enter the measured slot computation time (E1).
+
+The optional `TIMEOUT` clause gives the read deadline in seconds. The value is written the same way as the stream rate - as a fraction, a number with a point, or an integer:
+
+```rql
+DECLARE a BYTE STREAM s0, 1/50 DEVICE '/dev/sensor0'
+DECLARE b BYTE STREAM s1, 1/50 DEVICE '/dev/sensor1' TIMEOUT 1/100
+DECLARE c BYTE STREAM s2, 1/50 DEVICE '/dev/sensor2' TIMEOUT 0
+```
+
+| Value | Meaning |
+| ----- | ------- |
+| `TIMEOUT 0` | an immediate attempt: no complete record in a due slot gives a `NULL` record without waiting |
+| `TIMEOUT t`, `t > 0` | one deadline for the whole record, counted from the start of the due slot; after it a `NULL` record |
+| no clause | the deadline from the `timeout_s` key in the `[sources]` section of `retractor.toml`, and 0 without that key |
+
+An explicit clause wins over the configuration - including an explicit `TIMEOUT 0`, which switches off a positive value from `retractor.toml` for a single source. A negative value is an error: there is no "wait forever" deadline. A deadline longer than a day is a plan error as well, and so is `TIMEOUT` on `BINFILE`, `TEXTFILE` and the deprecated `FILE` (on `FILE` with a hint to declare the source with an explicit `DEVICE`). The configuration key is described in [Command-line options - xretractor](../appendices/command-line-options/xretractor.md#configuration-file-toml).
+
+Reading properties:
+
+- **The deadline is not renewed.** A system call interrupted by a signal and a spurious wakeup do not extend the wait - the deadline is fixed from the start of the slot.
+- **Several sources wait in parallel.** All `DEVICE` sources due in a slot wait together, so the slot grows by at most the largest deadline, not by their sum.
+- **An incomplete record survives the deadline.** Bytes that arrived before the deadline wait in the source buffer; a record completed later goes to the next due slot. Only a record that is incomplete at the moment the writer disconnects is dropped with a warning - the record boundary is lost together with the writer, so the next writer starts a new record.
+- **The moment of reading.** A `DEVICE` record consumed in slot k is read at the start of slot k, not at the end of the previous slot as for `BINFILE` and `TEXTFILE`. The logical record indices are the same: the same bytes given as `BINFILE` and through a FIFO as `DEVICE` give the same results, also behind operators that join streams of different rates.
+- **End of data.** The end of data is decided only by a read returning zero bytes (a FIFO without a writer, a hung-up terminal). Without `ONESHOT` it means "there is no writer right now": the slot gets a `NULL` record, the source stays open, and a writer connecting again resumes the data. With `ONESHOT` (also in `--until-eof` mode) exhaustion is the first end of data **after** at least one byte was received - an end before the first data is a writer that has not connected yet. A writer that connects and disconnects without writing therefore does not end the run.
+- **A read error** other than a momentary lack of data (e.g. an unplugged USB device) gives `NULL` records and a warning on the state change, without exhausting the source. Reopening an unplugged device is not supported.
+- **Mode without a clock.** In `--no-clock` (`-f`) mode the deadline of every `DEVICE` source is 0: real seconds have no conversion to virtual time. One immediate attempt in every due slot remains, so a FIFO with data written up front gives a repeatable run.
+
+The effective deadline of every `DEVICE` source and its origin (`RQL`, `config`, `default` or `no-clock`) goes to the engine log when the plan starts and on an ad hoc import, e.g. `DEVICE stream 's1': effective TIMEOUT 0.01 s (RQL)`. The `xretractor -c` listing shows an explicit clause in the same form as the rate, e.g. `timeout=1/100`.
+
+> **⚠️ Warning** Limits of real time:
+>
+> * Reading without blocking does not protect against a driver that blocks inside the read call despite the non-blocking mode. Such a device needs isolation in a separate process or thread.
+> * A deadline longer than the stream rate overruns the slot. Compilation then prints a warning, e.g. `DECLARE s1: TIMEOUT 0.05 s (RQL) is longer than the interval 0.02 s; waiting overruns the slot`, taking the value from `retractor.toml` into account as well.
+> * Without the `--realtime` option the next slot is scheduled relative to the end of the previous one, so the time spent waiting for a `DEVICE` source shifts all following slots - just like the computation time does. The `--realtime` option schedules slots against a fixed anchor of the time axis, and waiting that fits in the slot does not shift it.
+
+> **_NOTE:_** Reading a `DEVICE` source, `TIMEOUT` and the end of data are covered by the `device_timeout` test and by the `ut_faccbindev` unit test.
 
 ## Field types
 
@@ -120,7 +161,7 @@ After translation the rules of the chosen kind apply, including the file kind ch
 xretractor: stream 'src': BINFILE 'feed.fifo' is a FIFO, not a regular file (deprecated FILE resolved this path as BINFILE; declare it with DEVICE)
 ```
 
-A `FILE` declaration resolved as `DEVICE` takes `ONESHOT`, but neither `DISPOSABLE` nor `HOLD`. New plans should use the explicit keywords - the `FILE` form will be removed from the language in the future. `FILE` in the `SELECT` command still only names the result file and is not a deprecated form.
+A `FILE` declaration resolved as `DEVICE` gets the whole `DEVICE` reading described above and takes `ONESHOT`, but not `DISPOSABLE`, `HOLD` or `TIMEOUT` - its deadline comes only from `[sources] timeout_s` or is 0. New plans should use the explicit keywords - the `FILE` form will be removed from the language in the future. `FILE` in the `SELECT` command still only names the result file and is not a deprecated form.
 
 The warning about the deprecated form is silent by default, so existing plans do not change the program output. With `--verbose` (`-v`) `xretractor` prints one warning per declaration to stderr - at startup and in `-c` mode:
 

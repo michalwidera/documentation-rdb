@@ -21,7 +21,7 @@
                     "SELECT select STREAM stream FROM from DECLARE declare RETENTION retention " +
                     "FILE file BINFILE binfile TEXTFILE textfile DEVICE device " +
                     "STORAGE storage ROTATION rotation SUBSTRAT substrat RULE rule " +
-                    "DISPOSABLE disposable ONESHOT oneshot HOLD hold VOLATILE volatile " +
+                    "DISPOSABLE disposable ONESHOT oneshot HOLD hold TIMEOUT timeout VOLATILE volatile " +
                     "PERSISTENT persistent DEFAULT default ON on WHEN when DUMP dump SYSTEM system DO do TO to " +
                     "AND and OR or NOT not",
                 type: "BYTE Byte CHAR Char STRING String UINT Uint INTEGER Integer FLOAT Float DOUBLE Double",
