@@ -22,6 +22,35 @@ Addition, subtraction, and multiplication on `UINT` fields are checked: a sum or
 
 > **⚠️ Warning** After an interleave `A#B`, do not refer to its components as `A[0]`, `A.field`, `A[_]`, or `A.*`. An interleave has one shared schema; use the output stream name or recover a component with `&` or `%`. See [Aliasing](../../query-compilation/aliasing.md).
 
+## Unary operators
+
+The behavior in this section requires an engine version containing the fix for [#328](https://github.com/michalwidera/retractordb/issues/328).
+
+The operators `+`, `-`, and `~` accept a field, a function result, or a parenthesized expression. Each item in the `SELECT` list still produces one output field, and an operand in a `RULE` condition remains part of that condition.
+
+| Operator | Operand type | Result |
+| -------- | ------------ | ------ |
+| `+a` | Any value type, including `STRING` | The value and type of `a`, unchanged |
+| `-a` | `INTEGER`, `RATIONAL`, `FLOAT`, `DOUBLE` | Arithmetic negation, preserving the type |
+| `-a` | `BYTE`, `UINT` | Bitwise complement, preserving the type; the same result as `~a` |
+| `~a` | `BYTE`, `UINT` | Inversion of all bits within the operand type's width |
+
+For a `BYTE` value of 0, both `-a` and `~a` yield 255; for 1 they yield 254, and for 255 they yield 0. For `UINT`, the corresponding results for 0 and 1 are 4294967295 and 4294967294. This is neither subtraction from zero nor logical `NOT`. To obtain an arithmetic negative value from an unsigned field, explicitly convert its type first, for example `-to_double(a)`.
+
+The type is that of the computed operand, rather than just the source field. The literal `-1` is a negative `INTEGER`; it does not use the bitwise-complement rule for `BYTE` or `UINT`. An allowed operator passes `NULL` through unchanged. Overflow in arithmetic negation of an `INTEGER` or `RATIONAL` yields `NULL`; for example, `-a` over an `INTEGER` value of -2147483648 yields `NULL`.
+
+The operand of a unary operator includes exponentiation, multiplication, and division, but stops before binary `+` or `-`. Thus `-a+1` means `(-a)+1`, while `-(a+1)` negates the entire sum. `-a*b` means `-(a*b)`; write `(-a)*b` to negate only `a`. This distinction can change the operand type, the bitwise-complement result, or where overflow occurs. Likewise, `~a*b` means `~(a*b)`. The exponentiation distinction remains: `-2^2` yields 4, whereas `-a^2` means `-(a^2)`; write `(-a)^2` to square a negated field.
+
+```rql
+DECLARE b BYTE, u UINT, i INTEGER STREAM src, 1 TEXTFILE 'source.txt'
+SELECT -src[0], ~src[0], -src[1], ~src[1], +src[2], -(src[2]+1), -src[2]+1 STREAM unary FROM src
+RULE negative ON unary WHEN -unary[4] < 0 DO DUMP -1 TO 0
+```
+
+For input `0 1 5`, the result has seven fields: `255, 255, 4294967294, 4294967294, 5, -6, -4`. The rule checks the negation of the fifth field, that is `-5 < 0`.
+
+`-a` over `STRING` and `~a` over `INTEGER`, `RATIONAL`, `FLOAT`, `DOUBLE`, or `STRING` are rejected during compilation, both in `SELECT` and in a `RULE` condition. Diagnostics state the reason: `unary '-' is not defined for STRING` or `unary '~' is defined only for BYTE and UINT, not for ...`. When checking a file with `xretractor -c`, the reason appears in `Check result:`. Rejecting such an ad-hoc query (`xqry -a`) leaves the running plan and service active.
+
 ## Available scalar functions
 
 The sole name-and-arity list shared by the compiler and evaluator is the `rqlFunctions.hpp` table. Matching is case-insensitive and the canonical spelling is stored in the plan. An unknown function or invalid arity stops compilation rather than being deferred to runtime.
