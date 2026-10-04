@@ -80,7 +80,7 @@ help|h                          show this help
 | Command           | Description                                                             |
 | ------------------- | ---------------------------------------------------------------- |
 | `exit`, `quit`, `q` | Exit the tool. Data not yet written to the database stays on disk.  |
-| `quitdrop`, `qd`    | Exit and delete the open artifact files (data, `.desc`, `.meta`). |
+| `quitdrop`, `qd`    | Exit and delete the open artifact files (data, `.desc`, `.meta`). A data file referenced by `REF` in `.desc` outside the storage directory and `storage.ref_dirs` is kept - only `.desc` is deleted. |
 
 ---
 
@@ -103,6 +103,8 @@ open file_name { TYPE field TYPE field ... }
 If a `.desc` file exists, the schema is read from it. If not, the schema must be given in `{}`.
 
 If the data file cannot be opened, `open` prints the reason (such as `cannot open output file`) and leaves the storage unopened instead of terminating the process. If the attempt created a new `.desc` file but failed to open the data file, that descriptor file is removed. After fixing the cause, `open` can be retried.
+
+The `REF` field in an existing `.desc` points to the data file and may lead outside the directory set by the `storage` command - this is how the engine describes external `BINFILE`, `TEXTFILE`, and `DEVICE` sources, which `xtrdb` reads without restrictions. For a writable store (`DEFAULT`, `DIRECT`, `POSIX`, and others) whose `REF` points outside that directory, `open` refuses to open it: the diagnostic names the `.desc` and the data file, and refusal occurs before the file is created. Such writes can be allowed through the TOML configuration key `storage.ref_dirs` - a list of absolute directory paths where a `REF` from `.desc` may place the data file (see [xretractor options](xretractor.md#configuration-file-toml)). An invalid entry in this list stops `xtrdb` at startup with `Configuration error: storage.ref_dirs ...`. A `REF` supplied in the schema of `open name { ... }` is the operator's decision and is not subject to this restriction.
 
 Array field types: `STRING name[8]` means a text field 8 bytes long (array multiplicity = 8).
 
@@ -177,7 +179,7 @@ The write-state and read-only append-refusal contract is covered by the `it_xtrd
 
 | Command            | Description                                                                                     |
 | -------------------- | ---------------------------------------------------------------------------------------------- |
-| `rox`                | Toggle the "remove on exit" flag - deletes the data, `.desc`, and `.meta` when the tool exits. |
+| `rox`                | Toggle the "remove on exit" flag - deletes the data, `.desc`, and `.meta` when the tool exits; a data file outside the storage directory and `storage.ref_dirs` is kept, as with `quitdrop`. |
 | `cap N`              | Set the backread buffer capacity for stream devices.                     |
 | `dropfile f1 f2 … }` | Delete the listed files. The list ends with the token `}`.                                     |
 | `echo text`         | Print text to the terminal (useful in scripts).                                        |
