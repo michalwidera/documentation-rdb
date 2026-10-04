@@ -66,7 +66,9 @@ A **record-window aggregate** takes its type from the whole program of its argum
 
 ## Propagation through the plan
 
-Operators that **copy** the operand schema - `SELECT *`, the shift `>N`, decimation `-r`, the interleave `#`, the de-interleaves `&` and `%`, and the stream sum `+` - carry the producer's field shape slot by slot. The type travels through an arbitrarily long chain of intermediate streams.
+Operators that **copy** the operand schema - `SELECT *`, the shift `>N`, decimation `-r`, and the de-interleaves `&` and `%` - carry the producer's field shape slot by slot. Stream sum `+` concatenates both input schemas. The type travels through an arbitrarily long chain of intermediate streams.
+
+Interleave `#` **reconciles both input schemas** at each flat position. It selects the higher type, that type's width for numeric positions, and the greater length for strings. Differing layouts are converted field by field; for example, `RATIONAL` combined with `FLOAT` yields `FLOAT` and can lose precision. Exact index selection by interleave and de-interleave does not reverse type conversion. Byte-for-byte recovery requires a common layout preserving both inputs' representations.
 
 Operators that **synthesize** a schema keep their own: the `MIN`/`MAX`/`AVG`/`SUMC` reducer in the `FROM` clause yields one field: `RATIONAL` for an integer or rational source, `FLOAT` for `FLOAT`, and `DOUBLE` for `DOUBLE`. The `@(step, width)` window yields fields of the widest type in the source record.
 
