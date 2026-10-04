@@ -149,14 +149,17 @@ Example: DUMP 2 TO 5
 
 ## Retention (RETENTION N)
 
-Without a `RETENTION` clause, every trigger of a rule overwrites a single file `<stream>_<rule>_dump.tmp`. The `bookOfTasks` queue's capacity is then 1 - a new task evicts the old one (and closes its descriptor).
+Without a `RETENTION` clause, every trigger of a rule writes its dump under a single name `<stream>_<rule>_dump.tmp`. With a `RETENTION N` clause, the file number rotates modulo `N`: `_dump_0.tmp`, `_dump_1.tmp`, …, `_dump_(N-1).tmp`.
 
-With a `RETENTION N` clause:
-- The `bookOfTasks` queue's capacity is set to `N`.
-- The file number rotates modulo `N`: `_dump_0.tmp`, `_dump_1.tmp`, …, `_dump_(N-1).tmp`.
-- When the `N`-th task enters the queue, the oldest (still-unfinished) one is **removed** - the `dumpTask` destructor closes its open descriptor.
+A dump file is always created anew. The engine removes whatever sits under its name - including a symbolic or hard link, which it does not follow - and creates a new file exclusively (`O_EXCL | O_NOFOLLOW`). A write therefore never lands in a file outside the storage directory, and a process that held the previous dump open still sees its old contents. If the file cannot be created, the engine stops with a fatal error naming the file and the cause.
 
-This means that, with frequent events and a small `N`, an unfinished dump can get interrupted. `N` should be chosen so that the time to collect a single dump (`|step_back| + step_forward` cycles) is shorter than the interval between events multiplied by `N`.
+Dump tasks wait in the `bookOfTasks` queue, one per stream and shared by all of its `DO DUMP` rules. Its capacity is the largest requirement among those rules: `N` for a rule with `RETENTION N`, 1 for a rule without the clause. The capacity only grows - shrinking it would drop tasks already accepted. When the queue is full, a new task evicts the oldest unfinished one, whichever rule it came from, and the `dumpTask` destructor closes its descriptor.
+
+This gives two cases for a rule without `RETENTION`:
+- It is the only `DO DUMP` rule on the stream: the capacity is 1, so a new trigger interrupts the previous, unfinished dump.
+- Another rule on the same stream has `RETENTION N`: successive triggers can collect data at the same time. Each writes to its own file, the `_dump.tmp` name keeps the newest dump, and the older ones finish writing to files already removed from the directory.
+
+With frequent events and a small capacity, an unfinished dump can get interrupted. The capacity should be chosen so that the time to collect a single dump (`|step_back| + step_forward` cycles) is shorter than the interval between events multiplied by the capacity.
 
 ***
 
