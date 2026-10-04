@@ -28,7 +28,7 @@ _Fig. 8. RULE command syntax diagram_
 
 The railroad diagram in Fig. 8 was generated from the `rule_statement` rule in the system's ANTLR4 grammar (`RQL.g4`) and covers both forms of the command shown above in a single track: the branch after the word DO leads either to the DUMP variant (with a data-window dump and optional retention), or to the SYSTEM variant (with a system command in quotes). Rounded green boxes are keywords and symbols entered literally, rectangles are values supplied by the user; tracks bypassing the minus sign and the RETENTION clause mean they are optional.
 
-Events defined this way attach to defined data streams. The rule name should be unique. The data stream must be defined before the rule-creation command appears in the rql file.
+Events defined this way attach to defined data streams. A rule name must be unique within the stream selected by `ON`; different streams may have rules with the same name. The data stream must be defined before the rule-creation command appears in the rql file.
 
 In both versions of the RULE command, a rule name, a logical condition, and the name of the stream to which the process launched by the DO command is attached are created. The logical condition should refer to variables available in the schema of the data stream following the ON clause.
 
@@ -125,7 +125,7 @@ Range parameters:
 
 Total number of dumped records: `abs(step_forward - step_back)`. Example: `DUMP -5 TO 5` → 10 records (5 historical + 5 subsequent). `DUMP 0 TO 1` → 1 record (the current sample).
 
-The `step_back` range must be less than or equal to `step_forward`. The `step_back` value can be negative (history) or non-negative (delay). Both values being negative is not supported.
+The `step_back` bound must be strictly less than `step_forward`. Equal or reversed bounds are rejected by the parser, including when attaching a rule ad hoc. The `step_back` value can be negative (history) or non-negative (delay). Both values being negative is not supported.
 
 ### Dump files
 

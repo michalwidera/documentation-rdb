@@ -122,8 +122,8 @@ Command responses are matched to the client's specific request. The `ipc.client_
 | Option | Meaning |
 | --- | --- |
 | `-s` / `--select stream` | Subscribes to current records of the stream. |
-| `-m` / `--elimitqry N` | Stops after exactly N records; `0` means no limit. |
-| `-n` / `--null` | Skips records in which all values are `NULL`. |
+| `-m` / `--elimitqry N` | Stops after receiving N records, unless the server ends the stream earlier; `0` means no limit. With a positive limit, a keypress does not interrupt reception, even without `--needctrlc`. |
+| `-n` / `--null` | In raw format, suppresses printing records in which all values are `NULL`; these records still consume the `--elimitqry` budget. |
 | `-c` / `--needctrlc` | Requires Ctrl+C instead of stopping on any keypress. |
 
 Each subscription creates its own response queue. When the server stops or replaces its plan, it sends an end marker and the client closes reception. A sudden failure without a marker is detected by the `timing.query_no_data_timeout_ms` timeout.

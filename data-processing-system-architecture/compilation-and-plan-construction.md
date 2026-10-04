@@ -71,7 +71,7 @@ Execution-mode flags (without `-c`):
 | `-m N` | `--llimitqry N`   | run N processing cycles, then exit                    |
 | `-k`   | `--noanykey`      | don't wait for a keypress - daemon/script mode         |
 | `-t`   | `--realtime`      | real-time mode (SCHED\_FIFO, mlockall)                 |
-| `-x`   | `--xqrywait`      | wait for the first xqry connection before starting     |
+| `-x`   | `--xqrywait`      | wait until the first xqry command has been handled before starting |
 | `-s`   | `--status`        | check whether an xretractor instance is already running |
 | `-v`   | `--verbose`       | print stream parameters at startup                      |
 | `-j`   | `--service`       | service mode - log to stderr (journald)                 |
@@ -85,7 +85,7 @@ Execution-mode flags (without `-c`):
 
 > **⚠️ Warning**
 >
-> When using `-m N` in scripts and tests, always add `-x` (`--xqrywait`). Without this flag, the server may process all N cycles before the client (`xqry`) manages to connect - the client will receive no data and will wait until it times out. The `-x` flag holds off processing until the first command arrives from `xqry`.
+> When receiving the results of a run limited by `-m N` through `xqry`, add `-x` (`--xqrywait`). Without this flag, the server may process the entire budget before the client connects. The gate is released after the first command has been handled: `xqry --select` registers its subscription before computation starts. Another client's `--dir` or `--hello` also releases the gate, so it is not a readiness barrier for all receivers. When inspecting artifacts after the process has finished, `-x` is not needed and will hold up the run if no client command arrives.
 
 
 A full list of all options with a description of each - including the `--realtime` option, which requires system privileges - can be found in [Appendix A](../appendices/command-line-options/xretractor.md).

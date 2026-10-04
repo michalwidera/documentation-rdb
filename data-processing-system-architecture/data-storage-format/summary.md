@@ -20,7 +20,7 @@ Every artifact or substrate consists of up to five files - the binary data file,
 
 ## The rotation mechanism
 
-The `ROTATION rdb_counter` directive turns on session-history preservation mode. `PersistentCounter` stores a monotonically increasing session number `N`. Rotation is a process spread out over time: at the **start** of session N, `detectStartupState()` detects an inconsistency (data file empty, `.meta` non-empty) and renames `.meta` to `.meta.oldN`; at session **shutdown**, the `posixBinaryFile` destructor renames the data file to `.oldN` and the shadow file to `.shadow.oldN`. As a consequence of this ordering there is an offset of 1: `.meta.oldN` contains the metadata for session `N−1`, while `.oldN` contains the data for session `N`. Without the `ROTATION` directive, artifact files are deleted on every startup.
+The `ROTATION 'rdb_counter'` directive turns on session-history preservation mode. `PersistentCounter` stores a monotonically increasing session number `N`. Rotation is a process spread out over time: at the **start** of session N, `detectStartupState()` detects an inconsistency (data file empty, `.meta` non-empty) and renames `.meta` to `.meta.oldN`; at session **shutdown**, the `posixBinaryFile` destructor renames the data file to `.oldN` and the shadow file to `.shadow.oldN`. As a consequence of this ordering there is an offset of 1: `.meta.oldN` contains the metadata for session `N−1`, while `.oldN` contains the data for session `N`. Without the `ROTATION` directive, artifact files are deleted on every startup.
 
 ## The inspection tool `xtrdb -s`
 

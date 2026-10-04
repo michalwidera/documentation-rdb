@@ -79,7 +79,7 @@ help|h                          show this help
 
 | Command           | Description                                                             |
 | ------------------- | ---------------------------------------------------------------- |
-| `exit`, `quit`, `q` | Exit the tool. Data not yet written to the database stays on disk.  |
+| `exit`, `quit`, `q` | Exit the tool. Written records remain on disk unless deletion was enabled through `rox`; changes made only in the payload buffer are not saved automatically. |
 | `quitdrop`, `qd`    | Exit and delete the open artifact files (data, `.desc`, `.meta`). A data file referenced by `REF` in `.desc` outside the storage directory and `storage.ref_dirs` is kept - only `.desc` is deleted. |
 
 ---
@@ -90,6 +90,8 @@ help|h                          show this help
 | ------------------- | ------------------------------------------------------------------------------------------- |
 | `storage [path]` | Set the working directory. Subsequent `open` commands look for the file at this path.                  |
 | `policy [name]`    | Set the storage policy (`DEFAULT`, `DIRECT`, `POSIX`, `MEMORY`, …). Must precede `open`. |
+
+TOML configuration is loaded from the standard locations: `/etc/retractor/retractor.toml`, then `$XDG_CONFIG_HOME/retractor/retractor.toml` or `~/.config/retractor/retractor.toml`. `xtrdb` has no `--config` option; for a custom lock directory or `storage.ref_dirs` setting, place those keys in one of these layers.
 
 ---
 
@@ -128,7 +130,7 @@ Examples:
 | `append`  | Append the current payload as a new record at the end of the file.    |
 | `purge`   | Delete all records from the file (truncate the file to 0 records). |
 
-A record the store does not hold - an index past the last record, or a read from an empty file - is not a successful read: `read` and `rread` leave the payload in the `error` state (visible through `status`), while `list` and `rlist` print `fetch error` on that line and move on to the next one. Earlier the tool showed a zeroed record in such a place, indistinguishable from data.
+An index outside the range of a result store, including an empty store, is rejected before reading: `read` and `rread` print `record out of range - read command`, leaving the payload and its previous state unchanged. `list` and `rlist` print `record out of range - list command` and move on to the next index. If the range check allows the request but the read itself reports a missing record or an error, the payload state changes to `error`; `list` and `rlist` then print `fetch error`. For declared sources, `read` and `rread` skip the initial range check and use the source's read result. The state can be checked with `status`.
 
 A successful `write N` or `append` sets the payload state to `stored`. Attempting `append` on a declared `BINFILE`, `TEXTFILE`, or `DEVICE` source that supports only reading sets the state to `error`: the source data and record count remain unchanged, and `xtrdb` continues accepting commands. The payload state reported by `status` is separate from the process exit code; this refusal does not require an error exit. Other write failures, such as an I/O error, may terminate the process.
 

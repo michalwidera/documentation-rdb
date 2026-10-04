@@ -26,7 +26,7 @@ FLOAT    name [N]          # 32-bit floating point (IEEE 754)
 DOUBLE   name [N]          # 64-bit floating point
 RATIONAL name [N]          # pair of int32: numerator and denominator
 STRING   name [size]       # fixed-length string
-REF      "path/file"       # reference to an external descriptor file
+REF      "path/file"       # data file (relative paths use the process's working directory)
 TYPE     identifier        # storage type (DEFAULT, MEMORY, POSIXSHD, …)
 RETENTION capacity segment # cyclic on-disk retention
 RETMEMORY capacity         # cyclic in-memory retention
@@ -44,17 +44,18 @@ RETMEMORY capacity         # cyclic in-memory retention
 }
 ```
 
-**An ephemeris** - an ephemeral, RAM-only stream:
+**A `SELECT` result or substrate in RAM** - `MEMORY` storage with a one-record ring (ephemeris sources declared with `DECLARE` have type `BINFILE`, `TEXTSOURCE`, or `DEVICE`):
 
 ```desc
 {
   DOUBLE   x
   DOUBLE   y
   TYPE     MEMORY
+  RETMEMORY 1
 }
 ```
 
-**A substrate with retention** - a cyclic on-disk buffer of the last 1000 records (10 segments of 100):
+**A substrate with retention** - up to 1000 records on disk (10 segments of 100):
 
 ```desc
 {
@@ -62,7 +63,7 @@ RETMEMORY capacity         # cyclic in-memory retention
   FLOAT    a
   FLOAT    b
   TYPE     DEFAULT
-  RETENTION 1000 100
+  RETENTION 100 10
 }
 ```
 
@@ -72,7 +73,7 @@ RETMEMORY capacity         # cyclic in-memory retention
 {
   INTEGER  a
   FLOAT    b
-  TYPE     DEVICE
+  TYPE     BINFILE
   REF      "sensor/data.bin"
 }
 ```
@@ -178,16 +179,17 @@ The **append** operation (adding a new record) writes data to the end of the fil
 ### Example
 
 ```rql
-DECLARE a INTEGER, b FLOAT STREAM str1, 0.1 BINFILE 'data.dat'
+DECLARE a INTEGER, b FLOAT STREAM src, 0.1 BINFILE 'data.dat'
+SELECT * STREAM str1 FROM src
 ```
 
-Record size: INTEGER (4 B) + FLOAT (4 B) = **8 bytes**. After 5 seconds of data arriving (10 Hz), the file `data.dat` is 5 × 10 × 8 = **400 bytes**.
+Record size: INTEGER (4 B) + FLOAT (4 B) = **8 bytes**. After 50 records have been written, the output file `str1` occupies 50 x 8 = **400 bytes**. With a 0.1 s interval, this represents 5 seconds of data. `data.dat` is an existing read-only source; `DECLARE` does not grow it.
 
 ### Reading a record that does not exist
 
 A request for an index past the last record - or a read from an empty store - is not a successful read. Since 23 September 2026 `storage::read()` and `storage::revRead()` return a separate `NoSuchRecord` status, zero the destination buffer, and set the **entire null pattern to true**: a record that does not exist is an undetermined value, not a zero record. This is the same convention `dataModel::fetchBack()` and `fetchForward()` apply to a read beyond the accumulated history.
 
-This matters for the result, not only for diagnostics. Previously that branch returned success and marked the zeroed record explicitly as **not** null, so `NULL` absorption did not kick in and the `MIN`, `MAX`, `SUMC`, and `AVG` reducers folded a fabricated zero into the result instead of skipping the missing record (→ [Aggregate Operators](../../query-language-construction/select-command/aggregate-operators.md)). The `xtrdb` tool now tells this case apart from data: `read` leaves the payload in the `error` state, and `list` prints `fetch error` (→ [xtrdb](../../appendices/command-line-options/xtrdb.md)).
+This matters for the result, not only for diagnostics. Previously that branch returned success and marked the zeroed record explicitly as **not** null, so `NULL` absorption did not kick in and the `MIN`, `MAX`, `SUMC`, and `AVG` reducers folded a fabricated zero into the result instead of skipping the missing record (→ [Aggregate Operators](../../query-language-construction/select-command/aggregate-operators.md)). The `xtrdb` tool distinguishes an initial out-of-range refusal (`record out of range`, with no payload change) from a failed read of an allowed index (`error` and, for a list, `fetch error`). See [xtrdb](../../appendices/command-line-options/xtrdb.md#reading-and-writing-records) for details.
 
 The null pattern lives in the payload and in the `.meta` index, that is, inside the engine. A `DO DUMP` dump does not carry it - a non-existent record is written there as zeros indistinguishable from data (→ [Alerting implementation](../../query-execution/alerting-implementation.md#the-dump-contract-values-only-no-null-and-no-gaps)).
 

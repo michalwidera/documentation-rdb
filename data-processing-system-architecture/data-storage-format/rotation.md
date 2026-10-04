@@ -15,7 +15,7 @@ Rotation and deletion do not apply to ephemerides (`DECLARE`). That does not mea
 The `ROTATION` directive enables history-preservation mode. It takes the path to a file that stores a persistent session counter:
 
 ```rql
-ROTATION rdb_counter
+ROTATION 'rdb_counter'
 ```
 
 The `PersistentCounter` object reads the value `N` from the file at startup (`getCount()` = `N`) and writes `N+1` at shutdown. The counter increases monotonically with every `xretractor` session.
