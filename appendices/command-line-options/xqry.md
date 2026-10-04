@@ -128,6 +128,16 @@ Command responses are matched to the client's specific request. The `ipc.client_
 
 Each subscription creates its own response queue. When the server stops or replaces its plan, it sends an end marker and the client closes reception. A sudden failure without a marker is detected by the `timing.query_no_data_timeout_ms` timeout.
 
+### Subscribing at a plan epoch boundary
+
+A subscription belongs to one plan epoch. If the server closes that epoch between reading the stream parameters and registering the client, for example during `--reset` or instance shutdown, it refuses registration and removes the prepared response queue. It does not carry a late subscription into the new plan, even if that plan contains a stream with the same name.
+
+If the stream still exists after the plan swap, in presentation formats `xqry` reports that the `show` command was refused and records the reason in the client log, for example `plan epoch ended while subscribing to stream 'dst'; repeat the command`. For presentation formats, the result is `clientQueueMissing`, and the exit code corresponds to `ENOSR` (`no_stream_resources`). In `--jsonl` mode, the client emits an `error` event with code `client_queue_missing` and the reason in the `message` field. If the stream is absent from the new plan, the missing-stream diagnostic takes precedence.
+
+The client does not retry the subscription automatically. Once the plan swap has finished, run `xqry --select stream` again, checking that the stream name and schema in the new plan match your expectations.
+
+Refusal at the epoch boundary and successful resubscription are covered by the `it_subscribe_epoch_race-run` integration test.
+
 ### Reception or rendering failure
 
 An exception in the receive/render loop for presentation formats ends the subscription with a client error, even if some records have already been printed. The client stops reception, waits for the receiving thread to finish, and returns `renderFailed`. Standard error shows `select loop failed in the client; reason in the client log`, while the client log contains the stream name and the cause of the exception. The exit code corresponds to `EINTR` (`interrupted`). Records received before the failure are a partial result and do not indicate successful completion of the subscription.
