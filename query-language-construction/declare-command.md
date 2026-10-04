@@ -50,7 +50,7 @@ Before the plan starts - also on a plan reload (`xqry --reset`) and on an ad hoc
 xretractor: stream 'src': BINFILE 'feed.fifo' is a FIFO, not a regular file
 ```
 
-A path that does not exist is not a refusal: the stream then yields `NULL` records and the log gets a warning. Compilation with `-c` does not perform this check - it does not have to run on the machine with the data.
+A path that does not exist is not a refusal: the stream then yields `NULL` records. Whether read warnings are available depends on the build mode, as described below for `DEVICE`. Compilation with `-c` does not perform this check - it does not have to run on the machine with the data.
 
 ## Reading a DEVICE source and TIMEOUT
 
@@ -76,11 +76,13 @@ Reading properties:
 
 - **The deadline is not renewed.** A system call interrupted by a signal and a spurious wakeup do not extend the wait - the deadline is fixed from the start of the slot.
 - **Several sources wait in parallel.** All `DEVICE` sources due in a slot wait together, so the slot grows by at most the largest deadline, not by their sum.
-- **An incomplete record survives the deadline.** Bytes that arrived before the deadline wait in the source buffer; a record completed later goes to the next due slot. Only a record that is incomplete at the moment the writer disconnects is dropped with a warning - the record boundary is lost together with the writer, so the next writer starts a new record.
+- **An incomplete record survives the deadline.** Bytes that arrived before the deadline wait in the source buffer; a record completed later goes to the next due slot. Only a record that is incomplete at the moment the writer disconnects is dropped - the record boundary is lost together with the writer, so the next writer starts a new record.
 - **The moment of reading.** A `DEVICE` record consumed in slot k is read at the start of slot k, not at the end of the previous slot as for `BINFILE` and `TEXTFILE`. The logical record indices are the same: the same bytes given as `BINFILE` and through a FIFO as `DEVICE` give the same results, also behind operators that join streams of different rates.
 - **End of data.** The end of data is decided only by a read returning zero bytes (a FIFO without a writer, a hung-up terminal). Without `ONESHOT` it means "there is no writer right now": the slot gets a `NULL` record, the source stays open, and a writer connecting again resumes the data. With `ONESHOT` (also in `--until-eof` mode) exhaustion is the first end of data **after** at least one byte was received - an end before the first data is a writer that has not connected yet. A writer that connects and disconnects without writing therefore does not end the run.
-- **A read error** other than a momentary lack of data (e.g. an unplugged USB device) gives `NULL` records and a warning on the state change, without exhausting the source. Reopening an unplugged device is not supported.
+- **A read error** other than a momentary lack of data (e.g. an unplugged USB device) gives `NULL` records without exhausting the source. Reopening an unplugged device is not supported.
 - **Mode without a clock.** In `--no-clock` (`-f`) mode the deadline of every `DEVICE` source is 0: real seconds have no conversion to virtual time. One immediate attempt in every due slot remains, so a FIFO with data written up front gives a repeatable run.
+
+Dropped incomplete records and changes in the `DEVICE` connection state (no writer, resumed data, read error) have diagnostics at the `WARN` level. These warnings are available in the log in a `Debug` build; in `Release`, they are disabled at compile time by `SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_ERROR`. The absence of a warning in `Release` therefore does not confirm a successful read or complete records. Diagnostics at the `ERROR` level remain available.
 
 The effective deadline of every `DEVICE` source and its origin (`RQL`, `config`, `default` or `no-clock`) goes to the engine log when the plan starts and on an ad hoc import, e.g. `DEVICE stream 's1': effective TIMEOUT 0.01 s (RQL)`. The `xretractor -c` listing shows an explicit clause in the same form as the rate, e.g. `timeout=1/100`.
 

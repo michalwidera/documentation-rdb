@@ -367,7 +367,11 @@ _Fig. 17. Gap-recording sequence - onTransmissionGap_
 
 ### Safety mechanism: `flushCurrentEntry()` and overwriting (tail_.dirty)
 
-The `storage` class calls `flushCurrentEntry()` after **every** call to `write()`, to guarantee survival of a process crash. A naive implementation would append a new entry to the file on every flush - causing file growth proportional to the number of records, even without any change in the null pattern.
+The `storage` class calls `flushCurrentEntry()` after **a successful physical record append**, following the metadata update by `onRecordAppended()`. A record absorbed by the transmission-gap mechanism and a refused append to a read-only source return from `write()` earlier. Overwriting an existing record calls `onRecordModified()`, which updates either the main index or its shadow, depending on the store type.
+
+`flushCurrentEntry()` writes the current index entry to the file, reducing the amount of metadata held only in process memory. This write does not include `fsync` after every record or a transactional commit of the data together with the index, so it does not by itself guarantee consistency after a process crash or power loss. The `ut_metaData_usage` test checks an append followed by an explicit flush; it does not simulate a process crash.
+
+A naive implementation would append a new entry to the file on every flush - causing file growth proportional to the number of records, even without any change in the null pattern.
 
 The solution: a **lazy overwrite** mechanism flagged by `tail_.dirty`.
 
@@ -721,7 +725,7 @@ The simplest possible way to record a time series is a sequence of raw values in
 - Every modification of a historical record irreversibly destroys the original data.
 - A change to the record structure invalidates the entire file.
 
-RetractorDB records data from sensors operating in real time, where power interruptions, signal loss, and the need for retrospective data correction are normal operational occurrences, not exceptions. The four-file structure directly addresses each of these limitations.
+RetractorDB records data from sensors operating in real time, where power interruptions, signal loss, and the need for retrospective data correction are normal operational occurrences, not exceptions. The five-file structure directly addresses each of these limitations.
 
 ## What each file contributes
 

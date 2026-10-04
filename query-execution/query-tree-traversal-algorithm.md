@@ -9,12 +9,13 @@ The query-tree traversal algorithm is carried out by two cooperating components:
 %%{init: {"markdownAutoWrap": false}}%%
 flowchart TD
     A([Initialization]) --> B
-    B["processZeroStep()<br/>DECLARE only: revRead(0) → fire()"] --> C
+    B["processZeroStep()<br/>BINFILE and TEXTFILE: bootstrapDeclaration()<br/>Broadcast file declarations"] --> C
     C["TimeLine::getNextTimeSlot()<br/>Determine the next time slot"] --> W
-    W["rtAbsoluteSleep()<br/>Wait for the deadline: anchor + slot time"] --> D
-    D["getAwaitedStreamsSet()<br/>Filter: rInterval divides the current slot"] --> E
-    E["dataModel::processRows(inSet)<br/>Pass 1: non-declarations → input → SELECT windows → output → write<br/>Pass 2: declarations → unblock"] --> F
-    F["broadcast(inSet)<br/>Boost IPC queues → xqry clients"] --> C
+    W["rtAbsoluteSleep()<br/>Wait for the deadline: anchor + slot time"] --> V
+    V["DEVICE: snapshot of due sources under the epoch lock<br/>awaitRecords() outside model locks"] --> D
+    D["collectAwaitedStreams()<br/>Under epoch and core locks: dueMask_ and dueNames_"] --> E
+    E["dataModel::processRows(dueMask_, currentTimeSlot)<br/>Pass 1: declarations - bootstrap and DEVICE publication<br/>Pass 2: non-declarations - computation and write<br/>Pass 3: file declarations - read for the next slot"] --> F
+    F["broadcast(dueNames_, formatRow)<br/>Boost IPC queues to xqry clients<br/>Release the epoch lock"] --> C
 ```
 
 _Fig. 42. The query tree traversal algorithm – general overview_
@@ -61,15 +62,15 @@ Input: {1/2, 1/3}  →  Output: {1/2, 1/3}
 timeline
     title Time slots for deltas {1/2, 1/3}
     section t = 1/3
-        B (rInterval=1/3)
+        A (rInterval=1/3) : B (rInterval=1/3)
     section t = 1/2
         C (rInterval=1/2)
     section t = 2/3
-        B (rInterval=1/3)
+        A (rInterval=1/3) : B (rInterval=1/3)
     section t = 1
-        B (rInterval=1/3) : C (rInterval=1/2) : D (rInterval=1)
+        A (rInterval=1/3) : B (rInterval=1/3) : C (rInterval=1/2) : D (rInterval=1)
     section t = 4/3
-        B (rInterval=1/3)
+        A (rInterval=1/3) : B (rInterval=1/3)
     section t = 3/2
         C (rInterval=1/2)
 ```
@@ -82,19 +83,17 @@ The check `isThisDeltaAwaitCurrentTimeSlot(inDelta)` returns `true` when `ctSlot
 
 ## The zero step: `processZeroStep()`
 
-Before entering the `executorsm::run()` loop, `dataModel::processZeroStep()` is called. It processes **declarations only** (`DECLARE` input streams):
+Before entering the `executorsm::run()` loop, `dataModel::processZeroStep()` is called. It processes **file declarations only** (`BINFILE` and `TEXTFILE`):
 
 ```cpp
-for (auto &q : coreInstance_) {
-    if (!q.isDeclaration()) continue;
-    qSet[q.id]->bufferState = flux;   // unblock physical read
-    qSet[q.id]->revRead(0);           // read from index 0
-    qSet[q.id]->fire();               // copy chamber_ → outputPayload
-    assert(qSet[q.id]->bufferState == armed);
-}
+for (const auto &q : coreInstance_)
+    if (q.isDeclaration() && q.kind != sourceKind::device)
+        bootstrapDeclaration(q);
 ```
 
-After this step, every declaration has `bufferState = armed` - the data from the physical source is in `outputPayload`.
+`bootstrapDeclaration()` switches the buffer from `empty` to `flux`, calls `revRead(0)` and `fire()`, then checks the `armed` state. After the zero step, the file declaration's record is in `outputPayload`, ready for consumers. File declarations are broadcast under the same epoch lock.
+
+`DEVICE` has no zero step or broadcast in this phase. Its first record enters the model only at the start of its first due slot, before dependent queries are computed. A file declaration added ad hoc is initialized before consumers in its first due slot, since it did not participate in the zero step.
 
 ***
 
@@ -117,55 +116,59 @@ A stop signal (`SIGINT`, `SIGTERM`, `SIGHUP`) that interrupts the loop's sleep e
 
 > **_NOTE:_** The slot schedule is covered by the `slot_schedule` integration test and by the `ut_executor_rt` unit test.
 
-### Query filtering: `getAwaitedStreamsSet()`
+### Query filtering: `collectAwaitedStreams()`
 
-For the current slot `tl` (`executorsm.cpp`, line \~88):
+For the current slot, `executorsm::collectAwaitedStreams()` builds two parallel representations of the due queries:
 
 ```cpp
-std::set<std::string> retVal;
-for (auto &q : *coreInstancePtr)
-    if (TimeLine::isThisDeltaAwaitCurrentTimeSlot(q.rInterval))
-        retVal.insert(q.id);
-return retVal;
+dueMask_.assign(coreInstancePtr->size(), 0);
+dueNames_.clear();
+std::size_t position = 0;
+for (const auto &q : *coreInstancePtr) {
+    if (tl.isThisDeltaAwaitCurrentTimeSlot(q.rInterval)) {
+        dueMask_[position] = 1;
+        dueNames_.emplace_back(q.id);
+    }
+    ++position;
+}
 ```
 
-The result `inSet` is the set of query identifiers active in this slot - a subset of all queries.
+`dueMask_` is a vector of `char` with the length of the entire plan: an element equal to 1 marks the due query at the same position in `qTree`. `dueNames_` is a vector of `std::string_view` containing the names of those queries, used for broadcasting. Both vectors retain their capacity between slots.
 
-### Processing: `processRows(inSet)`
+The mask must describe **the same plan layout** that `processRows()` will process. It is therefore built under locks acquired in the order `plan_epoch_mutex`, then `core_mutex`; the epoch lock remains held through slot computation and broadcasting. An ad hoc import can change the plan's topological order, so building the mask before acquiring the epoch lock would violate this invariant. Epoch protection also preserves the lifetime of the name views.
 
-The function performs **two passes** over `inSet` (`dataModel.cpp`, line \~98), shown in Fig. 45:
+### Processing: `processRows(dueMask, currentTimeSlot)`
+
+`dataModel::processRows(std::span<const char> dueMask, currentTimeSlot)` acquires `core_mutex`, checks the mask length, and refreshes the instance-handle table when `qTree::planRevision()` changes. The handles correspond to positions in the plan, eliminating repeated name lookups during slot computation. Instances are stored in `qSet` through `std::unique_ptr`, so changes to the map layout preserve their addresses.
+
+Before calling `processRows()`, the executor takes a snapshot of due `DEVICE` sources under a short epoch lock, then calls `rdb::awaitRecords()` **outside model locks**. Waiting fills the accessors' private buffers; data is published to the model only in `processRows()`.
+
+The function performs **three passes** over the plan, considering only positions marked in the mask (Fig. 45):
 
 ```mermaid
 %%{init: {"markdownAutoWrap": false}}%%
-flowchart LR
-    S([processRows - inSet]) --> P1
+flowchart TB
+    S([processRows - dueMask]) --> P1
+    P1["Pass 1 - due declarations<br/>Bootstrap sources in the empty state<br/>DEVICE: publish the current slot's record"] --> P2
 
-    subgraph P1["Pass 1 - non-declarations (topological order)"]
+    subgraph P2["Pass 2 - due non-declarations in topological order"]
         direction TB
+        X0{"Have origin and tail elapsed?<br/>Are inputs available for the first ad hoc record?"} -->|yes| X1
+        X0 -->|no| X5([skip query])
         X1["constructInputPayload()<br/>builds input data from FROM"] --> XW
         XW["computeWindowAggregates()<br/>reduces history for SELECT windows"] --> X2
         X2["constructOutputPayload()<br/>evaluates SELECT expressions"] --> X3
-        X3["write()<br/>write to disk / memory"] --> X4
+        X3["write()<br/>write to disk or memory"] --> X4
         X4["constructRulesAndUpdate()<br/>evaluates RULE clauses"]
     end
 
-    P1 --> P2
-
-    subgraph P2["Pass 2 - declarations (unblock for the next slot)"]
-        direction TB
-        Y1{"bufferState<br/>== armed?"} -->|yes| Y2
-        Y2["bufferState = flux<br/>unblock read"] --> Y3
-        Y3["revRead(0)<br/>read new data"] --> Y4
-        Y4["fire()<br/>assign to outputPayload"]
-        Y1 -->|no| Y5([skip])
-    end
-
-    P2 --> E([end])
+    P2 --> P3
+    P3["Pass 3 - due file declarations in the armed state<br/>flux, revRead(0), fire()<br/>Read the record for the next due slot<br/>DEVICE is skipped"] --> E([end])
 ```
 
-_Fig. 45. The processRows algorithm – two processing passes_
+_Fig. 45. The processRows algorithm - three processing passes_
 
-Declarations are only unblocked once every dependent query has consumed their `outputPayload` in pass 1.
+`DEVICE` records are published before the current slot's consumers. File declarations advance to the next record only after consumers, and only in slots due for that source. A query marked in the mask may still emit no result because of its tail or logical origin (`origin`).
 
 ### Record-history windows in the SELECT list
 
@@ -177,14 +180,14 @@ NULL values are skipped, and a window with no present value stores NULL for all 
 
 ## Broadcasting results: `broadcast()`
 
-After every `processRows()`, `broadcast(inSet)` is called (`executorsm.cpp`, line \~449) - the algorithm is shown in Fig. 46:
+After every `processRows()`, `broadcast(dueNames_, formatRow)` is called while the epoch lock is still held - the algorithm is shown in Fig. 46:
 
 ```mermaid
 %% pdf-width: 85%
 %% pdf-height: 60%
 %%{init: {"markdownAutoWrap": false, "flowchart": {"nodeSpacing": 25, "rankSpacing": 30, "padding": 6}}}%%
 flowchart TB
-    A([inSet]) --> B["printRowValue()<br/>serialize into a<br/>Boost property_tree"]
+    A([dueNames_]) --> B["printRowValue()<br/>serialize into a<br/>Boost property_tree"]
     B --> C{{"clients subscribed<br/>to the stream?"}}
     C -->|none| H([skip])
     C -->|yes| D["queue brcdbr&lt;id&gt;<br/>try_send(data)"]
@@ -201,7 +204,7 @@ _Fig. 46. The broadcast algorithm – distributing results via Boost IPC_
 
 ## Full example: queries A, B, C, D for deltas {1/2, 1/3}
 
-Fig. 47 shows the complete call sequence for four queries A, B, C, D laid out on a time grid with deltas {1/2, 1/3}.
+Fig. 47 shows the selection of due queries and the phase order for the plan `[A, B, C, D]` from the graph in Fig. 43. A is a file source with interval `1/3`. The diagram describes the schedule; actual result emission also depends on the query's tail and logical origin.
 
 ```mermaid
 %% pdf-width: 85%
@@ -214,37 +217,38 @@ sequenceDiagram
     participant IPC as Boost IPC
 
     ES->>DM: processZeroStep()
-    DM->>DM: A: revRead(0) → fire() [armed]
-    ES->>IPC: broadcast({A})
+    DM->>DM: A: bootstrapDeclaration() [armed]
+    ES->>IPC: broadcast(A)
 
     TL-->>ES: nextSlot = 1/3
-    ES->>DM: processRows({B})
-    DM->>DM: Pass 1: B → input(A) → windows → output → write()
-    DM->>DM: Pass 2: A → flux → revRead(0) → fire()
-    ES->>IPC: broadcast({B})
+    ES->>DM: processRows([1,1,0,0], 1/3)
+    DM->>DM: Pass 2: B, if origin and tail have elapsed
+    DM->>DM: Pass 3: A reads the next record
+    ES->>IPC: broadcast(A, B)
 
     TL-->>ES: nextSlot = 1/2
-    ES->>DM: processRows({C})
-    DM->>DM: Pass 1: C → input(B) → windows → output → write()
-    DM->>DM: Pass 2: A → flux → revRead(0) → fire()
-    ES->>IPC: broadcast({C})
+    ES->>DM: processRows([0,0,1,0], 1/2)
+    DM->>DM: Pass 2: C, if origin and tail have elapsed
+    Note over DM: A is not due - no read
+    ES->>IPC: broadcast(C)
 
     TL-->>ES: nextSlot = 2/3
-    ES->>DM: processRows({B})
-    DM->>DM: Pass 1: B → input(A) → output → write()
-    DM->>DM: Pass 2: A → flux → revRead(0) → fire()
-    ES->>IPC: broadcast({B})
+    ES->>DM: processRows([1,1,0,0], 2/3)
+    DM->>DM: Pass 2: B, if origin and tail have elapsed
+    DM->>DM: Pass 3: A reads the next record
+    ES->>IPC: broadcast(A, B)
 
     TL-->>ES: nextSlot = 1
-    ES->>DM: processRows({B, C, D})
-    DM->>DM: Pass 1 (topologically): B → C → D
-    DM->>DM: Pass 2: A → flux → revRead(0) → fire()
-    ES->>IPC: broadcast({B, C, D})
+    ES->>DM: processRows([1,1,1,1], 1)
+    DM->>DM: Pass 2: B, C, D in topological order
+    Note over DM: Each query checks origin and tail
+    DM->>DM: Pass 3: A reads the next record
+    ES->>IPC: broadcast(A, B, C, D)
 ```
 
-_Fig. 47. Full execution example for queries A, B, C, D with deltas {1/2, 1/3}_
+_Fig. 47. Processing schedule for queries A, B, C, D with deltas {1/2, 1/3}_
 
-The dependency tree determines the order of pass 1. Time intervals from the Beatty algebra determine which nodes of the tree are active in a given slot.
+The names next to `broadcast` denote its `dueNames_` argument, rather than a guarantee that each query sends a record. The dependency tree determines computation order in pass 2, and the intervals determine the mask of active nodes. When A is a `DEVICE` source, it skips the zero step, waits for data before computation of a due slot, and publishes the record in pass 1; pass 3 then skips it.
 
 ***
 

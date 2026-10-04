@@ -128,6 +128,10 @@ Examples:
 
 A record the store does not hold - an index past the last record, or a read from an empty file - is not a successful read: `read` and `rread` leave the payload in the `error` state (visible through `status`), while `list` and `rlist` print `fetch error` on that line and move on to the next one. Earlier the tool showed a zeroed record in such a place, indistinguishable from data.
 
+A successful `write N` or `append` sets the payload state to `stored`. Attempting `append` on a declared `BINFILE`, `TEXTFILE`, or `DEVICE` source that supports only reading sets the state to `error`: the source data and record count remain unchanged, and `xtrdb` continues accepting commands. The payload state reported by `status` is separate from the process exit code; this refusal does not require an error exit. Other write failures, such as an I/O error, may terminate the process.
+
+The write-state and read-only append-refusal contract is covered by the `it_xtrdb_write_status-run` integration test.
+
 ---
 
 ## Browsing content
@@ -153,7 +157,7 @@ A record the store does not hold - an index past the last record, or a read from
 | `setpos N value` | Set the field at index N (0-based) in the payload buffer.                               |
 | `getpos N`         | Print the value of the field at index N from the current payload.                              |
 | `input`            | Interactively fill the payload - enter values in order for each field.       |
-| `status`           | Print the payload's state: `clean`, `fetched`, `changed`, `stored`.                      |
+| `status`           | Print the payload's state: `clean`, `fetched`, `changed`, `stored`, `error`.                      |
 | `hex` / `dec`      | Toggle numeric field input/output between hexadecimal and decimal. |
 
 ---

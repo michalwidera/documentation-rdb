@@ -128,6 +128,12 @@ Command responses are matched to the client's specific request. The `ipc.client_
 
 Each subscription creates its own response queue. When the server stops or replaces its plan, it sends an end marker and the client closes reception. A sudden failure without a marker is detected by the `timing.query_no_data_timeout_ms` timeout.
 
+### Reception or rendering failure
+
+An exception in the receive/render loop for presentation formats ends the subscription with a client error, even if some records have already been printed. The client stops reception, waits for the receiving thread to finish, and returns `renderFailed`. Standard error shows `select loop failed in the client; reason in the client log`, while the client log contains the stream name and the cause of the exception. The exit code corresponds to `EINTR` (`interrupted`). Records received before the failure are a partial result and do not indicate successful completion of the subscription.
+
+Diagnostics and the exit code for this path are covered by the `it_select_loop_failure-run` integration test.
+
 ### Presentation formats
 
 | Option | Format |
