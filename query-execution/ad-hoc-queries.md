@@ -32,12 +32,16 @@ $ xqry --server measurements -a "DECLARE a BYTE STREAM C, 1 TEXTFILE 'data3.txt'
 
 Attaching the first declaration to a server started with an empty plan is not yet supported; the ad hoc channel requires an active data model.
 
-A rule attached at run time may execute only `DO DUMP`. `DO SYSTEM` remains available only in the plan file the instance starts from, because exposing it through IPC would let a client run arbitrary shell commands as the server account. The same boundary holds on the `xqry --reset` channel, which also carries a complete plan but carries no authorship either: a plan with a `DO SYSTEM` rule is refused there as a whole, unless the operator deliberately sets `service.unrestricted = true` (→ [xqry](../appendices/command-line-options/xqry.md#the-do-system-rule-does-not-pass-through-this-channel)). The ad-hoc channel refuses unconditionally and does not read that key. The `ON` target must be an existing stream created by `SELECT`. The rule starts only after its complete required history has accumulated since attachment; if the in-memory stream retains too little history, the request is rejected.
+A rule attached at run time may execute only `DO DUMP`. `DO SYSTEM` remains available only in the plan file the instance starts from, because exposing it through IPC would let a client run arbitrary shell commands as the server account. The same boundary holds on the `xqry --reset` channel, which also carries a complete plan but carries no authorship either: a plan with a `DO SYSTEM` rule is refused there as a whole, unless the operator deliberately sets `service.unrestricted = true` (→ [xqry](../appendices/command-line-options/xqry.md#the-do-system-rule-does-not-pass-through-this-channel)). The ad-hoc channel refuses unconditionally and does not read that key. The `ON` target must be an existing stream created by `SELECT`.
+
+For a historical `DUMP -H TO M` range, the `WHEN` condition is first evaluated no earlier than record `H+1` after attachment, when the preceding `H` records were also produced after attachment. For a range without history (`H=0`), evaluation starts with the first new record. A `MEMORY` store must have at least `H+1` slots; for `H > 0` and capacity `N <= H`, the request is rejected without attaching the rule. Attachment does not enlarge the existing store. See [Alerting implementation](alerting-implementation.md#phase-1-historical-data-when-the-task-is-registered) for details.
 
 ```bash
 xqry --server measurements -a \
   "RULE alarm ON temperature WHEN temperature[0] > 80 DO DUMP -10 TO 5"
 ```
+
+On a `MEMORY` stream, the example above requires at least 11 slots; with capacity 10, the request is rejected.
 
 With multiple instances, the client routes a `SELECT` according to the owners of streams in `FROM`, and a `RULE` according to the stream in `ON`. A query combining sources from several servers is rejected. New stream names and storage files are claimed on the bus before the active plan is changed, so ad hoc commands cannot overwrite another instance's resource.
 

@@ -28,7 +28,7 @@ In the `STORAGE` clause a profile, like every keyword, has two spellings - upper
 
 For `MEMORY`, retention works in memory as a circular buffer: successive appends overwrite the oldest slot (`index % capacity`). Data is not segmented into files and never reaches disk. `RETENTION n` sets the ring size (at least what the plan needs) - the same for `STORAGE MEMORY` and `VOLATILE`; the segmented form `RETENTION n s` is a compilation error here.
 
-Even without `RETENTION`, a `MEMORY` store has a finite capacity: at least one record, increased by the compiler to meet consumer needs. Formerly, `STORAGE MEMORY` could grow without bound or, with `RETENTION n`, write to disk under the wrong storage type. The ring size and total history cost now count against the [plan budget](../../query-compilation/plan-size-limits.md#ram-history-budget). An ad-hoc `DO DUMP` rule that reaches deeper than the existing ring is rejected; attaching a rule does not enlarge a live store.
+Even without `RETENTION`, a `MEMORY` store has a finite capacity: at least one record, increased by the compiler to meet consumer needs. Formerly, `STORAGE MEMORY` could grow without bound or, with `RETENTION n`, write to disk under the wrong storage type. The ring size and total history cost now count against the [plan budget](../../query-compilation/plan-size-limits.md#ram-history-budget). An ad-hoc `DO DUMP -H TO M` rule requires `H+1` slots for history plus the current record. For `H > 0` and capacity `N <= H`, the request is rejected; attaching a rule does not enlarge a live store. See [Alerting implementation](../../query-execution/alerting-implementation.md#phase-1-historical-data-when-the-task-is-registered) for the rules on waiting for history.
 
 ### Retention on disk
 

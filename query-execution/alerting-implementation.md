@@ -82,7 +82,7 @@ The command's exit code is checked:
 
 At the moment the rule fires - right after the condition is found to be true - `dumpManager::registerTask()`:
 
-1. Creates the destination file on disk (POSIX `open()` with the `O_CREAT | O_TRUNC` flags).
+1. Removes any existing entry at the dump filename (`unlink()`) and creates a new file with POSIX `open()` using the `O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC` flags.
 2. If `step_back < 0`, reads `|step_back|` samples from the stream's historical buffer.  
    Historical data exists because every stream keeps a window of previous samples needed for AGSE window computations.
 3. Writes the historical samples to the file **from oldest to newest** (i.e. from `step_back` to `–1`).
@@ -95,6 +95,8 @@ Example: DUMP -3 TO 2
   Still to collect from the future: 2 samples (t, t+1)
   dumpedRecordsToGo = 2
 ```
+
+For a rule attached ad hoc, the entire history must be produced after attachment. With a `DUMP -H TO M` range, the rule can first evaluate its `WHEN` condition on record `H+1` after attachment: the preceding `H` records provide the history, and the new record is the current sample. Without a historical part (`H=0`), the condition is evaluated on the first new record. A `MEMORY` stream must retain at least `H+1` records; a request reaching further back is rejected without attaching the rule.
 
 ### Phase 2: future data (subsequent loop iterations)
 
@@ -149,7 +151,7 @@ Example: DUMP 2 TO 5
 
 ## Retention (RETENTION N)
 
-Without a `RETENTION` clause, every trigger of a rule writes its dump under a single name `<stream>_<rule>_dump.tmp`. With a `RETENTION N` clause, the file number rotates modulo `N`: `_dump_0.tmp`, `_dump_1.tmp`, …, `_dump_(N-1).tmp`.
+Without a `RETENTION` clause, every trigger of a rule writes its dump under a single name `<stream>_<rule>_dump.tmp`. With a `RETENTION N` clause, the first trigger of a rule in an engine run creates `_dump_0.tmp`, and subsequent file numbers rotate modulo `N`: `_dump_0.tmp`, `_dump_1.tmp`, …, `_dump_(N-1).tmp`.
 
 A dump file is always created anew. The engine removes whatever sits under its name - including a symbolic or hard link, which it does not follow - and creates a new file exclusively (`O_EXCL | O_NOFOLLOW`). A write therefore does not reach the target of a link substituted at the final dump filename. This protection does not cover substitution of parent directories during path resolution; it is not an atomic guarantee of containment within the storage directory. A process that held the previous dump open still sees its old contents. If the file cannot be created, the engine stops with a fatal error naming the file and the cause.
 
@@ -227,6 +229,10 @@ _Fig. 52. Independent evaluation of multiple rules on the same stream_
 |---|---|
 | Condition satisfied twice in a row (e.g. a measurement staying above the threshold) | Every sample registers a new DUMP task - files overlap when RETENTION is absent |
 | A `DECLARE` input stream used as an `ON` target | Compilation error - rules can only be attached to `SELECT` streams |
-| Insufficient history (buffer shorter than `|step_back|`) | The dump contains as many samples as are available; no error |
+| A rule from the plan file requests records from before the stream began | The historical part of the dump is not shortened; non-existent records are replaced with zeros |
+| Too few records since attaching an ad-hoc rule (`DUMP -H TO M`) | The rule waits to evaluate `WHEN` until record `H+1` after attachment; for `H=0`, it evaluates the first new record |
+| An ad-hoc rule with history `H > 0` on a `MEMORY` store of capacity `N <= H` | The request is rejected without attaching the rule; history plus the current record needs `H+1` slots |
 | Destination file unavailable (missing STORAGE directory) | Critical `FatalError` - xretractor exits |
 | DO SYSTEM returns a non-zero code | Error logged via spdlog; processing continues |
+
+Automatic capacity calculation for a historical `DUMP` in a rule from the plan file remains a separate issue described in [#419](https://github.com/michalwidera/retractordb/issues/419): the compiler accounts for `H` instead of `H+1`. The capacity check when attaching an ad-hoc rule already requires `H+1` slots.
