@@ -82,7 +82,7 @@ The command's exit code is checked:
 
 At the moment the rule fires - right after the condition is found to be true - `dumpManager::registerTask()`:
 
-1. Removes any existing entry at the dump filename (`unlink()`) and creates a new file with POSIX `open()` using the `O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC` flags.
+1. Removes any existing entry at the dump filename (`unlink()`) and creates a new file with POSIX `open()` using the `O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC` flags. It then removes earlier tasks writing under the same filename from the queue and closes their descriptors (see *Retention*).
 2. If `step_back < 0`, reads `|step_back|` samples from the stream's historical buffer.  
    The compiler accounts for the historical DUMP range when calculating the stream's required capacity.
 3. Writes the historical samples to the file **from oldest to newest** (i.e. from `step_back` to `–1`).
@@ -155,15 +155,15 @@ Example: DUMP 2 TO 5
 
 Without a `RETENTION` clause, every trigger of a rule writes its dump under a single name `<stream>_<rule>_dump.tmp`. With a `RETENTION N` clause, the first trigger of a rule in an engine run creates `_dump_0.tmp`, and subsequent file numbers rotate modulo `N`: `_dump_0.tmp`, `_dump_1.tmp`, …, `_dump_(N-1).tmp`.
 
+A filename must identify a single rule. A plan in which two `DO DUMP` rules share the stem `<stream>_<rule>` - e.g. rule `b_c` on stream `a` and rule `c` on stream `a_b` - is rejected on load, and a rule attached ad hoc with such a stem is refused. The comparison ignores letter case, because on a case-insensitive file system (macOS by default) `Ab_r` and `ab_R` are the same file, and plan validity must not depend on the host. The plan author then renames the rule or the stream.
+
 A dump file is always created anew. The engine removes whatever sits under its name - including a symbolic or hard link, which it does not follow - and creates a new file exclusively (`O_EXCL | O_NOFOLLOW`). A write therefore does not reach the target of a link substituted at the final dump filename. This protection does not cover substitution of parent directories during path resolution; it is not an atomic guarantee of containment within the storage directory. A process that held the previous dump open still sees its old contents. If the file cannot be created, the engine stops with a fatal error naming the file and the cause.
 
-Dump tasks wait in the `bookOfTasks` queue, one per stream and shared by all of its `DO DUMP` rules. Its capacity is the largest requirement among those rules: `N` for a rule with `RETENTION N`, 1 for a rule without the clause. The capacity only grows - shrinking it would drop tasks already accepted. When the queue is full, a new task evicts the oldest unfinished one, whichever rule it came from, and the `dumpTask` destructor closes its descriptor.
+Dump tasks wait in the `bookOfTasks` queue, one per stream and shared by all of its `DO DUMP` rules. The queue has no capacity of its own and evicts no tasks: a task ends after collecting its whole range, or when the same rule recreates its file. After creating the new file, `registerTask()` removes earlier tasks writing under the same name from the queue, and the `dumpTask` destructor closes their descriptors. A replaced task therefore does not write to a file already detached from the directory, and under each name only the newest trigger collects data.
 
-This gives two cases for a rule without `RETENTION`:
-- It is the only `DO DUMP` rule on the stream: the capacity is 1, so a new trigger interrupts the previous, unfinished dump.
-- Another rule on the same stream has `RETENTION N`: successive triggers can collect data at the same time. Each writes to its own file, the `_dump.tmp` name keeps the newest dump, and the older ones finish writing to files already removed from the directory.
+A rule without `RETENTION` thus has at most one task in progress, and a new trigger interrupts its previous, unfinished dump. A rule with `RETENTION N` has at most `N` tasks: an unfinished dump is interrupted only by the trigger that returns to its file after the numbering wraps, i.e. the `N`-th next one. Tasks of other rules on the same stream stay untouched - rules do not cut each other's dumps, including two rules without `RETENTION`. The number of descriptors open on a stream does not exceed the sum of these limits over its rules.
 
-With frequent events and a small capacity, an unfinished dump can get interrupted. The capacity should be chosen so that the time to collect a single dump (`|step_back| + step_forward` cycles) is shorter than the interval between events multiplied by the capacity.
+For every dump to be complete under frequent events, the time to collect a single dump (`|step_back| + step_forward` cycles) should be shorter than the interval between events multiplied by `N` (1 for a rule without `RETENTION`).
 
 ***
 
@@ -229,7 +229,8 @@ _Fig. 52. Independent evaluation of multiple rules on the same stream_
 
 | Situation | Behavior |
 |---|---|
-| Condition satisfied twice in a row (e.g. a measurement staying above the threshold) | Every sample registers a new DUMP task - files overlap when RETENTION is absent |
+| Condition satisfied twice in a row (e.g. a measurement staying above the threshold) | Every sample registers a new DUMP task; without RETENTION, it interrupts the previous unfinished dump of the same rule, with RETENTION N - only the `N`-th next trigger does |
+| Two DUMP rules with the same dump filename stem (e.g. `b_c` on `a` and `c` on `a_b`, including ones differing only in letter case) | The plan is rejected, an ad-hoc rule is refused; rename the rule or the stream |
 | A `DECLARE` input stream used as an `ON` target | Compilation error - rules can only be attached to `SELECT` streams |
 | A rule from the plan file requests records from before the stream began | The historical part of the dump is not shortened; non-existent records are replaced with zeros |
 | Too few records since attaching an ad-hoc rule (`DUMP -H TO M`) | The rule waits to evaluate `WHEN` until record `H+1` after attachment; for `H=0`, it evaluates the first new record |
