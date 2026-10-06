@@ -84,7 +84,7 @@ At the moment the rule fires - right after the condition is found to be true - `
 
 1. Removes any existing entry at the dump filename (`unlink()`) and creates a new file with POSIX `open()` using the `O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC` flags.
 2. If `step_back < 0`, reads `|step_back|` samples from the stream's historical buffer.  
-   Historical data exists because every stream keeps a window of previous samples needed for AGSE window computations.
+   The compiler accounts for the historical DUMP range when calculating the stream's required capacity.
 3. Writes the historical samples to the file **from oldest to newest** (i.e. from `step_back` to `–1`).
 4. Computes how many future samples still need to be collected (`dumpedRecordsToGo = |step_forward - step_back| - |step_back|`).
 5. If `step_back ≥ 0` (a delayed start), it sets `delayDumpRecordsToGo = step_back`.
@@ -95,6 +95,8 @@ Example: DUMP -3 TO 2
   Still to collect from the future: 2 samples (t, t+1)
   dumpedRecordsToGo = 2
 ```
+
+For a rule from the plan file, a `DUMP -H TO M` range (`H > 0`) requires at least `H+1` records: `H` historical records plus the current record. The compiler automatically enlarges the `STORAGE MEMORY` ring to this capacity, including when `RETENTION` is omitted or specifies a smaller value. A larger explicit `RETENTION` remains the ring's minimum capacity. For `DEFAULT` and `DIRECT` file stores with bounded retention, the compiler rejects the plan if retention cannot provide `H+1` records even immediately after rotation: `(segments - 1) * capacity + 1 >= H+1` must hold. This also applies to retention from the `[storage] default_retention` configuration setting.
 
 For a rule attached ad hoc, the entire history must be produced after attachment. With a `DUMP -H TO M` range, the rule can first evaluate its `WHEN` condition on record `H+1` after attachment: the preceding `H` records provide the history, and the new record is the current sample. Without a historical part (`H=0`), the condition is evaluated on the first new record. A `MEMORY` stream must retain at least `H+1` records; a request reaching further back is rejected without attaching the rule.
 
@@ -234,5 +236,3 @@ _Fig. 52. Independent evaluation of multiple rules on the same stream_
 | An ad-hoc rule with history `H > 0` on a `MEMORY` store of capacity `N <= H` | The request is rejected without attaching the rule; history plus the current record needs `H+1` slots |
 | Destination file unavailable (missing STORAGE directory) | Critical `FatalError` - xretractor exits |
 | DO SYSTEM returns a non-zero code | Error logged via spdlog; processing continues |
-
-Automatic capacity calculation for a historical `DUMP` in a rule from the plan file remains a separate issue described in [#419](https://github.com/michalwidera/retractordb/issues/419): the compiler accounts for `H` instead of `H+1`. The capacity check when attaching an ad-hoc rule already requires `H+1` slots.
