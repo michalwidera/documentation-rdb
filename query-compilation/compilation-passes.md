@@ -131,9 +131,13 @@ Applies to `RULE` conditions the same computability check that `inferFieldShapes
 
 #### simplifyFieldExpressions
 
-Simplifies `SELECT` field programs, record-history aggregate arguments, and `RULE` conditions after references have been resolved but before equivalent computations are shared. The pass folds constant expressions, combines constant tails in integer and rational arithmetic, and removes type-compatible neutral elements (`E+0`, `E-0`, `E*1`, `E/1`). It also writes a repeated exact factor as a power, for example `E*E*E` as `E^3`.
+Simplifies `SELECT` field programs, record-history aggregate arguments, and `RULE` conditions after references have been resolved but before equivalent computations are shared. The pass folds constant expressions, combines safe constant tails in integer arithmetic and STRING concatenation, and removes type-compatible neutral elements (`E+0`, `E-0`, `E*1`, `E/1`). With the separate `aggressive_expr_optimization=ON` switch it writes a repeated exact factor as a power, for example `E*E*E` as `E^3`; this rule is disabled by default.
 
 The pass preserves `NULL` semantics and type promotion. It therefore does not simplify `E*0`, reassociate `FLOAT` or `DOUBLE` operations, or alter programs whose type or operation cannot be established safely. Repeated-factor folding is limited to types with exact multiplication (`BYTE`, `INTEGER`, `UINT`, and `RATIONAL`); it does not replace one `FLOAT` or `DOUBLE` multiplication with a call to `pow`.
+
+Constant-tail reassociation (rule B) requires exact value equality, including `NULL`, with optimization enabled or disabled. For an `INTEGER`, `UINT`, or `BYTE` base and `INTEGER` constants, the guard computes the intervals of base values for which the intermediate result and the rewritten result fit their representation. A rewrite is allowed only when the rewritten result's defined domain is contained in the intermediate result's defined domain. For `BYTE` the guard uses the complete `INTEGER` range because a compound base, such as `b+b`, already produces `INTEGER`. It therefore retains the sequential forms of `(i+1)-1` at `INT_MAX`, `i*-1*-1` at `INT_MIN`, and `u*-2*-3` and `u+5-3` over `UINT`, preserving intermediate overflow as `NULL`.
+
+Rule B refuses reassociation for `RATIONAL` and other unproved promotions; constant folding and removal of type-compatible neutral elements remain available. `STRING` concatenation remains allowed. The `it_expr_corpus-value` regression covers `INTEGER`/`UINT` boundaries, `BYTE` promotion, `RATIONAL` overflow, and the `u+3-5` control; it checks values and descriptors under all-off as well.
 
 #### shareEquivalentSelectComputations
 
