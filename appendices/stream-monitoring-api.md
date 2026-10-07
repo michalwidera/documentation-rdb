@@ -83,6 +83,22 @@ with Client("laboratory", xqry="/path/to/xqry") as db:
 
 Use context managers or call `close()` explicitly. Merely breaking out of a `for` loop does not close the iterator. The library does not install signal handlers for the application.
 
+`ping()` returns `True` after a valid server response; on failure it raises `Error` with the error code and cause description. It does not return `False` or hide transport or protocol failures. Example error handling:
+
+```python
+from retractordb import Client, Error
+
+with Client("laboratory", xqry="/path/to/xqry") as db:
+    try:
+        db.ping()
+    except Error as exc:
+        print(f"Ping failed: {exc.code}: {exc}")
+    else:
+        print("Server responded")
+```
+
+**Python compatibility:** the `True` result preserves the behavior of existing `if db.ping():` and `assert db.ping()` code. Both calls raise an exception on failure. The contract approved in [#425](https://github.com/michalwidera/retractordb/issues/425) preserves the success result in Python; C++ uses `void`.
+
 ## C++
 
 The library requires C++23. Its targets are available on demand in the RetractorDB tree:
@@ -122,6 +138,12 @@ int main() {
 
 `SubscribeOptions` exposes `limit`, `idleTimeout`, and `capacity`. `next(timeout)` returns `std::optional<Record>`; an empty value means normal completion or an explicit close. Errors throw `retractordb::Error` with a stable `code` field. Subscription handles are movable but not copyable; the destructor and `close()` terminate and reap their child process.
 
+`Client` is also movable and noncopyable. Its move constructor and move assignment are `noexcept` and defined `= default` outside the header. Moving transfers ownership of the client and its subscriptions; move assignment first closes the destination's previous subscriptions. The client destructor closes its subscriptions even if their handles still exist. The accessors `Client::streams()`, `describe()`, and `subscribe()`, and `Subscription::schema()`, `next()`, `pid()`, and `endReason()` are `[[nodiscard]]`.
+
+`Client::ping()` returns `void` after a valid response and throws `retractordb::Error` with the error code and cause description on failure. Successful completion without an exception indicates success; there is no `false` result.
+
+**Moved-from client:** the source `Client` can safely be destroyed, closed with `close()`, or assigned another client. Calls to `ping()`, `streams()`, `describe()`, and `subscribe()` throw `retractordb::Error` with code `closed`. Assigning a working client makes the object usable again. After an ordinary `close()`, these methods also report `closed` when called with valid arguments.
+
 ## Limits and error handling
 
 Library buffers are bounded: by default, 1024 pending events, 1 MiB per JSONL line, and 64 KiB of retained stderr. An application-buffer overflow produces `buffer_overflow` and closes the subscription without silently dropping records. A server-side queue overflow is a limitation of the existing IPC and may surface only as an idle timeout.
@@ -143,3 +165,5 @@ The API is developed with the engine but remains optional. Plain `ninja`, `ninja
 The C++ API is always configured, but its targets use `EXCLUDE_FROM_ALL`. `xqry` has its own Boost.JSON translation unit, so the engine does not link anything from `api/`. The dependency runs only from the API to the public `xqry` process interface.
 
 The `st_api_fake` and `st_api_real` tests cover both languages. The former covers types, `NULL`, malformed output, overflow, and process cleanup. The latter uses a real `xretractor` and checks independent subscriptions, arrays, rational numbers, a missing stream, and server shutdown.
+
+The C++ tests also cover a client factory, `std::vector`, lambda capture, move assignment with active subscriptions, and safe `close()` and destruction of a moved-from object. They check the `closed` code from all four client methods after move construction, move assignment, and explicit closure. Both languages check successful and failed `ping()` calls and preservation of the `protocol_error`, `server_no_response`, and `closed` codes; the Python tests require a `True` result on success.
