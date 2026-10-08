@@ -44,6 +44,10 @@ A start without the `ROTATION` directive begins `SELECT` outputs and substrates 
 
 > **_NOTE:_** The `MEMORY` type (SUBSTRAT 'memory') is covered by the tests: `issue61_tmpmem` (serial and parallel), described in the appendix [Integration Tests](../../appendices/integration-tests.md).
 
+## Links in storage paths
+
+Storage writes refuse to follow a symbolic link at the final data, shadow, metadata, or descriptor filename. An explicit caller-supplied `REF` can authorize a main data-file link; the exception covers neither retention-segment names nor auxiliary files. Links in parent directories remain permitted. See [Files](../../data-processing-system-architecture/data-storage-format/files.md#file-opens-and-symbolic-links) for refusal behavior, the `REF` exception, and the protection boundary.
+
 ## When to use which
 
 The choice depends on the environment's requirements:

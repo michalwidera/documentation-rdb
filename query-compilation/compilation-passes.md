@@ -187,7 +187,18 @@ W_{\\#}
 \right)
 \\]
 
-The result is exact - it neither undershoots nor overshoots the causal bound. The arithmetic runs in 64 bits, because the product \\((j+1+W)\cdot\text{numerator}\cdot\text{denominator}\\) exceeds `int` range already for moderate intervals. Above the `kHashPhaseScanLimit` threshold (`SOperations.hpp`) the scan stops being affordable and the former closed form \\(\lceil(p+q-1)/p\rceil\\) takes over; it overshoots the tail by one slot - a safe choice, since undershooting would mean emitting a record before its dependency is determined.
+The scan result is exact - it neither undershoots nor overshoots the causal bound. The arithmetic runs in 64 bits, because the product \\((j+1+W)\cdot\text{numerator}\cdot\text{denominator}\\) exceeds `int` range even for moderate intervals. Above `kHashPhaseScanLimit`, `HashStartupLatency()` (`SOperations.hpp`) uses a safe bound without a phase scan:
+
+\\[
+W_{\\#,\mathrm{fallback}}
+=\max\left(
+\left\lceil\frac{W_a\Delta_a}{\Delta_c}\right\rceil,
+\left\lceil\frac{W_b\Delta_b}{\Delta_c}\right\rceil
++\left\lceil\frac{p+q-1}{p}\right\rceil
+\right)
+\\]
+
+The first two terms convert the input tails into output slots; a zero tail contributes zero. The term \\(\lceil(p+q-1)/p\rceil\\) describes only the phase and is insufficient on its own for nonzero input tails. The complete bound is conservative: it does not release a record before its dependencies are ready, but it does not promise an excess of exactly one slot. The regression `ut_soperations::xSOperations.hash_startup_latency_above_scan_limit_stays_safe` compares it with an independent scan, including nonzero input tails.
 
 Regressions cover ratios including \\(3/5\\), \\(3/2\\), \\(7/11\\), and \\(160/147\\), including periodic all-`NULL` records in the blocked, non-rewritten left-hand side of the R1 identity; the operator formula itself is guarded by `ut_h10aGate`.
 
