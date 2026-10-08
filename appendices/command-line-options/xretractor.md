@@ -183,7 +183,7 @@ The `--config` option (short form `-g`) points at a configuration file, includin
 1. `/etc/retractor/retractor.toml` - system layer,
 2. `$XDG_CONFIG_HOME/retractor/retractor.toml` (or `~/.config/retractor/retractor.toml`) - user layer.
 
-The absence of any file is a **valid state** - the program starts with default values. A TOML syntax error in a searched layer produces a warning and skips that layer; with an explicitly given path (`--config`), a missing file or a syntax error is hard, because it is an explicit user request. The same file is also read by `xqry` (under the `-e` short option), so the `[ipc]` and `[timing]` sections apply to both processes.
+The absence of discovered files is a **valid state** - the program starts with default values. An existing file with invalid TOML stops startup: the program returns a nonzero exit code and reports an ERROR diagnostic naming the file and cause, including in Release builds. Every loaded layer must be valid, even if a later layer would override its keys. With an explicit path (`--config`), a missing file remains an error as well. The same configuration loader is used by `xqry` (`--config`, short option `-e`) and `xtrdb`; these programs also refuse to run with a malformed file. The `--help` option works in all three programs regardless of the configuration; `xretractor` then reports the error in the `Config:` line of its help. The `[ipc]` and `[timing]` sections apply to the engine and the `xqry` client.
 
 | Key | Default | Meaning |
 | --- | ------- | ------- |
@@ -198,7 +198,7 @@ The absence of any file is a **valid state** - the program starts with default v
 | `timing.server_startup_poll_ms` | `100` | Polling interval while waiting for the server to start. |
 | `timing.query_no_data_timeout_ms` | `10000` | No-data timeout after which the `xqry` client considers the server dead. |
 | `scheduling.rt_priority` | `50` | `SCHED_FIFO` priority in `--realtime` mode; allowed range 1–99. |
-| `paths.lock_dir` | _(system temp directory)_ | Directory for instance lock files. For systemd services, `/var/run/retractor` or `$XDG_RUNTIME_DIR` is recommended. The path must be absolute. It does not change the fixed `/tmp` directory for IPC identity locks. |
+| `paths.lock_dir` | _(system temp directory)_ | Directory for instance lock files. For systemd services, `/var/run/retractor` or `$XDG_RUNTIME_DIR` is recommended. A nonempty path must be absolute in every loaded layer; a relative path stops startup with an ERROR diagnostic naming the file and cause, including in Release. An empty value keeps the default temporary directory. It does not change the fixed `/tmp` directory for IPC identity locks. |
 | `server.autoname` | `false` | Generates a name when neither `--name` nor `--autoname` was given. An explicit `--name` wins. `false` preserves the historical unnamed instance. |
 | `service.query_file` | _(value from the build configuration)_ | The query file overwritten when a set is handed to a running service. Used only as a fallback, when the service did not report its own `QUERYFILE` in the lock file. It must match the `ExecStart` argument of the systemd unit - configuration does not change `ExecStart`. |
 | `service.unrestricted` | `false` | Allows a `DO SYSTEM` rule in a plan accepted over the `xqry --reset` channel. The default value refuses such a plan as a whole (→ [xqry](xqry.md#the-do-system-rule-does-not-pass-through-this-channel)). With `true` the instance leaves a warning in the log at every start, and anyone able to open its IPC objects runs shell commands under its account. The key is read at process start-up, so it is set by the same authority that writes the service's plan file; it never opens the ad-hoc channel. |
@@ -234,7 +234,7 @@ lock_dir = "/var/run/retractor"
 autoname = false
 ```
 
-> **_NOTE:_** Layer loading and validation are covered by the `ut_appConfig` unit test; hard rejection of an invalid `storage.dir` by the `config_storage_validation` integration test, and the precedence and rejection of `sources.timeout_s` by the `device_timeout` integration test.
+> **_NOTE:_** Layer loading and validation are covered by the `ut_appConfig` unit test; hard rejection of an invalid `storage.dir`, a malformed TOML file and a relative `paths.lock_dir` by the `config_storage_validation` integration test, and the precedence and rejection of `sources.timeout_s` by the `device_timeout` integration test.
 
 ---
 
