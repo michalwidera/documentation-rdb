@@ -81,6 +81,8 @@ Each receives its own lock and IPC objects. The shared bus nevertheless rejects 
 
 Service mode provides a separate guarantee: exactly one service instance may run in each `RDB_NAMESPACE`; in the default namespace it is named `service`. See [Multiple Instances and the Bus](../../data-processing-system-architecture/multiple-instances-and-bus.md).
 
+The instance lock file must be a regular file with a single name, owned by the account that starts the instance. A symbolic link (dangling ones included), a second hard link, a directory or a FIFO at that path, as well as a file owned by another account - also for an instance started as root - stop startup without changing the contents of the target file. The `stderr` message, shown in Release builds as well, names the path and the cause, and exit code `5` (`EIO`) distinguishes this refusal from an identity that is already taken (`37`, `ENOLCK`, message `is already running`). A leftover of another account after a crash is neither taken over by the instance nor removed by `--cleanup`; an operator with rights to the lock directory removes it by hand. Reading presence and IPC identity locks of other accounts remains allowed.
+
 ### Cleaning up leftovers
 
 ```bash
