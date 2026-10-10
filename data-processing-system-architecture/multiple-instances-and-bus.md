@@ -30,11 +30,19 @@ Before startup, an instance acquires its file lock in `paths.lock_dir` (the temp
 
 Named instances have separate Boost.Interprocess objects. The base names of the command queue, response segment, and mutex receive the instance suffix; a subscriber queue also contains the client PID. Stopping an instance ends only its subscriptions and removes its IPC; it may also clean up resources abandoned by dead processes. Live instances remain protected.
 
-Every IPC object a server creates - the command queue, the response queues, the response-map segment and mutex, and the bus segment - is created with an explicit `0600` mode. Separate names keep instances apart from one another; this mode keeps them apart from other accounts: the trust boundary is the account the server runs under, not the umask of the process that started it. Boost's default mode is `0666`, which under a typical umask would give a foreign user read access to the segment, and under umask `002` would give the whole group the right to send commands - including `--reset`, which replaces the entire plan. The client loses nothing by it: `xqry` opens all of these objects through `open_only` only.
+New IPC objects created by the server receive an explicit `0600` mode, which restricts access to the server account without relying on the process umask. This applies to the command queue, subscription queues, response segment, and bus segment. Separate names keep the resources of cooperating instances apart, and locks coordinate their creation and cleanup.
 
-The bus is shared by the host or `RDB_NAMESPACE`. Every live server publishes its name, PID, operating modes, plan file, and stream names. A slot is considered live only when both the PID and process start time match `/proc`; a zombie process does not retain resources.
+> **⚠️ Warning**
+>
+> Mode `0600` applies to creating a new object. Opening an existing object neither changes its permissions nor verifies its owner. The server still uses `open_or_create` for command and subscription queues; the bus can open an existing segment through `open_only`, and the client also opens objects without checking the expected UID. An existing object owned by another account can therefore violate the intended access boundary. The identity lock and an attempt to remove an old object do not replace that verification. This limitation is described in [#465](https://github.com/michalwidera/retractordb/issues/465); executing a `SYSTEM` rule through the plan-replacement channel additionally depends on `service.unrestricted` (see [xqry](../appendices/command-line-options/xqry.md#the-do-system-rule-does-not-pass-through-this-channel)).
+
+The bus is shared by the host or `RDB_NAMESPACE`. Every live server publishes its name, PID, operating modes, plan file, and stream names. When the process entry is readable, a slot remains live if its PID and nonzero start time match; a zombie process does not retain resources. On Linux the engine reads `/proc/<pid>/task/<pid>/stat`, while on macOS it uses the platform adapter.
+
+An unreadable process entry means the engine cannot decide, rather than confirming that the owner is dead. On Linux a failed read confirms absence only when `kill(pid, 0)` returns `ESRCH`; success or `EPERM` leaves the result uncertain. `bus::isProcessAlive()` then keeps the slot and its claims, including when it cannot compare start times. This protects an owner hidden by `hidepid` or `ProtectProc`, but may retain stale claims after PID reuse. Lack of access to an entry alone therefore does not authorize releasing resources. The rule is checked by `ut_bus::BusFixture.UnreadableOwnerKeepsSlot`.
 
 The current layout uses the `xrdbbus_v7` segment, or `xrdbbus_v7_<RDB_NAMESPACE>` when `RDB_NAMESPACE` is set. Each namespace has its own registry and collision checks. Segment users hold a presence lock through `flock`; the last one leaving can remove the unused segment. Layout versions have separate registries: concurrently running binaries using v6 and v7 does not provide collision checks between their streams and storage paths. Stop older instances before upgrading.
+
+Shared presence-lock acquisition retries nonblocking `flock` calls for up to 500 ms. A transient exclusive holder may release its lock within that period; if it still holds it, the bus remains unavailable instead of blocking attachment indefinitely. This deadline applies to waiting for `flock`, not to the entire file-opening procedure.
 
 Before starting or replacing a plan, the bus checks that the following do not overlap:
 
@@ -45,6 +53,8 @@ Before starting or replacing a plan, the bus checks that the following do not ov
 Resources are claimed before old artifacts are removed and before IPC is created. A losing instance therefore cannot delete data belonging to a live owner. The rejection message identifies the conflicting resource, instance name, and PID.
 
 For `xqry --reset`, the new plan's resources are reserved first. Only after the new epoch has been built successfully does that reservation atomically replace the active set. A parse error, compilation error, limit error, or collision leaves the current plan and its claims unchanged.
+
+An unrecoverable bus-mutex error, `ENOTRECOVERABLE`, is reported at ERROR level, including in Release, once per `Bus` object. The message identifies the `/dev/shm` segment to remove after all instances mapping it have stopped. Removing a segment still used by a live instance can split the resource registry. Startup and ad hoc import retain the emergency mode described below; plan replacement is rejected when an attached bus has an unusable mutex.
 
 > **⚠️ Warning**
 >

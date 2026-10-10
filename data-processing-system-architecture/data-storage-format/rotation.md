@@ -18,7 +18,9 @@ The `ROTATION` directive enables history-preservation mode. It takes the path to
 ROTATION 'rdb_counter'
 ```
 
-The `PersistentCounter` object reads the value `N` from the file at startup (`getCount()` = `N`) and writes `N+1` at shutdown. The counter increases monotonically with every `xretractor` session.
+The `PersistentCounter` object reads the value `N` from the file and writes `N+1` in its constructor, reserving the next session number before archiving begins. `getCount()` still returns `N`, used in the current session's suffixes. A missing file means first use and number 0; an existing empty or unreadable file, or one that does not contain a valid nonnegative integer, stops startup. A process crash can consume a number without creating a complete archive set, so gaps in the numbering are allowed. The counter value does not prove that the preceding rotation completed.
+
+The counter is written through a temporary file: its contents are synchronized with `fsync`, and `rename` then replaces the destination file. Failure before that replacement completes stops startup. After replacement, the engine attempts to `fsync` the directory; failure is reported at ERROR level, but neither rolls back the reservation nor stops startup. The `ut_persistentCounter::PersistentCounterTest.construction_reserves_next_value` test checks the saved value while the object is still alive.
 
 ## Control flow during rotation
 
@@ -33,6 +35,7 @@ sequenceDiagram
     participant Old as .oldN files
 
     Note over RQL: session N starts, percounter = N
+    Note over RQL: PersistentCounter writes N+1 before archiving
     RQL->>D: open storage
     RQL->>M: prepare index
     Note over RQL: operation - writing records
@@ -43,7 +46,6 @@ sequenceDiagram
     RQL->>M: flushCurrentEntry()
     RQL->>Old: rename .meta to .meta.oldN
     RQL->>Old: accessor destructor - data and shadow under .oldN
-    Note over RQL: PersistentCounter writes N+1
 ```
 
 _Fig. 25. File rotation sequence - session start and stop_
@@ -51,6 +53,14 @@ _Fig. 25. File rotation sequence - session start and stop_
 `storage::~storage()` calls `metaData::rotate(N, false)`: it flushes the pending RLE entry, archives the index, and detaches it from the file without creating a new active `.meta`. The `storageShadow` variant first archives an existing `.meta.shadow`. The accessor destructor then rotates the data and its shadow. Files with the same number belong to the same session and allow its values and `NULL` bits to be reconstructed.
 
 If startup finds empty data but a nonempty index left by an older engine, `detectStartupState()` resets the orphaned index. It does not assign it the current session number. This also happens when gap detection is disabled. Shutdown archiving is not a transaction over the entire file family; interrupting the process during renames can leave an incomplete set.
+
+## Rotation failures and archive durability
+
+Data, data-shadow, metadata, and metadata-shadow renames use `rotateStorageFile`. After a successful `rename`, the engine calls `fsync` on the containing directory; if the source and destination directories differ, it attempts to synchronize both. Failure to inspect a path, rename a file, open a directory, call `fsync`, or close the descriptor is reported at ERROR level, including in Release, with the path and cause. Overwriting an existing archive also produces an ERROR message, but is not blocked: its previous contents are lost.
+
+Directory synchronization persists file-name entries. It does not replace `fsync` of the archived file's contents or provide a transaction over the complete data and metadata set. If the rename succeeds but subsequent directory synchronization fails, the engine does not undo the rename. After a failure, check archive completeness and rotation diagnostics independently of the counter value.
+
+Failed metadata rotation does not reset the unarchived index. With `reopen=true`, which prepares for further writing, it throws an exception instead of creating an apparently valid empty index. Storage shutdown uses `reopen=false`: it detaches persistence without throwing. If the metadata shadow stayed under its active name after a failed rotation, the main index also stays under its active name; if the shadow was renamed and only directory synchronization failed, the main index can be archived. Destructor errors do not by themselves change the process exit code, so a successful exit code does not confirm complete rotation. The `ut_storageRotation` test checks operation order, diagnostics, and failure paths.
 
 ## What ends up in `.old<N>` files
 
