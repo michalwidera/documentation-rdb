@@ -241,7 +241,7 @@ If all conditions hold, substrate `it` is considered a duplicate of substrate `i
 
 ### Position in the compilation pipeline
 
-Deduplication is the ninth of the twenty-three pipeline stages (the `compiler::compile()` function):
+Deduplication follows interval resolution and common time-shift factorization, before the second substrate-name check. The order in `compiler::compile()` is:
 
 <div class="timeline compact">
 
