@@ -14,7 +14,9 @@ The ad hoc channel accepts **exactly one `SELECT`, `DECLARE`, or `RULE` statemen
 
 A syntax error or invalid value is returned to the client with its reason, and the server continues to accept commands. The parser rejects, among other cases, out-of-range numeric literals, a zero denominator, a zero interval (in `DECLARE` and with `&`, `%`, or `-`), and an empty `FILE` name. If attachment fails after import, the server restores the previous plan and releases newly claimed stream names and storage files on the bus. The same command can be retried after the cause is fixed.
 
-Before attaching a `SELECT` whose output is stored on disk, the server checks whether it can open the data file and, for the applicable storage profiles, the `.shadow` file. This check does not create new files; for a missing file, it checks the parent directory. A refusal returns the reason to the client, such as `cannot open output file`, without changing the plan. If the directory becomes unavailable after this check, a later failure to open a POSIX or POSIXSHD accessor, or a DEFAULT/DIRECT segment, is also returned as a refusal: the server rolls back the import and new claims on the bus, stays running, and allows the command to be retried. This handling of late open failures does not cover the `STORAGE GENERIC` profile.
+Before attaching new streams, the server checks the `STORAGE` directory, retained descriptors, source kinds, and whether output files and applicable `.shadow` files can be opened. A new `SELECT` descriptor must match the plan's schema and must not introduce an unplanned `REF`; its `TYPE` must be supported. The check includes descriptors without `ROTATION` and for `MEMORY`, because import does not delete them. Only new streams are checked. The open check creates no new files; for a missing file, it checks the parent directory. A refusal returns the reason to the client, such as `cannot open output file`, without changing the plan. If the directory becomes unavailable after this check, a later failure to open a POSIX or POSIXSHD accessor, or a DEFAULT/DIRECT segment, is also returned as a refusal: the server rolls back the import and new claims on the bus, stays running, and allows the command to be retried. This handling of late open failures does not cover the `STORAGE GENERIC` profile.
+
+A generated substrate name colliding with a different program causes a compilation refusal (`Fail local chain compiler:Substrate name '...' denotes two different programs`) without terminating the server. This also applies to ordinary names with underscores, such as `A_B + C` and `A + B_C`. A corrected command can be submitted after refusal; coverage: `it_plan_error_e4-run` and `it_storage_refusal-adhoc`.
 
 A new source can be declared without stopping a running engine:
 
@@ -69,7 +71,7 @@ We'll save the query file under the name qplan1.rql. For the query to run correc
 $ xretractor qplan1.rql
 ```
 
-If we previously performed some operations in this directory and created a str1 stream with a different schema, we'll get an error titled "Error in data descriptor file". It will also show information about the differences between the two descriptors. In that case, the files str1 and str1.desc should be deleted and the command run again.
+Without `ROTATION`, startup removes earlier `SELECT` output files, so an old `str1` schema does not block this example. When `ROTATION` preserves the files, an incompatible descriptor causes a refusal before startup with `descriptor schema mismatch` and the file path. The operator must restore a compatible plan or deliberately remove the stream's file family and start it afresh. Ad hoc import preserves existing files and also refuses an incompatible descriptor.
 
 The xretractor process will begin processing data. At this point, open another terminal and issue the command:
 

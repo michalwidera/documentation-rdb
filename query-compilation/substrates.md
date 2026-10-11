@@ -171,7 +171,7 @@ A substrate is generated for every query whose program contains more than one st
 
 The newly created substrate is given a name built from the operation symbol, its parameter, and the operand names, for example `STREAM_ADD_core1_core0`, `STREAM_TIMEMOVE_2_core0`, or `STREAM_AGSE_1_10_core0` (the `composeStreamName` function in `compiler.cpp`). A parameter is part of node identity: two different windows over one source must not receive the same name. Characters unavailable in identifiers are encoded; a negative number uses `N`, for example, and a fraction slash becomes `_`.
 
-A readable name grows with the complexity of the `FROM` clause and is also the substrate's file name. Above 200 bytes the compiler keeps the operation name and replaces the remainder with a stable 16-digit FNV-1a digest, for example `STREAM_ADD_x92741c15f69ba93f`. This lets a wide expression stay below the system `NAME_MAX`; the same plan structure always receives the same name, while a different operand order receives a different digest. `validateSubstratNameUniqueness()` stops compilation if one digest were ever to denote two different programs.
+A readable name grows with the complexity of the `FROM` clause and is also the substrate's file name. Above 200 bytes the compiler keeps the operation name and replaces the remainder with a stable 16-digit FNV-1a digest, for example `STREAM_ADD_x92741c15f69ba93f`. This lets a wide expression stay below the system `NAME_MAX`; the same plan structure always receives the same name, while a different operand order receives a different digest. `validateSubstratNameUniqueness()` refuses a name denoting two different programs, whether from a digest collision or ordinary names with underscores, such as `A_B + C` and `A + B_C`. The initial check precedes sorting by name so that the second program cannot disappear from the plan; identical duplicates are allowed. See [Compilation Passes](compilation-passes.md#validatesubstratnameuniqueness) for the order.
 
 In the parent query's program, the operator token is replaced with a `PUSH_STREAM` token pointing at this substrate.
 
@@ -250,6 +250,7 @@ Deduplication is the ninth of the twenty-three pipeline stages (the `compiler::c
 - `expandStreamGenerators` - stream-family expansion
 - `snapshotNamedSourceRefs` - snapshot of user-written references
 - `extractIntermediateStreams` - substrate extraction
+- `validateSubstratNameUniqueness` - initial check before sorting
 - `expandSchemaWildcards` - expansion of `*` and `[_]`
 - `resolveStreamIntervals` - time-interval computation
 - `factorMatchedHashTimeMoves` - matched interleave-shift factorization

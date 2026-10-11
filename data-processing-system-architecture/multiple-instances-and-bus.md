@@ -48,7 +48,7 @@ An unreadable process entry means the engine cannot decide, rather than confirmi
 
 The current layout uses the `xrdbbus_v7` segment, or `xrdbbus_v7_<RDB_NAMESPACE>` when `RDB_NAMESPACE` is set. Each namespace has its own registry and collision checks. Segment users hold a presence lock through `flock`; the last one leaving can remove the unused segment. Layout versions have separate registries: concurrently running binaries using v6 and v7 does not provide collision checks between their streams and storage paths. Stop older instances before upgrading.
 
-Shared presence-lock acquisition retries nonblocking `flock` calls for up to 500 ms. A transient exclusive holder may release its lock within that period; if it still holds it, the bus remains unavailable instead of blocking attachment indefinitely. This deadline applies to waiting for `flock`, not to the entire file-opening procedure.
+Shared presence-lock acquisition retries nonblocking `flock` calls for up to 500 ms. A transient exclusive holder may release its lock within that period; if it still holds it, the bus remains unavailable instead of blocking attachment indefinitely. This deadline applies to waiting for `flock`, not to the entire file-opening procedure. The separate open/create loop has a limit of 100 attempts. Presence and IPC identity locks require regular files without following symbolic links; their read-only opens do not require ownership matching the reader's UID. The writable instance lock additionally requires the same UID and one link - see [startup conditions](../appendices/command-line-options/xretractor.md#multiple-instances).
 
 Before starting or replacing a plan, the bus checks that the following do not overlap:
 
@@ -58,9 +58,11 @@ Before starting or replacing a plan, the bus checks that the following do not ov
 
 Resources are claimed before old artifacts are removed and before IPC is created. A losing instance therefore cannot delete data belonging to a live owner. The rejection message identifies the conflicting resource, instance name, and PID.
 
-For `xqry --reset`, the new plan's resources are reserved first. Only after the new epoch has been built successfully does that reservation atomically replace the active set. A parse error, compilation error, limit error, or collision leaves the current plan and its claims unchanged.
+On `xqry --reset`, resources for the new plan are reserved first. At a slot boundary, the old model is dismantled, the plan is replaced, and the reservation replaces the active bus resource set. The new epoch model is constructed only after activation; commands requiring a model wait for its publication. A parse or compilation error, a limit violation, or a collision detected before reset acceptance leaves the old plan and its claims unchanged.
 
-An unrecoverable bus-mutex error, `ENOTRECOVERABLE`, is reported at ERROR level, including in Release, once per `Bus` object. The message identifies the `/dev/shm` segment to remove after all instances mapping it have stopped. Removing a segment still used by a live instance can split the resource registry. Startup and ad hoc import retain the emergency mode described below; plan replacement is rejected when an attached bus has an unusable mutex.
+An unrecoverable bus-mutex error, `ENOTRECOVERABLE`, is reported at ERROR level, including in Release, once per `Bus` object. The message identifies the `/dev/shm` segment to remove after all instances mapping it have stopped. Removing a segment still used by a live instance can split the resource registry. Startup and ad hoc import retain the emergency mode described below; on reset, an unusable mutex in an attached bus causes a refusal during reservation, before the client receives acceptance.
+
+If the bus lock fails only during activation after reset acceptance, the old model has already been dismantled. The server continues with the new plan in emergency mode, without publishing its new resource set or enforcing disjointness. The bus slot may still list the old plan's streams, making routing from that inventory unreliable. A missing required reservation or slot is a separate invariant violation and terminates the process through `FatalError`. Reset does not provide a full rollback guarantee for failures after acceptance.
 
 > **⚠️ Warning**
 >

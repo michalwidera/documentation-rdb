@@ -31,7 +31,7 @@ The subchapters on substrates and the `_` symbol use extended variants of the sa
 
 ## The chain of stages
 
-The chain of twenty-five stages is defined by the `compiler::compile()` function:
+The order of passes and checks is defined by the `compiler::compile()` function:
 
 <div class="timeline compact">
 
@@ -40,6 +40,7 @@ The chain of twenty-five stages is defined by the `compiler::compile()` function
 - `expandStreamGenerators` - expansion of `name[N]` stream families
 - `snapshotNamedSourceRefs` - snapshot of user-written references
 - `extractIntermediateStreams` - two-argument `FROM` expressions, substrates
+- `validateSubstratNameUniqueness` - initial name check before sorting
 - `expandSchemaWildcards` - expansion of `*` and `[_]`
 - `resolveStreamIntervals` - stream intervals, loop detection
 - `factorMatchedHashTimeMoves` - factoring a common shift out of an interleave
@@ -109,7 +110,7 @@ An optimization: if two queries use the same intermediate operation (e.g. `core0
 
 #### validateSubstratNameUniqueness
 
-Checks that two substrates with the same name denote the same program. Names longer than 200 bytes are shortened deterministically by `composeStreamName()`, so this check turns an extremely unlikely 64-bit digest collision into a loud error instead of an ambiguous plan. It runs independently of optimizer switches and after deduplication, because identical duplicate names are a normal transient state before that point.
+Checks that two substrates with the same name denote the same program. The check runs after `extractIntermediateStreams`, before the first topological sort in `expandSchemaWildcards`, and again after deduplication. Underscores in ordinary names can also cause collisions: `A_B + C` and `A + B_C` generate `STREAM_ADD_A_B_C`. Names longer than 200 bytes are shortened deterministically by `composeStreamName()`, and the same check also protects against digest collisions. Different programs cause a compilation refusal with `Substrate name '...' denotes two different programs`; identical duplicates are allowed, even with deduplication disabled. The check does not depend on optimizer switches. In ad hoc import and reset, the refusal returns to the client while the server stays running. Coverage: `ut_compiler` and `it_plan_error_e4-run`.
 
 #### resolveFieldReferences
 

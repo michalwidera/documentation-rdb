@@ -136,7 +136,15 @@ An example of a command that creates an object in RetractorDB returning random v
 DECLARE random_field INTEGER STREAM random_stream, 0.1 DEVICE '/dev/random'
 ```
 
-A file declared as `TEXTFILE` is interpreted as a continuous, unbounded data file read line by line. Upon reaching the end of the file, reading resumes from the beginning. Basic support for the format is provided - if we specify two integer fields in the declaration, and the file contains two integer values separated by a space, those values will be read as consecutive elements of the record.
+A file declared as `TEXTFILE` is read as a sequence of whitespace-separated tokens. Line boundaries do not define records: the field declarations and their arrays determine how many values form a record. By default, reading wraps to the beginning at EOF; `ONESHOT` or `--until-eof` disables this loop.
+
+### Invalid numeric values in TEXTFILE
+
+A numeric token must be consumed in full and fit the field type's range. `abc`, `12x`, and `99999999999` in an `INTEGER` field, `-5` in `UINT`, `300` in `BYTE`, and `1e999`, `inf`, and `nan` in `DOUBLE` yield `NULL`. Valid `+7` and `-5` in `INTEGER` retain their values. Floating-point underflow, such as `1e-999`, still yields zero. The tokens `NULL`, `Null`, and `null` also mark a missing value.
+
+An invalid token neither terminates the process nor misaligns neighboring fields or subsequent records. An invalid array element makes the entire array field NULL because its elements share one NULL bit; other fields retain their values. `STRING` fields are not subject to numeric validation.
+
+The first invalid token in a source produces one `WARN` log entry naming the file, record number, field, and token. Further errors, including after wrapping to the beginning, do not repeat the warning. In `Release`, the entry is compiled out by `SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_ERROR`, while conversion to `NULL` still applies. The rule is covered by `ut_facctxtsrc` and `it_issue471_txt_bad_token-value`.
 
 ```rql
 DECLARE field_1 INTEGER STREAM cyclic_stream, 0.1 TEXTFILE 'file.txt'

@@ -28,7 +28,7 @@ The following system response will be printed on the screen:
 {{#include ../regen/out/plan-basic.txt}}
 ```
 
-Omitting the -c parameter will cause the system to attempt compilation and immediately send the compiled query execution plan for execution. This will cause an error, since the data file datafile1.dat presumably hasn't been prepared yet.
+Omitting `-c` compiles the plan and attempts to run it. A missing source file, `datafile1.dat`, does not by itself refuse the plan: the source then yields `NULL` records. Startup does require an existing storage directory and valid retained descriptors; see [xretractor](../appendices/command-line-options/xretractor.md#plan-refusal-and-environment-failure) for checks and refusal codes.
 
 Besides the text view, we can also look at the compilation output in graphical form. To do this, invoke the following sequence of commands:
 
