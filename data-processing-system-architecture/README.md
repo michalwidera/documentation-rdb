@@ -4,7 +4,7 @@ The construction of the data-processing system is a strictly technical chapter. 
 
 RetractorDB was implemented in C++ under Linux. The source code goes through continuous integration and testing on GitHub, backed by CircleCI. The code is run and developed locally on the Linux WSL2 platform. I abandoned development and implementation of the system under Windows. In the early phase I kept that option open, and I may return to it in the future. However, maintaining too many development platforms significantly slows down rapid prototyping and system development. I still keep and maintain the system's functionality on the Linux ARM platform. The code is compiled and tested on ARM and x86-64 architecture machines running in CircleCI's resources. Raspberry Pi is one of the intended production platforms for RetractorDB, aimed at Edge IoT needs.
 
-The build uses Conan 2, CMake, and Ninja. Tool preparation, source builds, and release-package installation are described in [Installation Process](../appendices/installation-process.md). Linux remains the general deployment contract of this manual; the Apple port is solely for development and testing, with its limitations covered in a separate section of that appendix.
+The build uses Conan 2, CMake, and Ninja. Tool preparation, source builds, and release-package installation are described in [System Installation](../system-installation/README.md). Linux remains the general deployment contract of this manual; the Apple port is solely for development and testing, with its limitations covered in [building from source](../system-installation/source-build.md#apple-development-environment).
 
 ## Overview of topics covered in this chapter
 

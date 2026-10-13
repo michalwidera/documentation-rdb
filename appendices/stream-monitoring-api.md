@@ -1,5 +1,7 @@
 # Stream Monitoring API
 
+This client observes the service. [Engine and offline reads](python-jupyter-api.md) have a separate contract; [Python installation](../system-installation/python-jupyter.md) distinguishes an embedded wheel from the client-only package.
+
 The optional client API monitors streams from a running, explicitly named `xretractor` instance on the same Linux host. Its transport layer starts `xqry --jsonl` processes, so the API does not duplicate the Boost IPC protocol and follows the command-line tool's rules for selecting streams and ending subscriptions.
 
 The following interfaces are available:

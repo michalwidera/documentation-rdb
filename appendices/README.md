@@ -46,8 +46,16 @@ The appendices contain documents not directly related to the system's constructi
 
   Running them: `ninja test` or `ctest -R <name> -V` in the `build/Debug/` directory.
 
-- **[Installation Process](installation-process.md)**
+- **[Python and Jupyter API](python-jupyter-api.md)**
 
-  Installing a Linux release through `curl` or apt, upgrades and removal, building from source, and configuration checks. A separate section covers Apple solely as a development environment.
+  Embedded-engine API, storage ownership, errors, NumPy/DLPack copies and devices.
+
+- **[Integration history](embedded-integration-history.md)**
+
+  C2/C3 material and design decisions, separate from the current API.
+
+- **[Notebook and Colab acceptance](notebook-acceptance.md)**
+
+  Local-module and installed-wheel smoke, plus separate Colab CPU/GPU acceptance.
 
 </div>

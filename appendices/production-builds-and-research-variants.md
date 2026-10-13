@@ -1,6 +1,6 @@
 # Production Builds and Diagnostic Variants
 
-The `scripts/buildrdb.sh` script provides the production `release` build and diagnostic modes. The `release-ablation` and `probe` variants have separate CMake configurations, output directories, and Conan generators. Verification of the resulting binary confirms its switches. Tool preparation and installation are described in [Installation Process](installation-process.md).
+The `scripts/buildrdb.sh` script provides the production `release` build and diagnostic modes. The `release-ablation` and `probe` variants have separate CMake configurations, output directories, and Conan generators. Verification of the resulting binary confirms its switches. Tool preparation and installation are described in [System Installation](../system-installation/README.md).
 
 > **⚠️ Warning**
 >
@@ -200,7 +200,7 @@ CMake configuration checks the available platform functions and records `RDB_HAS
 
 The CMake option `-DRDB_SANITIZE=address,undefined` enables AddressSanitizer and UndefinedBehaviorSanitizer; detected undefined behavior terminates execution. This is a CMake configuration argument, not an additional `buildrdb.sh` option. Sanitizers require rebuilding the binaries under test.
 
-On the Apple development port, the ready-made entry point is `scripts/macos-build.sh --sanitize`. Running ordinary tests without Valgrind does not enable sanitizers automatically. `scripts/macos-build.sh release` selects the Release configuration but does not implement the production contract of `buildrdb.sh release`. See [Apple development environment](installation-process.md#apple-development-environment) for the full workflow and limitations.
+On the Apple development port, the ready-made entry point is `scripts/macos-build.sh --sanitize`. Running ordinary tests without Valgrind does not enable sanitizers automatically. `scripts/macos-build.sh release` selects the Release configuration but does not implement the production contract of `buildrdb.sh release`. See [Apple development environment](../system-installation/source-build.md#apple-development-environment) for the full workflow and limitations.
 
 ## Optional client API
 

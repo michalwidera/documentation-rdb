@@ -8,7 +8,7 @@ The tables below describe the **intent** of each scenario. They are not an execu
 
 After the directory merge, all integration tests use the `it_` prefix; the former `pt_` prefix no longer denotes a separate class. Script tests use `st_`, while API tests also carry the `api` label and are skipped by `ninja test` by default. Two top-level guards - `harness_guard-selftest` and `harness_command_integrity` - verify that a wrapper actually ran the command under test and did not mask its exit status.
 
-Valgrind descriptions refer to the standard Linux run. The Apple development port runs tests without that wrapper and requires a separate sanitizer build; a `-vg` name does not establish memory checking. See [Apple development environment](installation-process.md#apple-development-environment) for the test scope and explicit `test-api` step. Unit tests in `test_busFallback.cpp` also check that a stopped live owner retains its lock and that the lock is recovered after its owner dies.
+Valgrind descriptions refer to the standard Linux run. The Apple development port runs tests without that wrapper and requires a separate sanitizer build; a `-vg` name does not establish memory checking. See [Apple development environment](../system-installation/source-build.md#apple-development-environment) for the test scope and explicit `test-api` step. Unit tests in `test_busFallback.cpp` also check that a stopped live owner retains its lock and that the lock is recovered after its owner dies.
 
 ## Execution and service scenarios
 
