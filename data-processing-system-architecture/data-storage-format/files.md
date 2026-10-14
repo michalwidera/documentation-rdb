@@ -381,6 +381,8 @@ The `storage` class calls `flushCurrentEntry()` after **a successful physical re
 
 `flushCurrentEntry()` writes the current index entry to the file, reducing the amount of metadata held only in process memory. This write does not include `fsync` after every record or a transactional commit of the data together with the index, so it does not by itself guarantee consistency after a process crash or power loss. The `ut_metaData_usage` test checks an append followed by an explicit flush; it does not simulate a process crash.
 
+Rewriting the index through `MetaIndexStore::rewrite()` returns Result with `Errc::IO` and `errno` if opening or writing the temporary file, or replacing `.meta`, fails. `onRecordModified()` propagates that error before changing the in-memory index state; this does not provide a transaction with an earlier data write. A rewrite failure during `loadIndex()` is an initialization error and detaches persistence. The separate `appendEntry`, `overwriteLast` and `saveHeader` paths still lack this error propagation; port #511 does not guarantee detection of every metadata-write failure. `ut_metaData` guards failed replacement.
+
 A naive implementation would append a new entry to the file on every flush - causing file growth proportional to the number of records, even without any change in the null pattern.
 
 The solution: a **lazy overwrite** mechanism flagged by `tail_.dirty`.
@@ -460,7 +462,7 @@ _Fig. 19. Persistence and state recovery after a restart_
 | Method | Description  |
 | -------- | ----------------- |
 | `getNullBitset(i)` | Returns the null pattern for record `i`. Virtual: in the `storageShadow` variant it first checks overrides in `metaShadow` (from the end - the most recent wins), and only falls back to the main index if there's no entry. |
-| `nullBitsetFor(i)` | As above, but for a record outside the index range it returns an all-false pattern instead of throwing. Lets `storage::read()` apply null metadata to a record that is present in the data file but not yet in the index. It does not cover a record absent from the data file itself - `storage::read()` then reports no such record and sets an all-true pattern of its own (→ [Reading a record that does not exist](#reading-a-record-that-does-not-exist)). |
+| `nullBitsetFor(i)` | As above, but for a record outside the index range it returns an all-false pattern without reporting an error. Calling `getNullBitset(i)` directly requires an index within range; violating that condition is an invariant error, not a recoverable exception. Lets `storage::read()` apply null metadata to a record that is present in the data file but not yet in the index. It does not cover a record absent from the data file itself - `storage::read()` then reports no such record and sets an all-true pattern of its own (→ [Reading a record that does not exist](#reading-a-record-that-does-not-exist)). |
 | `isGapBefore(i)` | Returns `true` if, in the RLE index, an entry with `isGap=true` sits immediately before record `i`. Record 0 never has a gap before it. |
 | `segments()` | Returns all RLE segments: committed (from disk) plus the current one (from memory), if non-empty. Does not include overrides from `.meta.shadow`. Used for inspection and tests. |
 | `totalRecords()` | The sum of records across all segments (committed + pending). |

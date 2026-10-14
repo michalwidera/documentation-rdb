@@ -47,7 +47,7 @@ SELECT ... STREAM c FROM a # b
 
 \\[\Delta_c = \frac{\Delta_a \cdot \Delta_b}{\Delta_a + \Delta_b}\\]
 
-The result corresponds to the harmonic mean of the intervals - the stream only produces a value when both inputs are available at the same time.
+The `#` operator interleaves input records. The output rate is the sum of the input rates, giving the interval above. The plan determines which input is selected; the sources need not emit simultaneously.
 
 Example: core0(Δ=1/10) # core1(Δ=1/5) → str1(Δ=1/15)
 
@@ -75,15 +75,21 @@ Reducers operate on a complete stream expression, e.g. `AVG(a@(1,10))`. They red
 SELECT ... STREAM c FROM a @ (step, window)
 ```
 
-\\[\Delta_c = \frac{\Delta_a \cdot \text{step}}{\text{windowSize}}\\]
+\\[\Delta_c = \frac{\Delta_a \cdot \text{step}}{F_{a}}\\]
 
-AGSE (the Episode Series Generation Algorithm) generates sliding windows. The output interval depends on the step and the window size relative to the source.
+AGSE (the Episode Series Generation Algorithm) generates sliding windows. `F_a` is the number of flat values in a source record, determined by `descriptorStorage().flatElementCount()`. The step counts these values, so the output interval depends on the step and the input record width. The output window size determines the number of values in the window.
 
 ### De-hash operators (STREAM\_DEHASH\_DIV, STREAM\_DEHASH\_MOD)
 
 The inverse operations of `#` - they determine what interval one of the input streams had, given the result's interval and the other argument:
 
 \\[\Delta_a = \frac{\Delta_c \cdot \Delta_b}{\left|\Delta_c - \Delta_b\right|}\\]
+
+## Interval validation
+
+A `DECLARE` source interval must be positive. The compiler also checks this for a plan constructed without the parser. Interval arguments to `&`, `%` and `-` are checked during compilation; for deinterleave `&` and `%`, an argument equal to the source interval is also refused before division by zero in the formula above. This includes a source interval computed from another expression. In Python, this refusal gives `CompileError`, after which the plan can be corrected and compilation retried.
+
+Operator arithmetic uses wider integers and checks whether the result fits the interval representation. An out-of-range result is a plan refusal. An internal zero denoting an unresolved node, and a directive's zero interval, do not authorize a source with a zero step. After compilation completes, stream intervals are positive; runtime relies on this invariant instead of repeating the same checks for every record. `ut_compiler` regressions cover nonpositive intervals, equal-interval deinterleave and recompilation of a valid plan containing directives.
 
 ## Why iteration?
 

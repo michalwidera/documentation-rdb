@@ -260,7 +260,9 @@ Startup, plan delivery, reset, and ad hoc import share storage checks before cha
 | --- | --- | --- |
 | Plan error: syntax, compilation, missing `STORAGE` directory, incompatible retained `.desc`, or invalid counter contents | refusal, `EPROTO` (`71` on Linux) | cleared when startup is refused; the next start is idle |
 | Environment error: denied access, I/O failure, unreadable counter, or a symbolic link at an output path (`ELOOP`) | `EIO` (`5`); during execution, `FATAL (environment):` | preserved for another start after repair |
-| Engine invariant violation, `FatalError` | `EXIT_FAILURE` (`1`), `FATAL:` | cleared by exit cleanup |
+| Engine invariant violation, `rdb::fatal()` or the `FatalError` boundary | `EXIT_FAILURE` (`1`), `FATAL:` | cleared by exit cleanup |
+
+The core propagates execution errors through Result. The xretractor boundary distinguishes `Errc::IO` from an internal error and runs the corresponding termination procedure; `rdb::fatal()` uses the handler installed by the launcher. The systemd unit since #475 also uses `ExecStopPost`: after SIGABRT or OOM kill it clears the plan file, because these terminations do not run `atexit`. An ordinary I/O failure preserves the plan. This policy requires the current unit and `xretractor-stop-post` helper, rather than only replacing the binary. `it_service_abort-run` guards it.
 
 `EIO` identifies the process error category; causes such as `EACCES` or `ENOSPC` appear in diagnostics. Outside a unit, the operator's `.rql` file remains unchanged. Compile-only mode (`-c`) neither checks storage files or the counter nor clears the query file, even inside a unit. A reset or ad hoc request refused before acceptance returns the reason to the client, while the running server keeps its plan.
 

@@ -2,6 +2,8 @@
 
 This historical material covers C2/C3 of epic #446 and the initial Python binding. It replaces `core-phase-2.md`, `core-phase-3.md` and historical parts of `jupyter-integration.md` from the code repository's former `docs` directory. The current contract lives in the [Python API](python-jupyter-api.md), and commands in [building the library](../system-installation/python-build.md). #450 later introduced storage-directory ownership, and #476/#451 completed error policy and acceptance. Library real-time execution, mobile targets, ingest, DeviceWindowLoader and MPS hardware acceptance remain outside the completed epic scope.
 
+After epic #445 was merged, port #511 replaced the historical throwing boundary with Result and the `rdb::fatal()` handler. Shipped programs use a uniform exception mode, and `RDB_NOEXCEPT_CHECK` checks the core separately. The C2/C3 descriptions below preserve those stages; the [Python API](python-jupyter-api.md#errors) describes the current recovery boundary.
+
 ## C2: instance-owned state
 
 The daemon constructed state once, making process state difficult to distinguish from engine state. A notebook creates and destroys engines on repeated cell execution. C2 separated ownership so stream names in different instances would not cause shared results.

@@ -235,5 +235,5 @@ _Fig. 52. Independent evaluation of multiple rules on the same stream_
 | A rule from the plan file requests records from before the stream began | The historical part of the dump is not shortened; non-existent records are replaced with zeros |
 | Too few records since attaching an ad-hoc rule (`DUMP -H TO M`) | The rule waits to evaluate `WHEN` until record `H+1` after attachment; for `H=0`, it evaluates the first new record |
 | An ad-hoc rule with history `H > 0` on a `MEMORY` store of capacity `N <= H` | The request is rejected without attaching the rule; history plus the current record needs `H+1` slots |
-| Destination file unavailable (missing STORAGE directory) | Critical `FatalError` - xretractor exits |
+| DUMP file unavailable during execution | I/O error returned through Result; xretractor exits with `EIO`, preserving the service plan. A missing `STORAGE` directory at preflight is a plan refusal |
 | DO SYSTEM returns a non-zero code | Error logged via spdlog; processing continues |

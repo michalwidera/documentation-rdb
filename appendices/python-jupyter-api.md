@@ -1,6 +1,6 @@
 # Python and Jupyter API
 
-This chapter describes the `dev/445-jupyter-epic` API accepted in #451 and the storage-directory contract of #450. Separate pages cover [wheel and Jupyter installation](../system-installation/python-jupyter.md), [building the library](../system-installation/python-build.md), and [notebook acceptance](notebook-acceptance.md). [C2/C3 history](embedded-integration-history.md) does not replace this contract.
+This chapter describes the embedded-engine API on `master` after merging epic #445 in PR #510 and the #511 Result port in PR #512, including the storage-directory contract of #450. Separate pages cover [wheel and Jupyter installation](../system-installation/python-jupyter.md), [building the library](../system-installation/python-build.md), and [notebook acceptance](notebook-acceptance.md). [C2/C3 history](embedded-integration-history.md) does not replace this contract. An existing wheel can come from an earlier revision; its package version alone does not establish that it contains these changes.
 
 ## Roles and scope
 
@@ -124,7 +124,7 @@ RetractorDBError
 
 | Class | Python result | State afterwards |
 | --- | --- | --- |
-| K1, broken invariant | `InternalError` | Module tainted; guarded entries refuse until interpreter restart; `close()` remains available |
+| K1 returned as `Result`, or an unexpected C++ exception escaping the core | `InternalError` | Module tainted; guarded entries refuse until interpreter restart; `close()` remains available |
 | K2, plan refusal | `PlanError`: syntax, compilation, corrupt descriptor | Correct the input and retry; failed `compile()` leaves no old plan |
 | K3, request refusal | `ConfigError`, also `ValueError` | Instance remains usable |
 | K4, environment failure | `IOError`, also `OSError` | A slot failure stops the plan until recompilation; compile refusal creates no plan |
@@ -134,7 +134,11 @@ RetractorDBError
 
 `IOError.errno` preserves a system code or uses EIO when no code is available; `filename` is set when the call accepts a path argument. Otherwise the path can be in the message. Field/stream names, indices, array conversion and signatures can raise standard `KeyError`, `IndexError`, `ValueError` or `TypeError`; not every exception derives from `RetractorDBError`.
 
-Handled entries turn K1/K4 into exceptions but do not guarantee survival of every core failure. `FatalError` or `EnvironmentError` inside `noexcept`, destruction or stack unwinding can terminate the interpreter, including at the `Engine.close()` and destructor boundary. Do not catch `InternalError` intending to continue computation in the same kernel.
+The core returns recoverable errors as `rdb::Result<T>`; the binding translates the Error category into the Python exception classes above. Descriptor-read I/O failures give `IOError` with the original `errno`, rather than `CorruptDescriptor`, which describes invalid contents. An unexpected C++ exception escaping a core call, such as `bad_alloc` or `length_error`, gives `InternalError` and taints the module. Do not catch `InternalError` intending to continue computation in the same kernel.
+
+`rdb::fatal()` and `RDB_ASSERT` invoke a separate process handler that never returns. Its default action terminates the host through `abort` (SIGABRT), including a Jupyter kernel; the binding does not turn this path into a Python exception. `xretractor` installs its own handler, exiting with code 1 and cleaning up IPC. The handler is a policy for the whole process, rather than one Engine. `RDB_NOEXCEPT_CHECK=OFF` does not change this behavior. Failures inside `noexcept` or during destruction also have no general interpreter-survival guarantee.
+
+Invalid input should not reach the fatal path: for example, the compiler refuses deinterleave `&` or `%` when its argument equals the source interval, giving `CompileError`. Correct the plan and reuse Engine. Subprocess tests in `test_error_classes.py` and `test_fatal_paths.py` check the Result, C++ exception and SIGABRT boundaries; `ut_compiler` also guards the deinterleave refusal.
 
 ## Memory ownership, NumPy and DLPack
 
@@ -167,7 +171,7 @@ CPU/DLPack does not pin engine buffers or provide pinned host memory for CUDA. C
 | --- | --- | --- |
 | Plan, EOF, recompilation and directory | `src/embed/engine.cc`, `storageGuard.cc`, `src/python/module.cpp` | `test_engine.py`, C++ `ut_embedEngine` |
 | Descriptors and offline reads | `src/python/module.cpp`, `src/rdb/lib/descriptor.cc` | `test_descriptor.py`, `test_storage.py` |
-| K1-K7 and reuse | `src/include/fatalError.hpp`, `src/python/module.cpp` | `test_error_classes.py`, `test_fatal_paths.py`, `test_reentry.py` |
+| K1-K7 and reuse | `src/include/rdb/error.hpp`, `src/rdb/lib/error.cc`, `src/include/fatalError.hpp`, `src/python/module.cpp` | `test_error_classes.py`, `test_fatal_paths.py`, `test_reentry.py` |
 | Copies, windows and devices | `retractordb/engine.py`, `retractordb/torch.py`, `src/python/module.cpp` | `test_window.py` |
 | Isolation and logical equivalence | `src/embed/engine.cc`, `src/retractor/lib/dataModel.cpp` | `test_isolation.py`, `test_reference.py` |
 

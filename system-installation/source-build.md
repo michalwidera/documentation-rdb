@@ -32,6 +32,16 @@ ctest --test-dir build/Release --output-on-failure
 
 The `release-dirty` mode is for diagnosing local changes and does not produce a production release. See the [build contract](../appendices/production-builds-and-research-variants.md). Packages for distribution are prepared separately; scripts and checks for Linux releases are described in the code repository's `scripts/release_package/README.md`.
 
+## Engine error-handling check
+
+The default `RDB_NOEXCEPT_CHECK=ON` adds the `rdb_noexcept_check`, `retractorcore_noexcept_check` and `rdbembed_noexcept_check` libraries to a full build. They compile the same core sources again with `-fno-exceptions`, excluding designated units that handle ANTLR, Boost.Stacktrace and configuration. Using `throw`, `try` or `catch` in the checked part of the core then fails compilation. The check objects are not linked into shipped programs.
+
+Shipped programs and the Python module compile uniformly with exception support. External libraries still use exceptions; mixing units with and without `-fno-exceptions` in one program caused incompatible Boost and spdlog inline functions and skipped destructors when an exception crossed the core. `RDB_NOEXCEPT_CHECK` therefore replaces the original `RDB_NO_EXCEPTIONS` from port #511.
+
+C++ core operations report recoverable errors through `rdb::Result<T> = std::expected<T, Error>`, carrying the category, message and `errno`. Callers check the result, and object construction can require a `create` or `make` factory. `RDB_NOEXCEPT_CHECK=OFF` disables only the additional compilation check; it does not restore the former exception-based C++ API. It does not control kernel survival: `rdb::fatal()` terminates the host regardless of this flag. See the [Python API error boundary](../appendices/python-jupyter-api.md#errors).
+
+A full build runs the check automatically. Building only a selected target, such as `_core`, does not run the independent check libraries; they can be built explicitly following the [Python procedure](python-build.md#module-from-a-build-tree). The `exception_mode_guard` test checks actual shipped-target flags and check completeness using `compile_commands.json`. It does not prove that the check build ran.
+
 ## Apple development environment
 
 The macOS port is for development and testing. The system's general contract, service description, and production procedures in this manual apply to Linux. The `curl` installer described under [Linux releases](linux-releases.md) supports Linux; Apple requires a source build.
