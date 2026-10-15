@@ -67,14 +67,14 @@ The command's exit code is checked:
 
 ## The DO DUMP action - detailed algorithm
 
-`DO DUMP` is more complex, since it requires gathering data **from the past** (moments before the event) and **from the future** (moments after the event). This is handled by the `dumpManager` class.
+`DO DUMP` writes the requested range of records relative to sample `t`, for which the rule condition is true. The range is half-open: `[step_back, step_forward)`, with `step_back < step_forward`; the record at offset `step_forward` is excluded. Negative offsets refer to history, `0` to the current sample, and positive offsets to future samples. This is handled by the `dumpManager` class.
 
 <div class="timeline compact">
 
 - **Event** - `WHEN` holds for sample `t`; the rule calls `dumpManager::registerTask()`
-- **Phase 1** - writes `|step_back|` historical samples from the stream buffer (or sets a delayed start)
-- **Phase 2** - on subsequent iterations `processStreamChunk()` appends future samples
-- **End** - `dumpedRecordsToGo` reaches 0, the file is closed, and the task leaves the queue
+- **Phase 1** - writes the historical part of the range from the stream buffer (or sets a delayed start)
+- **Phase 2** - if records remain to be collected, `processStreamChunk()` appends the current sample and future samples
+- **End** - with `dumpedRecordsToGo == 0`, the next `processStreamChunk()` closes the file and removes the task without appending further records
 
 </div>
 
@@ -83,26 +83,35 @@ The command's exit code is checked:
 At the moment the rule fires - right after the condition is found to be true - `dumpManager::registerTask()`:
 
 1. Removes any existing entry at the dump filename (`unlink()`) and creates a new file with POSIX `open()` using the `O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC` flags. It then removes earlier tasks writing under the same filename from the queue and closes their descriptors (see *Retention*).
-2. If `step_back < 0`, reads `|step_back|` samples from the stream's historical buffer.  
-   The compiler accounts for the historical DUMP range when calculating the stream's required capacity.
-3. Writes the historical samples to the file **from oldest to newest** (i.e. from `step_back` to `–1`).
-4. Computes how many future samples still need to be collected (`dumpedRecordsToGo = |step_forward - step_back| - |step_back|`).
-5. If `step_back ≥ 0` (a delayed start), it sets `delayDumpRecordsToGo = step_back`.
+2. If `step_back < 0`, reads the historical part `[step_back, min(step_forward, 0))`, which contains `min(step_forward, 0) - step_back` records. The compiler accounts for the furthest required historical offset when calculating the stream's capacity.
+3. Writes these records to the file **from oldest to newest**, excluding the record at the right boundary of the historical range.
+4. Computes the number of remaining records: `dumpedRecordsToGo = (step_forward - step_back) - historyWritten`, where `historyWritten` is the number of records written in step 3, or zero when the range has no historical part.
+5. If `step_back >= 0` (a delayed start), it sets `delayDumpRecordsToGo = step_back`.
 
 ```
 Example: DUMP -3 TO 2
-  At registration: write samples t-3, t-2, t-1  (history)
-  Still to collect from the future: 2 samples (t, t+1)
+  At registration: write samples t-3, t-2, t-1 (history)
+  Still to collect: 2 samples (t, t+1)
   dumpedRecordsToGo = 2
+
+Example: DUMP -5 TO -2
+  At registration: write samples t-5, t-4, t-3
+  dumpedRecordsToGo = 0 - the whole range has been written
+
+Example: DUMP -5 TO 0
+  At registration: write samples t-5, t-4, t-3, t-2, t-1
+  dumpedRecordsToGo = 0 - sample t is outside the range
 ```
+
+With `step_forward <= 0`, the entire dump is ready after task registration. The next `processStreamChunk()`, called while sample `t` is still being handled, removes the completed task and closes its file; it appends neither the current sample nor future ones.
 
 For a rule from the plan file, a `DUMP -H TO M` range (`H > 0`) requires at least `H+1` records: `H` historical records plus the current record. The compiler automatically enlarges the `STORAGE MEMORY` ring to this capacity, including when `RETENTION` is omitted or specifies a smaller value. A larger explicit `RETENTION` remains the ring's minimum capacity. For `DEFAULT` and `DIRECT` file stores with bounded retention, the compiler rejects the plan if retention cannot provide `H+1` records even immediately after rotation: `(segments - 1) * capacity + 1 >= H+1` must hold. This also applies to retention from the `[storage] default_retention` configuration setting.
 
 For a rule attached ad hoc, the entire history must be produced after attachment. With a `DUMP -H TO M` range, the rule can first evaluate its `WHEN` condition on record `H+1` after attachment: the preceding `H` records provide the history, and the new record is the current sample. Without a historical part (`H=0`), the condition is evaluated on the first new record. A `MEMORY` stream must retain at least `H+1` records; a request reaching further back is rejected without attaching the rule.
 
-### Phase 2: future data (subsequent loop iterations)
+### Phase 2: the current sample and future data
 
-After registration, the task goes into the `bookOfTasks[streamName]` queue. On every subsequent iteration of the time grid (when the stream produces a new sample), `dumpManager::processStreamChunk()` is called:
+After registration, the task goes into the `bookOfTasks[streamName]` queue. `dumpManager::processStreamChunk()` is called after all rules have been evaluated for sample `t`, and then after every new sample of the stream:
 
 1. For every active task in the queue (`dumpedRecordsToGo > 0`):
    - If `delayDumpRecordsToGo > 0` - decrement and skip (start delay).
@@ -163,7 +172,7 @@ Dump tasks wait in the `bookOfTasks` queue, one per stream and shared by all of 
 
 A rule without `RETENTION` thus has at most one task in progress, and a new trigger interrupts its previous, unfinished dump. A rule with `RETENTION N` has at most `N` tasks: an unfinished dump is interrupted only by the trigger that returns to its file after the numbering wraps, i.e. the `N`-th next one. Tasks of other rules on the same stream stay untouched - rules do not cut each other's dumps, including two rules without `RETENTION`. The number of descriptors open on a stream does not exceed the sum of these limits over its rules.
 
-For every dump to be complete under frequent events, the time to collect a single dump (`|step_back| + step_forward` cycles) should be shorter than the interval between events multiplied by `N` (1 for a rule without `RETENTION`).
+If `step_forward > 0`, the last required sample is at offset `step_forward - 1` relative to the event and must be written before the trigger that reuses the same file (for regularly spaced events: after `N` intervals, or one without `RETENTION`). With `step_forward <= 0`, the entire dump is written at registration.
 
 ***
 
