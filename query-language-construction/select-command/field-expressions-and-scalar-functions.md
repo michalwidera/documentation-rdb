@@ -16,6 +16,8 @@ These fields mean `v*(w^2)`, `v^(w^2)`, and `(v*w)^2`. A negative literal is one
 
 For integer and rational types, a non-negative integral power has the semantics of repeated multiplication, including type promotion and overflow. Other cases use floating-point computation; an infinite or `NaN` result becomes NULL. Text operands are not allowed.
 
+The product of two `BYTE` values has type `INTEGER`; the same promotion applies to exponentiation, including a zero exponent. For `BYTE` fields `b` and `e` with `e = 0`, `b^e` yields integer `1`, including when `b = 0`, and `-(b^e)` yields `-1`. Negation acts on an `INTEGER` result here, so it is arithmetic. The cases `exact_power_zero_exponent_is_one_of_the_product_type` and `negated_byte_power_with_zero_exponent_is_minus_one` in `ut_expeval` guard this behavior.
+
 NULL propagates through ordinary arithmetic. Division by zero yields NULL for every numeric type and does not stop later stream processing. Comparison and three-valued logic in a `RULE` condition are documented in [Logical Condition](../rule-command-logical-condition.md).
 
 Addition, subtraction, and multiplication on `UINT` fields are checked: a sum or product outside the unsigned 32-bit range, or a negative difference, yields `NULL` instead of a wrapped value. An operation on an `INTEGER` and a `UINT` operand is computed on the exact values, and only the result is narrowed to `UINT`: it yields `NULL` only when the result does not fit. With `u = 10` and `i = -2`, `u + i` yields `8` while `u * i` yields `NULL`; comparing such a pair, for example `i < u`, is exact as well. `INTEGER` and `RATIONAL` arithmetic also yields `NULL` on overflow.

@@ -117,6 +117,8 @@ str1  | 1/30     | 0    | 0     |               | 0
 
 Command responses are matched to the client's specific request. The `ipc.client_response_max_fails` time budget covers sending the command and receiving its response; a full command queue causes a refusal when that deadline expires. A response abandoned by a killed client can be reclaimed without blocking later clients.
 
+Waiting for command-queue space uses nonblocking send attempts and the shared deadline measured by a monotonic clock. A temporarily full queue can therefore accept the command if space becomes available before the deadline; it is not refused immediately. `ut_ipcClient` guards both outcomes.
+
 ## Receiving data
 
 | Option | Meaning |
@@ -126,7 +128,7 @@ Command responses are matched to the client's specific request. The `ipc.client_
 | `-n` / `--null` | In raw format, suppresses printing records in which all values are `NULL`; these records still consume the `--elimitqry` budget. |
 | `-c` / `--needctrlc` | Requires Ctrl+C instead of stopping on any keypress. |
 
-Each subscription creates its own response queue. When the server stops or replaces its plan, it sends an end marker and the client closes reception. A sudden failure without a marker is detected by the `timing.query_no_data_timeout_ms` timeout.
+Each subscription creates its own response queue. When the server stops or replaces its plan, it attempts to send an end marker, then removes the queue name even if sending fails. A full queue may reject the marker; an abandoned queue lock after a client's death also does not stop cleanup. Receiving the marker ends reception; a missing marker, including after a sudden failure, is detected by the `timing.query_no_data_timeout_ms` timeout. `ut_ipcServer` guards the final send and cleanup.
 
 ### Subscribing at a plan epoch boundary
 
@@ -178,7 +180,7 @@ Compiler directives and several statements in one request are rejected. Logical 
 xqry --server service --reset plan.rql
 ```
 
-Before changing the active model, the server parses and compiles the set, checks retained `.desc` files (always for `DECLARE` sources, and under `:ROTATION` for `SELECT` outputs and substrates), checks retained storage compatibility and whether disk output files can be opened, and reserves its stream names, storage files, and rotation counter. File validation does not create them; a refusal, such as `descriptor parse failed` with the file path and error location or `cannot open output file`, neither stops the old plan nor changes the service startup file. An accepted plan becomes active at the end of the current slot, old subscriptions receive an end marker, and artifacts from the previous epoch are cleaned up according to startup and rotation rules. An empty file switches the server to idle state.
+Before changing the active model, the server parses and compiles the set, checks retained `.desc` files (always for `DECLARE` sources, and under `:ROTATION` for `SELECT` outputs and substrates), checks retained storage compatibility and whether disk output files can be opened, and reserves its stream names, storage files, and rotation counter. File validation does not create them; a refusal, such as `descriptor parse failed` with the file path and error location or `cannot open output file`, neither stops the old plan nor changes the service startup file. An accepted plan becomes active at the end of the current slot, the server attempts to end old subscriptions with a marker under the rules described in the receiving-data section, and artifacts from the previous epoch are cleaned up according to startup and rotation rules. An empty file switches the server to idle state.
 
 The file check is preliminary: a path may change between the `OK` response to `--reset` and the actual storage open. A late open failure during the plan swap is not currently returned to the client as a refusal and may stop the server; `OK` does not guarantee that this later operation will succeed.
 

@@ -77,9 +77,13 @@ A failed recompilation also closes the previous plan; refusal does not restore i
 
 Compilation, stepping, running and record reads release the GIL. `run()` checks Python signals approximately every 50 ms between slots, allowing `KeyboardInterrupt`; this is not a maximum interruption delay for a long slot. Diagnostics reach `logging.getLogger("retractordb")`.
 
+An exception from a custom `logging` handler is reported through `sys.unraisablehook`; it does not replace the original compilation error or, by itself, taint the module. `test_logging_handler_failure_preserves_the_plan_error_and_next_compile` checks that the plan can be corrected and run again after this event.
+
 ## Storage directory and offline access
 
 `Engine()` creates a private directory that survives `close()` and is removed on destruction. An explicit `storage_dir`, or an overriding RQL `STORAGE`, must name an empty directory on first use or one with a valid `.retractordb-embedded` ownership marker. Foreign directories are refused. The marker does not establish that an owner process is still alive.
+
+If writing a newly created marker fails, `StorageGuard` attempts to remove the incomplete marker and returns `IOError` with the cause. It does not treat a partial marker as successful directory initialization.
 
 The directory lock lasts until the plan's storages close. It excludes another `Engine` and `Storage` in a marked directory, including through path aliases or another process. Process death releases the lock. Explicit directories remain on disk; recompilation can replace their descriptors and results. Preflight refusal preserves old artifacts but closes the plan; later I/O failures are not transactional.
 

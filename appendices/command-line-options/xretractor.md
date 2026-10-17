@@ -172,7 +172,7 @@ In this mode, options for creating diagrams and diagnostic dumps, described in m
 | `rules` | Adds alerting rules to the graph. |
 | `hideruleprog` | Hides the programs describing the alerting conditions (used together with `rules`). |
 | `transparent` | Generates the graph with a transparent background. |
-| `diagram` | Generates marble diagrams. The argument takes the form `type:cycle_count`: `type` (`0` or `1`) determines whether the diagrams show timestamps; `cycle_count` sets the number of cycles shown in the diagram. |
+| `diagram` | Generates marble diagrams. Argument `type[:cycle_count]`: `0` disables the time grid and `1` enables it; the positive integer cycle count defaults to `1`. The entire argument must be a valid integer or pair of integers; an invalid type, an empty part after the colon, or a nonpositive cycle count is an argument error. An empty plan and a cycle count that would overflow the grid are also rejected. |
 | `shmbudget` | Reports the fixed IPC reservation, capacity, and free space of the `shm_open` filesystem (usually `/dev/shm`), plus the cost of one client queue for each plan interval. This lets an operator estimate the number of concurrent subscriptions before starting a server. |
 | `config` | Selects an explicit TOML file in `-c` mode as well; retention and history budget settings apply during compilation. |
 

@@ -28,6 +28,10 @@ In the `STORAGE` clause a profile, like every keyword, has two spellings - upper
 
 For `MEMORY`, retention works in memory as a circular buffer: successive appends overwrite the oldest slot (`index % capacity`). Data is not segmented into files and never reaches disk. `RETENTION n` sets the ring size (at least what the plan needs) - the same for `STORAGE MEMORY` and `VOLATILE`; the segmented form `RETENTION n s` is a compilation error here.
 
+A record index remains its logical append number, rather than a ring slot number. After `C` appends with capacity `N`, available indices run from `max(0, C-N)` through `C-1`. Reading or updating an older or not-yet-written record returns `ERANGE` from the accessor; it neither reads nor modifies the newer record occupying that slot. The C++ `storage` layer propagates this refusal as a `Result` with `Errc::IO` and `errno=ERANGE`. `ut_faccmemory` contains the regressions.
+
+Record bytes, `NULL` bits, and the append count belong to a `MemoryStore`. Accessors with the same name share them only within the same `MemoryStore` object; each embedded `Engine` owns its own. Calls without an explicit store use `MemoryStore::processDefault()`. The last accessor releases the data for its name, so a new plan does not inherit the old ring.
+
 Even without `RETENTION`, a `MEMORY` store has a finite capacity: at least one record, increased by the compiler to meet consumer needs. Formerly, `STORAGE MEMORY` could grow without bound or, with `RETENTION n`, write to disk under the wrong storage type. The ring size and total history cost now count against the [plan budget](../../query-compilation/plan-size-limits.md#ram-history-budget). An ad-hoc `DO DUMP -H TO M` rule requires `H+1` slots for history plus the current record. For `H > 0` and capacity `N <= H`, the request is rejected; attaching a rule does not enlarge a live store. See [Alerting implementation](../../query-execution/alerting-implementation.md#phase-1-historical-data-when-the-task-is-registered) for the rules on waiting for history.
 
 ### Retention on disk

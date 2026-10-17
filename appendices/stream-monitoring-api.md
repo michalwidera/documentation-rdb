@@ -140,11 +140,17 @@ int main() {
 
 `SubscribeOptions` exposes `limit`, `idleTimeout`, and `capacity`. `next(timeout)` returns `std::optional<Record>`; an empty value means normal completion or an explicit close. Errors throw `retractordb::Error` with a stable `code` field. Subscription handles are movable but not copyable; the destructor and `close()` terminate and reap their child process.
 
+`Client` requires an explicit server name of 1..32 characters: the first must be a lowercase ASCII letter, followed by lowercase ASCII letters, digits, `_`, or `-`. `Options::timeout` must be positive. A negative subscription `limit`, negative `idleTimeout`, or zero `capacity` is invalid; invalid arguments throw `std::invalid_argument`.
+
+`next(timeout)` throws `Error` with code `read_timeout` without closing the subscription; reading from the same process can be retried. Other transport or protocol errors close the subscription. After an `end` event, the client also waits for `xqry` to exit successfully within `Options::timeout`: a nonzero exit status gives `process_exit`, while failure to exit in time gives `process_timeout`.
+
 `Client` is also movable and noncopyable. Its move constructor and move assignment are `noexcept` and defined `= default` outside the header. Moving transfers ownership of the client and its subscriptions; move assignment first closes the destination's previous subscriptions. The client destructor closes its subscriptions even if their handles still exist. The accessors `Client::streams()`, `describe()`, and `subscribe()`, and `Subscription::schema()`, `next()`, `pid()`, and `endReason()` are `[[nodiscard]]`.
 
 `Client::ping()` returns `void` after a valid response and throws `retractordb::Error` with the error code and cause description on failure. Successful completion without an exception indicates success; there is no `false` result.
 
 **Moved-from client:** the source `Client` can safely be destroyed, closed with `close()`, or assigned another client. Calls to `ping()`, `streams()`, `describe()`, and `subscribe()` throw `retractordb::Error` with code `closed`. Assigning a working client makes the object usable again. After an ordinary `close()`, these methods also report `closed` when called with valid arguments.
+
+Moving a `Subscription` transfers its process, schema, and end reason; move assignment first closes the destination's previous process. The source after transferring ownership supports `next()` (returning an empty value), `close()`, reassignment, and destruction. `schema()`, `pid()`, and `endReason()` require a handle that has not transferred ownership. An ordinary `close()` preserves access to the schema, original PID, and recorded end reason; `next()` then returns an empty value.
 
 ## Limits and error handling
 
@@ -169,3 +175,5 @@ The C++ API is always configured, but its targets use `EXCLUDE_FROM_ALL`. `xqry`
 The `st_api_fake` and `st_api_real` tests cover both languages. The former covers types, `NULL`, malformed output, overflow, and process cleanup. The latter uses a real `xretractor` and checks independent subscriptions, arrays, rational numbers, a missing stream, and server shutdown.
 
 The C++ tests also cover a client factory, `std::vector`, lambda capture, move assignment with active subscriptions, and safe `close()` and destruction of a moved-from object. They check the `closed` code from all four client methods after move construction, move assignment, and explicit closure. Both languages check successful and failed `ping()` calls and preservation of the `protocol_error`, `server_no_response`, and `closed` codes; the Python tests require a `True` result on success.
+
+`st_api_fake` also checks incomplete or oversized JSONL lines, an unsuccessful exit after an `end` event, process-exit timeout, and retrying after `read_timeout`. Both scenarios check rejection of invalid C++ arguments, subscription moves, reaping the replaced process, and preserving the schema and PID after `close()`.

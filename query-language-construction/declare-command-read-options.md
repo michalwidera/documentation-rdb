@@ -15,6 +15,8 @@ The directives are independent and can be combined freely. They apply to replaye
 
 Without `ONESHOT`, a file is read in an infinite loop - once the end of the file is reached, the read position returns to the beginning. `ONESHOT` disables the loop: the file is read exactly once, and once exhausted the stream returns records with every field marked `NULL`. The record bytes are zeroed, but the null markers distinguish missing data from a numeric zero. Exhausting the file neither ends the process nor deletes the file.
 
+An empty looped `TEXTFILE` provides no record even after rewinding. Starting with the first read, the accessor returns `EIO` with zeroed bytes and every field marked `NULL`; it does not mark the source as exhausted. The service treats this absence as a `NULL` record rather than an `ONESHOT` end of file. Without looping, missing tokens in the final record become `NULL`, while fields already read retain their values. `ut_facctxtsrc` guards these cases.
+
 ```rql
 DECLARE measurement INTEGER STREAM burst, 0.1 BINFILE 'data.dat' ONESHOT
 ```
