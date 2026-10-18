@@ -17,6 +17,8 @@ Without `ONESHOT`, a file is read in an infinite loop - once the end of the file
 
 An empty looped `TEXTFILE` provides no record even after rewinding. Starting with the first read, the accessor returns `EIO` with zeroed bytes and every field marked `NULL`; it does not mark the source as exhausted. The service treats this absence as a `NULL` record rather than an `ONESHOT` end of file. Without looping, missing tokens in the final record become `NULL`, while fields already read retain their values. `ut_facctxtsrc` guards these cases.
 
+For a read failure handled with a `NULL` record, `SourceBuffer` logs `Read failure from declared source` only on the first such failure of that source. Later slots do not repeat the message. This is a `WARN` message, compiled out in `Release`; `ut_sourceBuffer` guards the rule.
+
 ```rql
 DECLARE measurement INTEGER STREAM burst, 0.1 BINFILE 'data.dat' ONESHOT
 ```
@@ -30,6 +32,8 @@ DECLARE sample INTEGER STREAM recording, 1/100 DEVICE '/tmp/recording.fifo' ONES
 ```
 
 The `--until-eof` (`-u`) option of `xretractor` reads all sources as if every declaration carried `ONESHOT`, and stops processing once the first of them is exhausted. For a `DEVICE` source exhaustion is checked before the slot that would get a `NULL` record from beyond the end of data, so such a record reaches no stream.
+
+The source must pass the [availability check](declare-command.md#file-kind-check) before execution. A missing file or failed open ends the run with an environment error, K4, and code `EIO`, including with `--until-eof`. A successfully opened FIFO without a writer follows the first-data waiting rule described above.
 
 ## DISPOSABLE
 

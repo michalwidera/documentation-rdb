@@ -44,13 +44,15 @@ The words `BINFILE`, `TEXTFILE`, `DEVICE` and `TIMEOUT` are reserved - no stream
 
 ### File kind check
 
-Before the plan starts - also on a plan reload (`xqry --reset`) and on an ad hoc import (`xqry -a`) - the system checks the kind of file at the path of every declaration, without opening it. A path of the wrong kind (a directory, a block device, a socket, a FIFO for `BINFILE`/`TEXTFILE`, a regular file for `DEVICE`) refuses the plan with the stream name and the path, e.g.:
+Before the plan starts - also on a plan reload (`xqry --reset`) and an ad hoc import (`xqry -a`) - the system checks the file kind and read permission at the declaration path without opening the source. Ad hoc import checks only newly added streams. A path of the wrong kind (a directory, a block device, a socket, a FIFO for `BINFILE`/`TEXTFILE`, a regular file for `DEVICE`) refuses the plan with the stream name and path, e.g.:
 
 ```
 xretractor: stream 'src': BINFILE 'feed.fifo' is a FIFO, not a regular file
 ```
 
-A path that does not exist is not a refusal: the stream then yields `NULL` records. Whether read warnings are available depends on the build mode, as described below for `DEVICE`. Compilation with `-c` does not perform this check - it does not have to run on the machine with the data.
+A missing source (`ENOENT`, or `ENOTDIR` when a path component is not a directory) or denied read access (`EACCES`) stops startup with an environment error, K4. This applies to `BINFILE`, `TEXTFILE` and `DEVICE`, with and without `--until-eof` (`-u`). The process returns `EIO` (`5` on Linux); the message identifies the stream, path and system cause, including in `Release` builds. Refusal by this check leaves existing artifacts unchanged. See [xretractor](../appendices/command-line-options/xretractor.md#plan-refusal-and-environment-failure) for codes and the service plan-file policy.
+
+Failure to open a source after a successful check also ends execution with K4, for example when the file disappears before model construction. Compile-only mode (`-c`) does not check source existence or permissions - compilation need not run on the machine holding the data. The `it_untileof_stop-missing-sources` regression covers startup refusal and late open failure for all three source kinds.
 
 ## Reading a DEVICE source and TIMEOUT
 
