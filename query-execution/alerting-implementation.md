@@ -166,7 +166,7 @@ Without a `RETENTION` clause, every trigger of a rule writes its dump under a si
 
 A filename must identify a single rule. A plan in which two `DO DUMP` rules share the stem `<stream>_<rule>` - e.g. rule `b_c` on stream `a` and rule `c` on stream `a_b` - is rejected on load, and a rule attached ad hoc with such a stem is refused. The comparison ignores letter case, because on a case-insensitive file system (macOS by default) `Ab_r` and `ab_R` are the same file, and plan validity must not depend on the host. The plan author then renames the rule or the stream.
 
-A dump file is always created anew. The engine removes whatever sits under its name - including a symbolic or hard link, which it does not follow - and creates a new file exclusively (`O_EXCL | O_NOFOLLOW`). A write therefore does not reach the target of a link substituted at the final dump filename. This protection does not cover substitution of parent directories during path resolution; it is not an atomic guarantee of containment within the storage directory. A process that held the previous dump open still sees its old contents. If the file cannot be created, the engine stops with a fatal error naming the file and the cause.
+A dump file is always created anew. The engine removes whatever sits under its name - including a symbolic or hard link, which it does not follow - and creates a new file exclusively (`O_EXCL | O_NOFOLLOW`). A write therefore does not reach the target of a link substituted at the final dump filename. This protection does not cover substitution of parent directories during path resolution; it is not an atomic guarantee of containment within the storage directory. A process that held the previous dump open still sees its old contents. Failure to remove, create or seek within a dump file is an I/O error: `xretractor` stops execution with environment class K4 and code `EIO` (`5` on Linux), naming the file and cause. The service plan file is preserved; see [xretractor](../appendices/command-line-options/xretractor.md#plan-refusal-and-environment-failure) for the policy.
 
 Dump tasks wait in the `bookOfTasks` queue, one per stream and shared by all of its `DO DUMP` rules. The queue has no capacity of its own and evicts no tasks: a task ends after collecting its whole range, or when the same rule recreates its file. After creating the new file, `registerTask()` removes earlier tasks writing under the same name from the queue, and the `dumpTask` destructor closes their descriptors. A replaced task therefore does not write to a file already detached from the directory, and under each name only the newest trigger collects data.
 
@@ -187,6 +187,12 @@ $ xtrdb
 > list
 > quit
 ```
+
+### Complete record writes and I/O errors
+
+Both when copying history and appending current samples, the engine repeats `write()` until the entire record has been written. A positive result shorter than the record size indicates progress, after which the remaining bytes are written. `EINTR` allows at most five consecutive retries; writing more bytes resets that counter. The task's remaining-record count decreases only after a complete record has been written (#479).
+
+A write making no progress (`write()` returning `0`) yields `Errc::IO` with `errno=EIO`; another write error preserves its system cause, such as `ENOSPC`, while exhausting interrupted-write retries preserves `EINTR`. The diagnostic identifies the path and the number of bytes written against the record size. `xretractor` ends such a run with environment class K4 and code `EIO`, preserving the service plan file. A failure after a partial write may leave the beginning of a record in the file; the write is not rolled back. Completing `write()` does not mean the data has been synchronized to durable storage. The `ut_dumpManager` tests cover writes in parts with `EINTR`, no progress, `ENOSPC`, the retry limit, and seek and history-write errors.
 
 ### The dump contract: values only, no NULL and no gaps
 
