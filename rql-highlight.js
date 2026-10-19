@@ -23,7 +23,7 @@
                     "STORAGE storage ROTATION rotation SUBSTRAT substrat RULE rule " +
                     "DISPOSABLE disposable ONESHOT oneshot HOLD hold TIMEOUT timeout VOLATILE volatile " +
                     "PERSISTENT persistent DEFAULT default ON on WHEN when DUMP dump SYSTEM system DO do TO to " +
-                    "AND and OR or NOT not",
+                    "LET let AND and OR or NOT not",
                 type: "BYTE Byte CHAR Char STRING String UINT Uint INTEGER Integer FLOAT Float DOUBLE Double",
                 literal:
                     "MEMORY memory DIRECT direct POSIX posix POSIXSHD posixshd " +
@@ -62,6 +62,17 @@
                 {
                     className: "built_in",
                     begin: /\bfloat\b(?=\s*\()/,
+                },
+                // Named constant (retractordb #440): the name in a LET declaration and the ?NAME reference.
+                {
+                    className: "keyword",
+                    begin: /(?<![A-Za-z_$0-9])(?:LET|let)\s+(?=[A-Za-z][A-Za-z_0-9]*(?![A-Za-z_$0-9]))/,
+                    starts: { className: "variable", end: /[A-Za-z][A-Za-z_0-9]*/ },
+                },
+                {
+                    className: "variable",
+                    begin: /\?[A-Za-z][A-Za-z_0-9]*(?![A-Za-z_$0-9])/,
+                    relevance: 0,
                 },
                 {
                     className: "number",

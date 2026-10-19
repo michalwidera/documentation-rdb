@@ -22,6 +22,7 @@
       <item>VOLATILE</item><item>volatile</item>
       <item>PERSISTENT</item><item>persistent</item>
       <item>DEFAULT</item><item>default</item>
+      <item>LET</item><item>let</item>
       <item>ON</item><item>on</item>
       <item>WHEN</item><item>when</item>
       <item>DUMP</item><item>dump</item>
@@ -62,6 +63,9 @@
         <DetectChar attribute="String" context="String" char="'"/>
         <RegExpr attribute="Built-in" context="#stay" String="\b(?:sqrt|ceil|floor|abs|round|trunc|sin|cos|exp|tan|log2|log|isnull|null2zero|iszero|isnonzero|length|to_integer|to_float|to_double|to_string|int|real|str)\b(?=\s*\()" insensitive="true"/>
         <RegExpr attribute="Built-in" context="#stay" String="\bfloat\b(?=\s*\()"/>
+        <!-- Named constant (retractordb #440): the name in a LET declaration and the ?NAME reference. -->
+        <RegExpr attribute="Keyword" context="Let Name" firstNonSpace="true" String="(?:LET|let)(?=\s+[A-Za-z][A-Za-z_0-9]*(?![A-Za-z_$0-9]))"/>
+        <RegExpr attribute="Named Constant" context="#stay" String="\?[A-Za-z][A-Za-z_0-9]*(?![A-Za-z_$0-9])"/>
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
         <keyword attribute="Data Type" context="#stay" String="types"/>
         <keyword attribute="Constant" context="#stay" String="profiles"/>
@@ -76,6 +80,10 @@
         <StringDetect attribute="Keyword" context="#stay" String="||"/>
         <StringDetect attribute="Keyword" context="#stay" String="::"/>
         <AnyChar attribute="Keyword" context="#stay" String="=&lt;&gt;!#&amp;%@+$:*/~^|-"/>
+      </context>
+      <context name="Let Name" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <RegExpr attribute="Named Constant" context="#pop" String="[A-Za-z][A-Za-z_0-9]*"/>
       </context>
       <context name="Line Comment" attribute="Comment" lineEndContext="#pop"/>
       <context name="Block Comment" attribute="Comment" lineEndContext="#stay">
@@ -92,6 +100,7 @@
       <itemData name="Keyword" defStyleNum="dsKeyword"/>
       <itemData name="Data Type" defStyleNum="dsDataType"/>
       <itemData name="Constant" defStyleNum="dsConstant"/>
+      <itemData name="Named Constant" defStyleNum="dsVariable"/>
       <itemData name="Built-in" defStyleNum="dsBuiltIn"/>
       <itemData name="Number" defStyleNum="dsDecVal"/>
       <itemData name="String" defStyleNum="dsString"/>

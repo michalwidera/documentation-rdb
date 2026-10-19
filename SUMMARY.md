@@ -29,6 +29,7 @@
     * [Mechanism Construction](query-language-construction/rule-command/alerting.md)
     * [Logical Condition](query-language-construction/rule-command-logical-condition.md)
     * [Alerting Example](query-language-construction/rule-command/alerting-example.md)
+  * [LET Command](query-language-construction/let-command.md)
   * [Configuration Directives](query-language-construction/configuration-directives.md)
 * [System Architecture](data-processing-system-architecture/README.md)
   * [General Perspective](data-processing-system-architecture/architecture-overview.md)
