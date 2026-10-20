@@ -8,6 +8,21 @@ Operands are numeric and text literals, `$` inside a stream generator, field ref
 
 The basic arithmetic operators are `+`, `-`, `*`, `/`, and `^`. Parentheses change grouping. `*` and `/` bind more strongly than `+` and `-`; exponentiation `^` binds most strongly and is right-associative:
 
+| Binary operator precedence (highest first) | Operators | Associativity |
+| --- | --- | --- |
+| 1 | `^` | Right: `a^b^c` means `a^(b^c)` |
+| 2 | `*`, `/` | Equal precedence, left: `a/b*c` means `(a/b)*c` |
+| 3 | `+`, `-` | Equal precedence, left: `a-b+c` means `(a-b)+c` |
+
+```rql
+DECLARE v INTEGER, w INTEGER STREAM source, 1 TEXTFILE 'source.txt'
+SELECT v-w+1, v/w*2 STREAM precedence FROM source
+```
+
+For input row `12 3`, the result is `10, 8`. Equal precedence within each pair applies since fix #554. Previously, `+` bound more strongly than `-`, and `*` more strongly than `/`: these fields yielded `8, 2`. To retain the earlier grouping deliberately, write it explicitly as `v-(w+1)` and `v/(w*2)`.
+
+Exponentiation examples:
+
 ```rql
 SELECT v*w^2, v^w^2, (v*w)^2 STREAM powers FROM source
 ```

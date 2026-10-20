@@ -13,6 +13,14 @@ The `WHEN` clause of the `RULE` command takes a logical expression, which is eva
 | `>=`     | greater than or equal |
 | `<=`     | less than or equal    |
 
+A single comparison has two scalar operands. Chains such as `0 < measurements[0] < 10`, `0 <= measurements[0] < 10`, or `measurements[0] = 1 = 1` are syntax errors; the parser identifies the second comparison operator. Express a range as two comparisons joined by `AND`:
+
+```rql
+RULE in_range ON measurements WHEN 0 < measurements[0] AND measurements[0] < 10 DO DUMP -1 TO 0
+```
+
+Comparison chains have been rejected since fix #555. The earlier parser accepted them and used a comparison's result as an operand of another comparison; this did not check the intended range.
+
 ## Logical connectives
 
 | Operator | Meaning |
@@ -20,6 +28,12 @@ The `WHEN` clause of the `RULE` command takes a logical expression, which is eva
 | `AND`    | conjunction - both conditions must be satisfied |
 | `OR`     | disjunction - one condition is enough            |
 | `NOT`    | negation - the condition must not be satisfied   |
+
+Precedence in `WHEN`, from highest to lowest, is arithmetic, comparison, `NOT`, `AND`, `OR`. `NOT measurements[0] < 0` negates the entire comparison `measurements[0] < 0`; for a non-NULL value, the condition is true when the field is non-negative. In `NOT measurements[0] < 0 AND measurements[0] > 5`, negation applies to the first comparison, and `AND` joins the two conditions. `AND` binds more strongly than `OR`.
+
+Since fix #555, `NOT` belongs exclusively to the `WHEN` condition. It cannot be used as a field operator in `SELECT` or inside arithmetic, for example `measurements[0] + NOT measurements[0]`. Previously, `NOT measurements[0] < 0` negated the field alone and then compared the result with zero, so the condition was never true.
+
+The grammar does not support parentheses around logical conditions or comparisons. Parentheses may group arithmetic expressions on either side of a comparison, for example `(measurements[0]+1) < 10`. Write compound conditions according to the precedence above.
 
 A bare `STRING` field is true when its value is nonempty. String comparisons and `NOT` over a string return `INTEGER` 1 or 0. `AND` and `OR` use the left operand's type, or the right operand's type if the left is `NULL`; a result based on a string is `INTEGER`. Thus `WHEN NOT status[0]` is true for an empty string, and a false string comparison does not trigger a rule through `OR`. `NULL` still follows the condition's three-valued logic.
 
