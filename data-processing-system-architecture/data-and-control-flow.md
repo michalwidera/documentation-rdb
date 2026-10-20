@@ -48,13 +48,13 @@ The selected instance's `IpcServer` communication thread continuously listens on
 
 The main loop checks `iLoopLimitCnt` on every iteration. When it detects the value `stop_now`, it finishes the current cycle and exits the loop - without interrupting mid-computation. This ensures the integrity of the artifacts being written.
 
-**4. xretractor notifies all connected clients (OOB broadcast)**
+**4. xretractor attempts to notify connected clients (OOB broadcast)**
 
-After exiting the loop, xretractor calls `IpcServer::broadcastOutOfBusiness()`. The IPC object walks the subscription registry, where the `show` command stored each client's PID and stream name. It sends every registered client a special `OUT_OF_BUSSINESS` message on its dedicated queue.
+After exiting the loop, xretractor calls `IpcServer::broadcastOutOfBusiness()`. The IPC object walks the subscription registry, where the `show` command stored each client's PID and stream name. For each client it makes one nonblocking attempt to send `OUT_OF_BUSSINESS`. A full or damaged queue may not receive the marker. Regardless of the attempt's outcome, the server removes the queue name and subscription entry; shutdown does not wait for an acknowledgement.
 
-**5. Every xqry client receives the termination signal and exits**
+**5. An xqry client exits after a marker or a no-data timeout**
 
-Every xqry subscription has its own queue containing the server name and client PID. Upon receiving the `OUT_OF_BUSSINESS` message, xqry sets its internal `done` flag and shuts down in a controlled manner - regardless of how much data it had received up to that point.
+Every xqry subscription has its own queue containing the server name and client PID. Upon receiving `OUT_OF_BUSSINESS`, xqry sets its internal `done` flag and shuts down in a controlled manner. If the marker was not delivered, the client may exit only after the configured no-data timeout. A consumer cannot rely on marker delivery as a shutdown guarantee.
 
 **6. IPC resource cleanup**
 
@@ -75,10 +75,10 @@ The process exits with status 1. A later start therefore finds neither orphaned 
 RetractorDB is designed to work with multiple parallel clients. If, say, three xqry processes are running simultaneously, subscribed to different streams, and one of them calls `xqry --kill`:
 
 - the selected xretractor processes the kill request **once**, regardless of which client sent it,
-- `IpcServer::broadcastOutOfBusiness()` sends the `OUT_OF_BUSSINESS` message to **all** clients registered with that instance,
-- each of the three xqry processes receives the termination signal and exits on its own,
+- `IpcServer::broadcastOutOfBusiness()` attempts to send `OUT_OF_BUSSINESS` to each subscription registered with that instance,
+- a client receiving the marker exits; the remaining clients may wait until the no-data timeout,
 - clients that hadn't subscribed to any stream (e.g. xqry invoked only with `--dir` or `--hello`) are not entered in the map and don't need to be notified - these commands exit immediately after providing their response.
 
 Clients connected to other named instances do not receive the message and continue running.
 
-It's worth noting that xqry also detects server inactivity: if no data arrives for 10 seconds, the client shuts itself down with a warning in the log. This is a safeguard in case xretractor crashes suddenly without being able to send the OOB message.
+The client's no-data timeout is set by `timing.query_no_data_timeout_ms` in TOML configuration; its default is 10000 ms. It also prevents an indefinite wait after a server crash or loss of the OOB marker during normal shutdown. See [xqry options](../appendices/command-line-options/xqry.md) for the complete receive contract.

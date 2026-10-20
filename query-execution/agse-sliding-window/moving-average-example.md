@@ -31,37 +31,36 @@ The file `avg.rql`:
 ```rql
 DECLARE temp INTEGER STREAM sensor, 1 TEXTFILE 'temp.txt'
 
-SELECT *           STREAM window5 FROM sensor@(1,5)
-SELECT window5[0]+window5[1]+window5[2]+window5[3]+window5[4] \
-STREAM sumRow \
-FROM window5
-SELECT sumRow[0]/5 STREAM avg5    FROM sumRow
+SELECT * STREAM avg5 FROM AVG(sensor@(1,5))
 ```
 
-### What each query does
+### What the query does
 
-1. `sensor@(1,5)` - creates a sliding 5-element window. Every `window5` record contains the 5 most recent temperature readings. Output interval: `1s / 1 × 1 = 1s` (hop=1, W=1 field).
-2. Sum of the five fields - a classic `SELECT` over the fields `window5[0]`..`window5[4]`.
-3. Dividing the sum by 5 - the result is the moving average.
+1. `sensor@(1,5)` creates a sliding window of the five most recent temperature readings. Its output interval is `(1s / 1) × 1 = 1s`, because the source has one element per record.
+2. `AVG(...)` reduces the five fields of each complete window to their mean. For `INTEGER` input, the result is `RATIONAL`, preserving the fractional part.
+
+Manually adding `INTEGER` fields and dividing by integer `5` would truncate the result: for `[1,1,1,1,2]` it would give `1`, while `AVG` gives exactly `6/5`. `NULL` values are skipped; a window with no present values produces `NULL`. Another way to express this mean is the history aggregate `SELECT AVG(temp : 5) STREAM avg5 FROM sensor`, described in [Aggregate Operators](../../query-language-construction/select-command/aggregate-operators.md).
 
 ## Running it
 
 ```
-$ xretractor avg.rql &
-$ xqry -s avg5
+$ xretractor avg.rql --xqrywait &
+$ xqry --null -s avg5
 ```
 
 Example output (the window fills up after the first 5 samples):
 
 ```
-30
-35
-40
-45
-50
+20/1
+25/1
+30/1
+35/1
+40/1
+45/1
+50/1
 ```
 
-The value `30` corresponds to the average of the first full window: `(10+15+20+25+30)/5 = 20`... note - RetractorDB does not show partial windows, so the first result to appear corresponds to the moment the window is fully saturated with data.
+The first stored result is `(10+15+20+25+30)/5 = 20`, printed as the fraction `20/1`. An artifact record is produced only after obtaining a complete window. `--xqrywait` holds startup until the first client command, allowing the subscription to include the first result. `--null` skips the initial `NULL` rows delivered over IPC in the client's output; it also skips genuine results whose fields are all `NULL`.
 
 ## Verifying the query plan
 
@@ -69,11 +68,11 @@ The value `30` corresponds to the average of the first full window: `(10+15+20+2
 $ xretractor -c avg.rql -f -p -d > out.dot && dot -Tsvg out.dot -o out.svg
 ```
 
-In the generated plan you can see the chain: `sensor → window5 → sumRow → avg5`. The key node is `sensor@(1,5)` - from a single-element stream arriving every second, a five-element stream is produced, continuously sliding.
+The generated plan contains the `sensor` source, an AGSE window substrate and the reducer producing `avg5`. The window has five fields, while the mean has one `RATIONAL` field. The compiler extracts the substrate without requiring a separate name in the query.
 
 ## The relationship between window parameters and delay
 
-The moving average introduces a delay of half the window length. For a window of N=5, the delay is 2 samples (2 seconds). Increasing the window:
+With complete data, a moving average of length N has a group delay of `(N-1)/2` samples. For N=5, this is 2 samples (2 seconds). This filter property is distinct from waiting for the first complete window and from the plan's startup tail. Increasing the window:
 
 * reduces noise (more smoothing),
 * increases the delay,

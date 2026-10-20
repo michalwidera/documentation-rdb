@@ -141,7 +141,7 @@ Range parameters:
 
 Total number of dumped records: `abs(step_forward - step_back)`. Example: `DUMP -5 TO 5` → 10 records (5 historical + 5 subsequent). `DUMP 0 TO 1` → 1 record (the current sample).
 
-The `step_back` bound must be strictly less than `step_forward`. Equal or reversed bounds are rejected by the parser, including when attaching a rule ad hoc. The `step_back` value can be negative (history) or non-negative (delay). Both values being negative is not supported.
+The `step_back` bound must be strictly less than `step_forward`. Equal or reversed bounds are rejected by the parser, including when attaching a rule ad hoc. The `step_back` value can be negative (history) or non-negative (delay). Both bounds may be negative: `DUMP -5 TO -2` writes three records at positions `t-5`, `t-4` and `t-3` relative to the triggering record `t`. The right bound is excluded; this range contains no current or future records.
 
 ### Dump files
 

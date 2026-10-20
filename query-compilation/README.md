@@ -12,7 +12,7 @@ In this chapter I want to explain how I solved the syntactic problems I encounte
 
 Compiler input - text in the RQL language containing `DECLARE`, `SELECT`, and `RULE` statements as well as configuration directives (e.g. `:STORAGE`). The ANTLR4 parser reads the file statement by statement.
 
-The order of `DECLARE` and `SELECT` in the file does not matter: a query may refer to a stream defined further down, because dependencies between streams are resolved only by the compiler. `RULE` is the exception - the parser attaches a rule to a stream that has already been read, so a rule must come after the definition of its stream; otherwise the parser reports `Rule '…' refers to stream '…', but no such stream is defined`. A reference to a stream that does not exist anywhere in the file stops compilation with `Referenced Stream in QUERY _not found_ in CORE TREE`.
+The order of `DECLARE` and `SELECT` in the file does not matter: a query may refer to a stream defined further down, because dependencies between streams are resolved only by the compiler. `RULE` is the exception - the parser attaches a rule to a stream that has already been read, so a rule must come after the definition of its stream; otherwise the parser reports `Rule '…' refers to stream '…', but no such stream is defined`. A reference to a stream that does not exist anywhere in the file produces a controlled refusal, for example `Check result:Stream 'dst' reads from 'absent', which is not defined in the plan`. `xretractor -c` then exits with code 71 on Linux.
 
 ### The ANTLR4 parser → `qTree`
 

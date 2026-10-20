@@ -26,7 +26,7 @@ $ seq 0 9 | paste - -
 The last, empty line matters and is significant. After running xretractor qplan3.rql, and in a second window xqry -s str3, we'll see something like this:
 
 ```
-$ xqry -s str3
+$ xqry --null -s str3
 7
 8
 9
@@ -60,7 +60,7 @@ SELECT * STREAM str4 FROM str3@(2,2)
 After running it, though, we won't see the expected original form of the data3.txt file. Instead, we'll see something like this:
 
 ```
-$ xqry -s str4
+$ xqry --null -s str4
 2 1
 4 3
 6 5
@@ -71,35 +71,57 @@ $ xqry -s str4
 6 5
 ```
 
-Along the difficult path of stream processing, there are traps. This is one of them. Only once the reader looks closely will they notice that the data is mirror-flipped. Please change this query to the following form:
+The result puts the newest field first, and its pairs span elements at indices 1..2, 3..4 and so on. Changing the width's sign reverses field order:
 
 ```rql
 SELECT * STREAM str4 FROM str3@(2,-2)
 ```
 
-Only a stream built this way will show the original form visible in the data3.txt file:
+The first records of this stream are:
 
 ```
-$ xqry -s str4
+$ xqry --null -s str4
+1 2
 3 4
 5 6
 7 8
 9 0
-1 2
-3 4
+...
 ```
 
-That minus sign in the window-width specification is the mirror flip. The window size is two, but the field sequence is built in reverse order.
+Arrival order is now preserved, but the pair `1 2` still combines fields from two adjacent source records. The minus sign alone does not change the window's phase. To recover the original pairs `0 1`, `2 3` and so on, replace the last query with:
+
+```rql
+SELECT * STREAM str4 FROM (str3>1)@(2,-2)
+```
+
+The `>1` shift makes positions 1..2 of the shifted stream carry elements 0..1 of `str3`. The negative width arranges them in arrival order. The first `str4` record has logical index 1, and successive records restore the source's values and grouping:
+
+```
+0 1
+2 3
+4 5
+6 7
+8 9
+...
+```
 
 Generating an image of the query plan that carries out serialization first and then deserialization, we'll see the following relationship (Fig. 54):
 
-<figure><img src="../../assets/plan_serializacja_deserializacja.png" alt=""><figcaption><p>Fig. 54. SErialization and DEserialization</p></figcaption></figure>
+```mermaid
+flowchart BT
+    A["A: BYTE a, BYTE b; delta=1"] --> S["str3: A@(1,1); delta=1/2"]
+    S --> T["str3>1: phase alignment"]
+    T --> R["str4: @(2,-2); delta=1"]
+```
+
+_Fig. 54. Serialization, phase alignment and deserialization_
 
 What's shown here is the most basic example of using the sliding-data-window operator. If we start experimenting with the hop and window size, we'll notice that we're able to create an arbitrary sliding window over the data stream, or skip some elements by building a hop larger than the window width.
 
 <div class="no-print">
 
-A recording of the experiment (Animation) looks as follows:
+The historical recording below shows serialization and field reversal; it does not include the `>1` phase alignment added above:
 
 <figure><img src="../../assets/agse-example.svg" alt=""><figcaption><p>Animation. Session recording of the AGSE serializer experiment</p></figcaption></figure>
 

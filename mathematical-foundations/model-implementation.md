@@ -245,19 +245,20 @@ def sum(A: list, deltaA: Fraction, B: list, deltaB: Fraction):
 
 def diff(C: list, deltaA: Fraction, deltaB: Fraction):
   result = []
-  deltaC = min(deltaA, deltaB)
   for i in range(0, 10):
       if deltaA > deltaB:
           result.append(C[int(ceil(i*deltaA/deltaB))])
       else:
           result.append(C[i])
-  return result, deltaC
+  return result, deltaA
 
 def main():
     sum_result, delta_sum = sum(A, deltaA, B, deltaB)
     diff_result, delta_diff = diff(sum_result, deltaA, deltaB)
+    slow_result, delta_slow = diff(sum_result, deltaB, deltaA)
     print("Sum:", sum_result[0:10], " deltaSum:", delta_sum)
     print("Diff(Sum):", diff_result[0:10], " deltaDiff:", delta_diff)
+    print("Diff(Sum, slower):", slow_result[0:10], " deltaDiff:", delta_slow)
 
 if __name__ == '__main__':
     main()
@@ -271,12 +272,15 @@ if __name__ == '__main__':
 $ python diff.py
 Sum: ['1a', '2a', '3b', '4b', '5c', '6c', '7d', '8d', '9e', '10e']  deltaSum: 1/2
 Diff(Sum): ['1a', '2a', '3b', '4b', '5c', '6c', '7d', '8d', '9e', '10e']  deltaDiff: 1/2
+Diff(Sum, slower): ['1a', '3b', '5c', '7d', '9e', '11f', '13g', '15h', '17i', '19j']  deltaDiff: 1
 ```
+
+The `diff` function takes the target interval as `deltaA`, while `deltaB` is the interval of the join's other component. The input `C` has interval `min(deltaA, deltaB)`. The result must return the target interval even when it is larger than the input interval: the second example selects every other record and has interval 1, rather than 1/2. Difference selects whole join records; it does not remove the other component's fields.
 
 
 ### Source code
 
-The source code for the examples shown here can be found in the project repository under the /examples/python-model/ directory.
+Historical model scripts are available in the project repository under `/examples/python-model/`. The listings above show the corrected difference function and its interval convention.
 
 A JavaScript implementation can be tested directly on the site:
 
