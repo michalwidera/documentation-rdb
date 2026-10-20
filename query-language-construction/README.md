@@ -6,7 +6,7 @@ RQL stands for _RetractorDB Query Language_. Its syntax is very similar to SQL s
 
 Valid statements in RQL currently begin with a handful of keywords. The most recognizable is the command starting with the keyword SELECT, followed by a list of attributes in the form of algebraic expressions - an algebra based on real numbers.
 
-Statements are written in a text file. Its extension is conventionally .rql, but any other extension will also be accepted and processed. An RQL text file contains a sequence of statements beginning with defined keywords. The [LET](let-command.md) command names numeric constants that later statements refer to as `?NAME`.
+Statements are written in a text file. Its extension is conventionally .rql, but any other extension will also be accepted and processed. An RQL text file contains a sequence of statements beginning with defined keywords. The [LET](let-command.md) command names numeric constants. [VAR and DO SET](var-command.md) introduce plan variables updated by rules; both declaration kinds use `?NAME` references.
 
 The `#` character starts a comment only when it is the first non-whitespace character on a line. The whole line, including an indented one, is discarded before parsing. Inside a `FROM` expression, `#` always means interleave regardless of whitespace. An end-of-line comment starts with `//`; block comments use `/* ... */`.
 

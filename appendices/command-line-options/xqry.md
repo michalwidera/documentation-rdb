@@ -21,8 +21,10 @@ Allowed options:
   -l [ --hello ]                 diagnostic - hello db world
   -k [ --kill ]                  kill xretractor server
   -d [ --dir ]                   list of queries
-  -y [ --yaml ]                  yaml output format for --dir, --detail and
-                                 --bus
+  -v [ --vars ]                  list plan variables (VAR) with their current
+                                 values
+  -y [ --yaml ]                  yaml output format for --dir, --detail, --vars
+                                 and --bus
   -j [ --jsonl ]                 versioned JSON Lines API output
   -i [ --idle-timeout ] arg (=0) JSONL idle timeout in ms; 0 disables
   -r [ --raw ]                   raw output mode (default)
@@ -50,7 +52,7 @@ xqry --server measurements --select temperature
 xqry --server measurements --kill
 ```
 
-Without this option, the client reads the bus in the current namespace: the default `xrdbbus_v7`, or `xrdbbus_v7_<namespace>` when `RDB_NAMESPACE` is set. When exactly one instance is live, it is selected automatically. With several instances, `--select` and `--detail` are routed to the owner of the named stream. Instance-wide commands (`--hello`, `--dir`, `--kill`, and `--reset`) are ambiguous and require `--server`. The combined `--bus` listing described below does not change this routing.
+Without this option, the client reads the bus in the current namespace: the default `xrdbbus_v7`, or `xrdbbus_v7_<namespace>` when `RDB_NAMESPACE` is set. When exactly one instance is live, it is selected automatically. With several instances, `--select` and `--detail` are routed to the owner of the named stream. Instance-wide commands (`--hello`, `--dir`, `--vars`, `--kill`, and `--reset`) are ambiguous and require `--server`. The combined `--bus` listing described below does not change this routing.
 
 Ad hoc routing examines sources in `FROM`, or the stream in `ON` for a `RULE`. They must all belong to one server. A `DECLARE` has no addressee, so with several instances it also requires `--server`. A misspelled name and a query crossing server boundaries are rejected before a command is sent.
 
@@ -113,11 +115,46 @@ str1  | 1/30     | 0    | 0     |               | 0
 
 `duration` is the stream's exact interval, `size` the amount of stored data, `count` the record count, `location` the source file, and `cap` the history capacity computed by the compiler. A declared source has `size` equal to `-1`.
 
-`--detail stream` shows the original query and its fields. The `--yaml` modifier switches `--dir`, `--detail`, and `--bus` to an `apiVersion: xqry/v1` document; it is not a command on its own. An unknown stream exits with code `2`.
+`--detail stream` shows the original query and its fields. The `--yaml` modifier switches `--dir`, `--detail`, `--vars`, and `--bus` to an `apiVersion: xqry/v1` document; it is not a command on its own. An unknown stream exits with code `2`.
 
 Command responses are matched to the client's specific request. The `ipc.client_response_max_fails` time budget covers sending the command and receiving its response; a full command queue causes a refusal when that deadline expires. A response abandoned by a killed client can be reclaimed without blocking later clients.
 
 Waiting for command-queue space uses nonblocking send attempts and the shared deadline measured by a monotonic clock. A temporarily full queue can therefore accept the command if space becomes available before the deadline; it is not refused immediately. `ut_ipcClient` guards both outcomes.
+
+## Plan variables: `--vars`
+
+`xqry --server measurements --vars` (short `-v`) lists `VAR` variables in declaration order:
+
+```text
+name  | type     | value
+------+----------+------
+COUNT | INTEGER  | 42
+GAIN  | FLOAT    | 0.5
+RATIO | RATIONAL | 1/3
+```
+
+`type` is the declared type; `value` is the value committed at the end of the last slot, with NULL printed as `null`. Reads occur between slots and return a consistent snapshot of all variables. Before the first slot, these are the declaration values. `LET` constants are not listed.
+
+With `--yaml`, the response is:
+
+```yaml
+---
+apiVersion: xqry/v1
+variables:
+  - name: COUNT
+    type: INTEGER
+    value: 42
+  - name: GAIN
+    type: FLOAT
+    value: 0.5
+  - name: RATIO
+    type: RATIONAL
+    value: 1/3
+```
+
+A plan without VAR prints only the table header and separator; an idle instance prints `no active plan`. Both exit with 0 and both return `variables: []` in YAML. No running server remains an IPC error. With several instances, supply `--server` because the command addresses a whole plan. `--vars --jsonl` is refused with code `22`.
+
+This command only reads; `xqry` has no direct variable assignment. Updates are requested by a `DO SET` rule, including one attached ad hoc. An accepted `--reset` restores declaration values. See [VAR and DO SET](../../query-language-construction/var-command.md) for details. Coverage: `it_var_xqry-run`.
 
 ## Receiving data
 
@@ -216,7 +253,7 @@ Mutating commands, `--bus`, YAML, other output formats, `--null`, and `--wait-se
 
 ## One command at a time
 
-`--select`, `--detail`, `--adhoc`, `--reset`, `--dir`, `--bus`, and `--hello` are distinct commands; passing several at once exits with code `22`. `--kill` can deliberately be combined with `--select -m N` or with `--adhoc` to stop the server after the operation.
+`--select`, `--detail`, `--adhoc`, `--reset`, `--dir`, `--vars`, `--bus`, and `--hello` are distinct commands; passing several at once exits with code `22`. `--kill` can deliberately be combined with `--select -m N` or with `--adhoc` to stop the server after the operation.
 
 ## Waiting for a server
 

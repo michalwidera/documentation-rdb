@@ -30,7 +30,7 @@ Every rule contains a list of tokens describing a logical expression (the `condi
 2. Passes the condition to the `expressionEvaluator::eval()` engine - **the same engine** that computes `SELECT` expressions.
 3. Casts the result to a boolean (`boolCast`): any non-zero numeric value is `true`, zero is `false`.
 
-If the condition is satisfied, the action associated with the rule is executed (`DO SYSTEM` or `DO DUMP`). If not, the rule is skipped with no side effects at all. The full flow is shown in Fig. 50.
+If the condition is satisfied, the action associated with the rule is executed (`DO SYSTEM`, `DO DUMP`, or `DO SET`). If not, the rule is skipped with no side effects at all. The full flow is shown in Fig. 50.
 
 ```mermaid
 %%{init: {"markdownAutoWrap": false}}%%
@@ -41,11 +41,23 @@ flowchart TD
     C -->|false| E([skip])
     D -->|DO SYSTEM| F["system(command)"]
     D -->|DO DUMP| G["dumpManager::registerTask()"]
+    D -->|DO SET| I["Evaluate value and buffer update"]
+    I --> H
     F --> H["dumpManager::<br/>processStreamChunk()"]
     G --> H
 ```
 
 _Fig. 50. Rule evaluation flow_
+
+***
+
+## The DO SET action and the slot boundary
+
+`constructRulesAndUpdate()` evaluates the `SET` right-hand side on the same record and VAR values as `WHEN`. It buffers the result, including NULL, for the current slot. Competing writes retain the update from the later rule in plan text order. Ad hoc rules receive subsequent positions.
+
+Only successful completion of `dataModel::processRows`, after advancing declared sources, copies the buffer to current values. Every field and rule in the slot reads the previous state; node order does not change update visibility. A failure before this boundary commits no VAR updates, and the next slot clears the buffer; this does not roll back stored records or external actions. The same boundary applies in `--until-eof` and the embedded engine. `xqry --vars` reads between slots under the plan epoch lock.
+
+Loading or resetting a plan constructs values from declarations, so rebuilding a window alone cannot restore a latch lost on restart. See [VAR and DO SET](../query-language-construction/var-command.md) for semantics and restrictions. Coverage: `ut_dataModel`, `it_var_set-value`, `it_var_reset-run`.
 
 ***
 

@@ -4,19 +4,20 @@ The `LET` command gives a name to a numeric constant. The plan can then refer to
 
 A constant is not a variable: its value is fixed when the plan is loaded and does not change during execution. Numbers written directly into a query (literals) remain fully valid, and both forms may appear in one plan.
 
-> **_NOTE:_** The functionality described here is covered by the tests: `let_constants` and `adhoc_parse_error`, described in the appendix [Integration Tests](../appendices/integration-tests.md), and by the compiler unit tests (`ut_compiler`).
+> **_NOTE:_** The functionality described here is covered by the tests: `let_constants`, `let_typed` and `adhoc_parse_error`, described in the appendix [Integration Tests](../appendices/integration-tests.md), and by the compiler unit tests (`ut_compiler`).
 
 ## Syntax
 
 ```rql
 LET constant_name = value
+LET constant_name : TYPE = value
 ```
 
 ![LET command syntax diagram](../assets/railroad-let.svg)
 
 _Fig. 67. LET command syntax diagram_
 
-The railroad diagram in Fig. 67 was generated from the `let_statement` rule in the system's ANTLR4 grammar (`RQL.g4`). The `LET` keyword is followed by the constant name, the `=` sign and the value: an integer or decimal number, or a fraction `numerator/denominator`, each with an optional minus sign.
+The railroad diagram in Fig. 67 was generated from the `let_statement` rule in the system's ANTLR4 grammar (`RQL.g4`). The `LET` keyword is followed by the constant name, an optional type annotation `: TYPE` (see [Explicit type](#explicit-type)), the `=` sign and the value: an integer or decimal number, or a fraction `numerator/denominator`, each with an optional minus sign.
 
 A synthetic example:
 
@@ -47,6 +48,36 @@ The right-hand side is always **a single literal**:
 
 An expression (`LET A = 1 + 2`), a reference to another constant (`LET B = ?A`) and a plus sign (`LET X = +1`) are syntax errors.
 
+### Explicit type
+
+The annotation `LET NAME : TYPE = literal` gives the constant a type independent of the literal's spelling. `TYPE` is `INTEGER`, `UINT`, `FLOAT`, `DOUBLE`, or `RATIONAL`, also spelled `Integer`, `Uint`, `Float`, `Double`, `Rational` - the same list as in [VAR](var-command.md). `STRING`, `BYTE`, and other types are syntax errors. A constant without an annotation behaves as before (see [Type of a constant](#type-of-a-constant)), and a plan without annotations compiles to an identical plan.
+
+The declaration literal goes through the same conversion as the literal of an annotated variable (matrix in [VAR - Explicit type](var-command.md#explicit-type)): to `INTEGER` and `UINT` only exactly, to `RATIONAL` exactly from the literal's text (`0.25` is `1/4`), to `FLOAT` and `DOUBLE` with rounding. A literal with no value in the type is a refusal that points at the declaration, e.g. `line 1:4: value -1 of constant ?N is out of range for UINT`.
+
+In a `SELECT` and `RULE ... WHEN` expression an annotated constant is a number of the annotated type. This makes it possible to write values in an expression that no literal expresses:
+
+```rql
+LET K : DOUBLE = 0.1
+LET Q : RATIONAL = 1/4
+LET N : UINT = 3000000000
+
+DECLARE x DOUBLE, k INTEGER, u UINT STREAM src, 1 TEXTFILE 'data.txt'
+SELECT src[0] * ?K, src[1] * ?Q, src[2] STREAM scaled FROM src
+RULE above ON scaled WHEN scaled[2] > ?N DO DUMP -1 TO 1
+```
+
+- `src[0] * ?K` multiplies by `0.1` in `DOUBLE` precision. The unannotated constant `LET C = 0.1` is a `FLOAT` value in an expression (0.100000001490116...), and `to_double(?C)` does not repair that, because the argument is already a `FLOAT`.
+- `src[1] * ?Q` yields a `RATIONAL` field (for `k = 3` the value `3/4`). Without the annotation a fraction in an expression is refused, and `1/4` is an integer division.
+- `scaled[2] > ?N` compares two `UINT` values. The number 3000000000 cannot be written as an integer literal in an expression.
+
+The `SELECT` field type follows from the operand types, as for fields and literals: `DOUBLE * FLOAT` gives `DOUBLE`, `INTEGER * RATIONAL` gives `RATIONAL`, `UINT + INTEGER` gives `UINT`.
+
+`-?NAME` negates the value in the annotated type. A negation with no value in that type is a refusal: with `LET N : UINT = 5`, `-?N` gives `expression -?N = 5 (line 3:8) is out of range for UINT`.
+
+On the right-hand side of `DO SET` an annotated constant behaves like any constant: when it is the whole right-hand side, its text is converted to the type of the **variable** (see [VAR](var-command.md)), and the constant's annotation does not matter. With `LET K : DOUBLE = 0.1` and `VAR R : RATIONAL = 0`, `DO SET ?R = ?K` sets exactly `1/10`. Any other right-hand side with a typed constant has the type that follows from its operand types, like any expression.
+
+In structural contexts (indexes, sizes, `@`, `>`, windows, retention, `DUMP`, intervals, `TIMEOUT`) an annotated constant is allowed only with the type natural to the context: `INTEGER` in integer contexts, `INTEGER` or `RATIONAL` in a `DECLARE` interval, in the `&`, `%`, `-` operators and in `TIMEOUT`. The context then takes the converted value: `LET W : INTEGER = 4/2` in `src > ?W` gives the same as `src > 2`, and `LET T : RATIONAL = 0.0000001` as an interval is exactly `1/10000000`. Any other annotation is a refusal, not a silent conversion: whoever writes `LET W : DOUBLE = 3` declared a `DOUBLE` value, while a time shift needs an integer - `line 3:27: constant ?W : DOUBLE cannot be used in time shift; it takes a constant without annotation or annotated INTEGER`.
+
 ### Name and reference
 
 A constant name starts with a letter and consists of letters, digits and underscores. The `$` character is not allowed, so that references are never confused with a stream-generator index. Names are case-sensitive: `?signal` and `?SIGNAL` are different constants.
@@ -58,7 +89,7 @@ The word `LET` (also `let`) is reserved and cannot be the name of a stream, fiel
 ### Scope
 
 - A constant is valid from the line of its declaration to the end of the plan file. `LET` may appear anywhere in the file, but before its first use; a reference before the declaration is an error.
-- Declaring the same name again is an error; a constant cannot be overwritten.
+- Redeclaring the same name is an error, including a collision with [VAR](var-command.md). `LET` and `VAR` share a namespace; a constant cannot be overwritten or used as a `DO SET` target.
 - Constants belong to one plan: they do not carry over to another file, a later load or ad-hoc queries.
 - An unused constant is not an error. `xretractor` prints a warning to stderr, also with `--quiet`, for example `xretractor: warning: line 2: constant ?UNUSED is declared but never used`. When the plan is reloaded through the reset channel, the same warning goes to the server log.
 
@@ -81,9 +112,9 @@ The word `LET` (also `let`) is reserved and cannot be the name of a stream, fiel
 | `DECLARE` interval | `STREAM src, ?SOURCE_INTERVAL TEXTFILE '...'` | > 0 |
 | `&`, `%`, `-` operators | `src - ?OUTPUT_INTERVAL` | > 0 |
 | `TIMEOUT` | `TIMEOUT ?WAIT` | ≥ 0 |
-| expression in `SELECT` and `RULE ... WHEN` | `src[0] * ?GAIN + ?OFFSET`, `x >= ?ALARM_LIMIT` | integer or decimal |
+| expression in `SELECT` and `RULE ... WHEN` | `src[0] * ?GAIN + ?OFFSET`, `x >= ?ALARM_LIMIT` | integer or decimal; with an annotation also `UINT`, `DOUBLE`, and `RATIONAL` |
 
-On the syntax diagrams of the [SELECT](select-command/README.md), [DECLARE](declare-command.md) and [RULE](rule-command.md) commands, a `?constant` branch stands next to the number wherever the diagram shows a number: for sizes, intervals, `TIMEOUT`, retention and `DUMP` bounds. The remaining positions in the table belong to expressions, which the diagrams do not expand.
+On the syntax diagrams of the [SELECT](select-command/), [DECLARE](declare-command.md) and [RULE](rule-command.md) commands, a `?constant` branch stands next to the number wherever the diagram shows a number: for sizes, intervals, `TIMEOUT`, retention and `DUMP` bounds. The remaining positions in the table belong to expressions, which the diagrams do not expand.
 
 An example covering all contexts at once:
 
@@ -110,13 +141,15 @@ SELECT src[?VALUE_INDEX] * ?GAIN + ?OFFSET STREAM scaled FROM src - ?OUTPUT_INTE
 
 ## Type of a constant
 
-A constant has the type of its literal. In every position the parser substitutes it exactly as it would substitute a literal of that form written in that position, with no implicit conversion:
+A constant without an annotation has the type of its literal. In every position the parser substitutes it exactly as it would substitute a literal of that form written in that position, with no implicit conversion:
 
 | Context | integer constant | decimal constant | fraction |
 |---|---|---|---|
 | integer contexts (indices, sizes, `@`, `>`, windows, retention, `DUMP`) | the value | refused: `is not an integer` | refused: `is not an integer` |
 | `DECLARE` interval, `&`, `%`, `-`, `TIMEOUT` | `n` as the literal `n` | as the literal `x.y` (converted to a fraction with the same range check) | as the literal `a/b` |
 | expression in `SELECT` and `RULE ... WHEN` | `INTEGER` | `FLOAT` | refused: in an expression `1/40` is an integer division, not a fraction literal - write the constant as a decimal |
+
+An annotated constant has the annotated type - see [Explicit type](#explicit-type).
 
 A fraction built from a constant, such as `?N/40` or `?A/?B`, is not a fraction literal. In an interval it is a syntax error, and in an expression it is an ordinary division of the constant's value by `40`.
 
@@ -150,9 +183,12 @@ Every constant error is a compilation refusal: `xretractor` exits with an error 
 | zero denominator | `line 2:4: fraction 1/0 of constant ?D has a zero denominator` |
 | value outside the literal range | `line 2:4: value 2147483648 of constant ?X is out of range` |
 | non-integer value in an integer context | `line 3:14: constant ?H = 0.5 in field index is not an integer` |
-| fraction in an expression | `constant ?F = 1/40 (line 3:19) is a fraction, which an expression has no literal for; write it as a decimal` |
+| fraction in an expression (without an annotation; with `: RATIONAL` it is accepted) | `constant ?F = 1/40 (line 3:19) is a fraction, which an expression has no literal for; write it as a decimal` |
+| literal with no value in the annotated type | `line 1:4: value 2.5 of constant ?N is out of range for INTEGER` |
+| negation with no value in the annotated type | `expression -?N = 5 (line 3:8) is out of range for UINT` |
+| annotation not allowed in a structural context | `line 3:9: constant ?N : UINT cannot be used in field index; it takes a constant without annotation or annotated INTEGER` |
 | violated position constraint | `AGSE window ?W = 0 (line 3:34) must be greater than zero`, `interval ?N = -1 (line 3:29) must be greater than zero`, `DUMP RETENTION ?B = -2 (line 4:52) must not be negative` |
-| expression or reference on the right-hand side, space after `?` | parser syntax error, e.g. `token recognition error at: '? '` |
+| expression or reference on the right-hand side, space after `?`, type outside the list (`BYTE`, `STRING`) | parser syntax error, e.g. `token recognition error at: '? '` |
 
 Position constraints that cannot be checked at substitution time - for example an index outside the stream schema or an empty `DUMP` range - are reported by the compiler with the same message as for a literal.
 

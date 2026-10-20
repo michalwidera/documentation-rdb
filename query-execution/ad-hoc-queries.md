@@ -34,7 +34,7 @@ $ xqry --server measurements -a "DECLARE a BYTE STREAM C, 1 TEXTFILE 'data3.txt'
 
 Attaching the first declaration to a server started with an empty plan is not yet supported; the ad hoc channel requires an active data model.
 
-A rule attached at run time may execute only `DO DUMP`. `DO SYSTEM` remains available only in the plan file the instance starts from, because exposing it through IPC would let a client run arbitrary shell commands as the server account. The same boundary holds on the `xqry --reset` channel, which also carries a complete plan but carries no authorship either: a plan with a `DO SYSTEM` rule is refused there as a whole, unless the operator deliberately sets `service.unrestricted = true` (→ [xqry](../appendices/command-line-options/xqry.md#the-do-system-rule-does-not-pass-through-this-channel)). The ad-hoc channel refuses unconditionally and does not read that key. The `ON` target must be an existing stream created by `SELECT`.
+A rule attached at run time may execute `DO DUMP` or `DO SET`. `DO SYSTEM` remains available only in the plan file the instance starts from, because exposing it through IPC would let a client run arbitrary shell commands as the server account. The same boundary holds on the `xqry --reset` channel, which also carries a complete plan but carries no authorship either: a plan with a `DO SYSTEM` rule is refused there as a whole, unless the operator deliberately sets `service.unrestricted = true` (→ [xqry](../appendices/command-line-options/xqry.md#the-do-system-rule-does-not-pass-through-this-channel)). The ad-hoc channel refuses unconditionally and does not read that key. The `ON` target must be an existing stream created by `SELECT`.
 
 For a historical `DUMP -H TO M` range, the `WHEN` condition is first evaluated no earlier than record `H+1` after attachment, when the preceding `H` records were also produced after attachment. For a range without history (`H=0`), evaluation starts with the first new record. A `MEMORY` store must have at least `H+1` slots; for `H > 0` and capacity `N <= H`, the request is rejected without attaching the rule. Attachment does not enlarge the existing store. See [Alerting implementation](alerting-implementation.md#phase-1-historical-data-when-the-task-is-registered) for details.
 
@@ -48,6 +48,19 @@ On a `MEMORY` stream, the example above requires at least 11 slots; with capacit
 With multiple instances, the client routes a `SELECT` according to the owners of streams in `FROM`, and a `RULE` according to the stream in `ON`. A query combining sources from several servers is rejected. New stream names and storage files are claimed on the bus before the active plan is changed, so ad hoc commands cannot overwrite another instance's resource.
 
 Ad hoc commands extend the current plan. Use `xqry --reset file.rql` to replace it fully and atomically, including on an idle instance.
+
+### Plan variables and DO SET
+
+Ad hoc can see the active plan's `VAR` variables: it can read them in `SELECT` and `WHEN` and write them through an attached `DO SET` rule. `VAR` and `LET` declarations are refused; the plan file's `LET` constants are invisible. For the [hysteresis example](../query-language-construction/var-command.md#hysteresis), submit:
+
+```bash
+xqry --server measurements -a "SELECT status[0], ?ALARM STREAM monitor FROM status"
+xqry --server measurements -a "RULE force_alarm ON status WHEN status[0] >= 300 DO SET ?ALARM = 1"
+```
+
+The rule starts evaluating from the next new target record. Its update is committed at the end of the slot and becomes visible from the following slot. In a conflict with a plan rule or an earlier ad hoc rule, the later attached firing rule wins. There is no separate configuration key for `SET`; the `DO SYSTEM` refusal is unchanged.
+
+The right-hand side must have the variable's type. A refusal preserves active values and rules. Accepted ad hoc additions retain existing variable state; an accepted `--reset` creates new state from declarations and removes the old plan's ad hoc rules. A `SET` rule can target an existing individual generator instance such as `cell$0`; the entire family is not a live-plan target. Coverage: `it_var_adhoc-run`.
 
 ### Where an ad hoc stream begins
 

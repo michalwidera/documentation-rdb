@@ -26,11 +26,11 @@ DO SYSTEM system_command
 
 _Fig. 8. RULE command syntax diagram_
 
-The railroad diagram in Fig. 8 was generated from the `rule_statement` rule in the system's ANTLR4 grammar (`RQL.g4`) and covers both forms of the command shown above in a single track: the branch after the word DO leads either to the DUMP variant (with a data-window dump and optional retention), or to the SYSTEM variant (with a system command in quotes). Rounded green boxes are keywords and symbols entered literally, rectangles are values supplied by the user; tracks bypassing the minus sign and the RETENTION clause mean they are optional.
+The railroad diagram in Fig. 8 is generated from the ANTLR4 `rule_statement` rule (`RQL.g4`). After `DO` it has three branches: `DUMP` writes a record range, `SYSTEM` executes a shell command, and `SET ?NAME = expression` requests a plan variable update. Rounded boxes denote literal symbols, rectangles denote user-supplied values, and bypass tracks denote optional elements.
 
 Events defined this way attach to defined data streams. A rule name must be unique within the stream selected by `ON`; different streams may have rules with the same name. The data stream must be defined before the rule-creation command appears in the rql file.
 
-In both versions of the RULE command, a rule name, a logical condition, and the name of the stream to which the process launched by the DO command is attached are created. The logical condition should refer to variables available in the schema of the data stream following the ON clause.
+In every form of the RULE command, a rule name, a logical condition, and the name of the stream to which the process launched by the DO command is attached are created. The condition can use fields of the `ON` stream, `LET` constants, and current `VAR` values.
 
 In the first version of the command, which includes the DO DUMP clause, we define a process that allows collecting data that will arrive in the future. If we omit the RETENTION clause, the dump goes directly to a file named after the rule, prefixed with the stream name. If we add the RETENTION clause, the files will be subject to retention within the range defined by the 'segments' parameter. Sequential numbers will be appended to the end of each dump. Dumps are binary and preserve the schema of all fields of the source data stream. It is worth noting here that the command creates a process in the system which, once the logical condition becomes true, pulls data from the past and also expects its arrival and registration in the future. Nothing prevents us, however, from collecting data only from the past or only from the future. If the step\_\* values are negative, they refer to the past (i.e. to data that is historical relative to the moment the event described by the logical condition occurred).
 
@@ -62,11 +62,12 @@ WHEN <condition>
 DO <action>
 ```
 
-Where `<action>` can take one of two forms:
+Where `<action>` is exactly one of three forms:
 
-```rql
+```text
 SYSTEM '<system_command>'
 DUMP [-]<step_back> TO [-]<step_forward> [RETENTION <n>]
+SET ?NAME = <scalar_expression>
 ```
 
 ### Restriction
@@ -104,7 +105,22 @@ DO SYSTEM 'curl -s http://monitoring/alert'
 
 Any program available on `PATH` can be used in the command: shell scripts, Python programs, REST calls, sending notifications, etc.
 
-A `DO SYSTEM` rule may be asked for **only in the plan file** the instance starts from - the author of that file is whoever runs the service. Both IPC channels refuse it: `xqry --adhoc` accepts only `DO DUMP` from a rule, and `xqry --reset` rejects the whole plan carrying `DO SYSTEM`, because that channel carries no authorship (→ [xqry](../appendices/command-line-options/xqry.md#the-do-system-rule-does-not-pass-through-this-channel)). An operator who deliberately hands the reset channel over sets `service.unrestricted = true` in the TOML configuration (→ [xretractor](../appendices/command-line-options/xretractor.md#configuration-file-toml)).
+A `DO SYSTEM` rule may be asked for **only in the plan file** the instance starts from - the author of that file is whoever runs the service. Both IPC channels refuse it: `xqry --adhoc` accepts `DO DUMP` and `DO SET` rules, and `xqry --reset` rejects the whole plan carrying `DO SYSTEM`, because that channel carries no authorship (→ [xqry](../appendices/command-line-options/xqry.md#the-do-system-rule-does-not-pass-through-this-channel)). An operator who deliberately hands the reset channel over sets `service.unrestricted = true` in the TOML configuration (→ [xretractor](../appendices/command-line-options/xretractor.md#configuration-file-toml)).
+
+## The DO SET action
+
+`DO SET ?NAME = expression` writes a variable declared by `VAR`. Its right-hand side is a scalar expression over the current `ON` record, `LET` constants, and plan variables; its type must match the variable's type. A `LET` constant cannot be a target. NULL replaces the previous value.
+
+```rql
+VAR COUNT = 0
+DECLARE x INTEGER STREAM src, 1 TEXTFILE 'signal.txt'
+SELECT src[0], ?COUNT STREAM counted FROM src
+RULE tick ON counted WHEN 1 = 1 DO SET ?COUNT = ?COUNT + 1
+```
+
+A `counted` record shows the counter's pre-slot state. Updates are buffered and visible from the next slot. Among multiple writes to one variable, the last firing rule in text order wins. Each rule executes one action; combining `SET` and `DUMP` requires two rules with the same condition.
+
+A `SET` rule on an entire generator family is refused. See [VAR and DO SET](var-command.md) for contexts, types, ad hoc and reset behavior, hysteresis, and uc10 examples.
 
 ## The DO DUMP action
 
