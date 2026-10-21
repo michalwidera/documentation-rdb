@@ -85,5 +85,4 @@
     * [Why Was This Name Chosen for the System?](appendices/system-origin/why-this-name.md)
   * [RQL Syntax Highlighting](appendices/syntax-highlighting/README.md)
   * [Integration Tests](appendices/integration-tests.md)
-  * [Installation Process (redirect)](appendices/installation-process.md)
 * [References](references.md)
