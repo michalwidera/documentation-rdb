@@ -37,29 +37,30 @@ Attempting to compile such a file ends with an error:
 ```
 $ xretractor brokenQuery.rql -c 2>out.txt
 $ echo $?
-1
+71
 $ cat out.txt
-[error] Circular dependency: stream interval resolution stalled with 1 
->> unresolved streams
+Input file:brokenQuery.rql
+Check result:Circular dependency in stream definitions
 ```
 
-The message `"Circular dependency in stream definitions"` appears when the `resolveStreamIntervals` stage detects that the number of unresolved streams has stopped decreasing. For how to run compilation and read error messages, see [Compilation Debugging](compilation-debugging.md).
+The message `"Circular dependency in stream definitions"` appears when the `resolveStreamIntervals` stage leaves unresolved streams and resolves no new stream during the entire round. The exit code `71` shown above applies to Linux. For how to run compilation and read error messages, see [Compilation Debugging](compilation-debugging.md).
 
 ## Detection mechanism
 
-On every iteration round, the `resolveStreamIntervals` stage counts the streams for which an interval could not yet be determined (`unresolvedCount`). In a valid, acyclic graph, this number decreases every round - at least one stream always gets its delta determined. In a graph with a cycle, streams depend on each other mutually and none can obtain a value - `unresolvedCount` stalls.
+On every round, the `resolveStreamIntervals` stage counts streams waiting for a source interval (`unresolvedCount`) and streams that have just obtained their first known interval (`resolvedThisPass`). When `unresolvedCount == 0`, the stage succeeds. Otherwise, it checks:
 
 ```cpp
-if (unresolvedCount >= prevUnresolved) {
-    SPDLOG_ERROR("Circular dependency: stream interval resolution stalled with
->> {} unresolved streams",
-                 unresolvedCount);
-    return std::string("Circular dependency in stream definitions");
+if (resolvedThisPass == 0) {
+  SPDLOG_ERROR("Circular dependency: stream interval resolution stalled with {} unresolved streams", unresolvedCount);
+  return {"Circular dependency in stream definitions"};
 }
-prevUnresolved = unresolvedCount;
 ```
 
-The `>=` condition (rather than `>`) guards against false positives: if the count doesn't decrease by even one, progress is impossible.
+Before this stage, the compiler checks that sources exist and declared intervals are positive. A known interval remains known. If the unresolved part of the graph is acyclic, it contains a node whose sources are all already resolved, so at least one new stream is resolved during the round. No such progress with a nonempty unresolved part means there is a cycle. Streams independent of the cycle may have been resolved earlier.
+
+Sorting at this stage is by interval, not topologically. A valid plan can therefore require several rounds, but it cannot stall without progress. [Interval Resolution](interval-resolution.md) gives the details and a visit-order example.
+
+The older comparison `unresolvedCount >= prevUnresolved` also detects a lack of progress if every unresolved node is counted correctly and resolved nodes remain resolved. The current implementation checks the number of newly resolved streams directly.
 
 ## How to fix it
 

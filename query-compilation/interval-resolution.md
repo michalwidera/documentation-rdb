@@ -6,24 +6,28 @@ The examples in this chapter use the canonical declarations from the whole chapt
 
 ## Algorithm
 
-The `resolveStreamIntervals` stage works iteratively:
+The `resolveStreamIntervals` stage works iteratively. Declared source intervals are already known and positive; an unresolved output stream interval has an internal value of zero. The existence of every source is checked before this stage.
 
 ```
-prevUnresolved = ∞
 loop:
     unresolvedCount = 0
-    sort qTree topologically
-    for every query:
-        if the source streams' deltas are known:
-            determine the output delta from the operator's equation
-        otherwise:
+    resolvedThisPass = 0
+    sort qTree by increasing interval
+    for every query except declarations and directives:
+        if any source interval is unresolved:
             unresolvedCount++
+            continue to the next query
+        determine the output delta from the operator's equation
+        if this query's interval was unresolved:
+            resolvedThisPass++
+        store the determined delta
     if unresolvedCount == 0: done (success)
-    if unresolvedCount >= prevUnresolved: error (loop in the graph)
-    prevUnresolved = unresolvedCount
+    if resolvedThisPass == 0: error (cycle in the graph)
 ```
 
-Every round resolves at least one stream - because the graph is acyclic, and the topological sort guarantees sources are processed before outputs. If the number of unresolved streams stops decreasing, that indicates a cycle - see [Loop Detection](loop-detection.md).
+The `qTree::sort()` call orders nodes by interval, not topologically. A producer therefore need not precede its consumer. An interval determined earlier in the same round is immediately available to subsequent queries.
+
+In a valid acyclic graph, every round that starts with unresolved nodes resolves at least one of them: those nodes include one whose sources are all already resolved. Known intervals remain known, so the number of unresolved nodes decreases. If unresolved nodes remain after a round but `resolvedThisPass == 0`, there is a cycle - see [Loop Detection](loop-detection.md). An invalid operator argument or an out-of-range result causes a separate compilation refusal.
 
 ## Operator equations
 
@@ -51,6 +55,16 @@ The `#` operator interleaves input records. The output rate is the sum of the in
 
 Example: core0(Δ=1/10) # core1(Δ=1/5) → str1(Δ=1/15)
 
+### Stream difference (`- r`, STREAM\_SUBTRACT)
+
+```rql
+SELECT ... STREAM c FROM a - r
+```
+
+\\[\Delta_c = r,\qquad r \geq \Delta_a > 0\\]
+
+The argument `r` is the target interval, not an amount subtracted from the source interval. The operator selects source records at this rate. An equal interval preserves the source rate, a larger interval produces a slower result, and a smaller interval is refused during plan constraint validation.
+
 ### Time shift (`>n`, STREAM\_TIMEMOVE)
 
 ```rql
@@ -59,7 +73,7 @@ SELECT ... STREAM c FROM a > n
 
 \\[\Delta_c = \Delta_a\\]
 
-A shift changes neither the stream's rate nor its emitted record sequence, but it does change the index at which that sequence appears: record `m` carries the content of record `m-n`. It is a causal delay, but its carrier is the **logical origin**, not the tail - records with an index below `n` have no definition. The operator's own tail is non-positive: it equals `max(0, W_src − n)`, because record `m-n` is older than the current one and therefore all the more available. The plan listing shows both quantities as `origin=` and `tail=`; the silent slots are their sum and the runtime emits nothing in them.
+A shift changes neither the stream's rate nor its emitted record sequence, but it does change the index at which that sequence appears: record `m` carries the content of record `m-n`. It is a causal delay, but its carrier is the **logical origin**, not the tail - records with an index below `n` have no definition. The operator's own tail is non-negative: it equals `max(0, W_src - n)`, because record `m-n` is older than the current one and therefore all the more available. The plan listing shows both quantities as `origin=` and `tail=`; the silent slots are their sum and the runtime emits nothing in them.
 
 Source history requires `n+1` records for the read range itself, plus two more for a declared source's head lead (the record armed when the storage is opened and the zero prefetch), which logical-index addressing does not shorten.
 
@@ -81,9 +95,17 @@ AGSE (the Episode Series Generation Algorithm) generates sliding windows. `F_a` 
 
 ### De-hash operators (STREAM\_DEHASH\_DIV, STREAM\_DEHASH\_MOD)
 
-The inverse operations of `#` - they determine what interval one of the input streams had, given the result's interval and the other argument:
+If `c = a # b`, the `&` operator determines the interval of component `a` from the interval of interleave `c` and an argument denoting the interval of the other component `b`. Inverting the interleave equation gives:
+
+\\[\Delta_a = \frac{\Delta_c \cdot \Delta_b}{\Delta_b - \Delta_c},\qquad 0 < \Delta_c < \Delta_b\\]
+
+The domain follows from positive intervals: the interleave has a higher rate than either component. For the `%` operator, the roles of `a` and `b` are exchanged.
+
+The implementation generally uses the absolute-value formula:
 
 \\[\Delta_a = \frac{\Delta_c \cdot \Delta_b}{\left|\Delta_c - \Delta_b\right|}\\]
+
+The compiler refuses equal intervals and a result faster than the source, that is, `Delta_a < Delta_c`. It can also accept an argument outside the domain of interleave inversion. For example, for `Delta_c = 3/2` and `Delta_b = 1` it computes `Delta_a = 3`, but interleaving intervals `3` and `1` gives an interval of `3/4`, not `3/2`. The absolute value therefore does not make this formula an inverse of `#` outside the stated domain.
 
 ## Interval validation
 
@@ -101,4 +123,6 @@ SELECT str1[0] STREAM str1 FROM core0
 SELECT str2[0] STREAM str2 FROM str1
 ```
 
-In the first iteration round, the compiler determines Δ\_str1 = 1/10 (because Δ\_core0 is known). In the second round - Δ\_str2 = 1/10 (because Δ\_str1 is now known). Without iteration, str2 would have to be declared before str1, which would limit the language's expressiveness.
+Both output streams have an interval of `1/10`. If `str1` is visited before `str2` in a round, both intervals can be determined in that same round. If the order is reversed, `str2` waits until the next round because `str1`'s interval was not yet known when `str2` was visited.
+
+Iteration makes the result independent of the visit order after sorting by interval. The order of queries in the file does not dictate their resolution order. If this stage processed the graph in a true topological order, the entire valid dependency chain could be resolved in one traversal.
