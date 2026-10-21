@@ -2,7 +2,7 @@
 
 ## Notebooks and their smoke test
 
-C5 (#493) adapts three notebooks from `feature/jupyter-integration` to the current RQL syntax and exception hierarchy ([errors](python-jupyter-api.md#errors)). All committed cell outputs are empty.
+Three notebooks use the current RQL syntax and exception hierarchy ([errors](python-jupyter-api.md#errors)). All committed cell outputs are empty.
 
 | Notebook in `api/python/notebooks/` | Flow |
 |---|---|
@@ -20,7 +20,7 @@ For local work, `RDB_PYTHON_MODULE_DIR` selects the built package root ([Python 
 
 The wheel profile creates a clean Python 3.12 venv using the versions in `scripts/notebook-versions.sh`. The default torch is the CPU build. These fixed local dependencies do not declare Colab's current runtime versions. An explicit `--without-torch` profile omits torch and checks that ML was skipped successfully. Use separate output directories; executed notebooks and `acceptance.json` remain there after the temporary venv is removed. Without `--output-dir`, the script prints a retained temporary results directory.
 
-### Manual release check for J5
+### Manual release check
 
 Run this step after building the current wheel ([wheel build](../system-installation/python-build.md)), before handing it to a Colab user or distributing it. Both installed-wheel profiles must pass; build-module smoke alone does not satisfy the release check. Keep the wheel build log with the report so its source SHA is traceable. The build must be from the named commit; any uncommitted changes affecting the wheel must be recorded and rebuilt after review/commit before release.
 
@@ -48,23 +48,23 @@ PYTHON="$PWD/.venv-jupyter-system-cpu/bin/rdb-python" \
   --output-dir build/notebook-results/local-module
 ```
 
-This profile installs nothing and has no wheel installation timing. Real Colab CPU/GPU acceptance is a separate human run under [the protocol below](#real-colab-cpu-then-gpu). Report its date, runtime and restart outcome separately from the container results. PyPI publication (#447), DeviceWindowLoader (#468) and MPS acceptance are not prerequisites of #448. Automated release CI remains a separate task.
+This profile installs nothing and has no wheel installation timing. Real Colab CPU/GPU acceptance is a separate human run under [the protocol below](#real-colab-cpu-then-gpu). Report its date, runtime and restart outcome separately from the container results.
 
 ## Container and Google Colab acceptance
 
-Issue #448 accepts a ready C4 wheel (#492) from a file or direct HTTPS URL. PyPI publication, DeviceWindowLoader and MPS acceptance are separate work. A container run is evidence for the installed wheel; acceptance in real Colab requires its own CPU and GPU runs by a human. No Colab result is claimed by this protocol.
+This protocol covers a ready wheel from a file or direct HTTPS URL. A container run is evidence for the installed wheel; acceptance in real Colab requires its own CPU and GPU runs by a human. No Colab result is claimed by this protocol.
 
 ## Prepare the artifact
 
 1. Build the Linux x86_64 wheel from the intended source revision using `docker/wheel/build-wheels.sh x86_64`. Keep its full source SHA and build log. Record any uncommitted changes that affect the wheel; rebuild from the reviewed commit before distribution. Use the repaired cp312-abi3 wheel for Python 3.12+.
 2. Record its filename and `sha256sum build/wheelhouse/<wheel-name>.whl`. Use that same wheel for the container and Colab acceptance, not an older file with the same version and filename.
-3. Run both installed-wheel container profiles from [the manual release check](#manual-release-check-for-j5). Preserve each `acceptance.json` and the three executed notebooks. Require `notebook-smoke: OK - 3/3 notebooks`; the profile without torch must record `training.status = skipped` and successful NumPy assertions. The default profile must record successful CPU training. Compare wheel SHA-256 with step 2.
+3. Run both installed-wheel container profiles from [the manual release check](#manual-release-check). Preserve each `acceptance.json` and the three executed notebooks. Require `notebook-smoke: OK - 3/3 notebooks`; the profile without torch must record `training.status = skipped` and successful NumPy assertions. The default profile must record successful CPU training. Compare wheel SHA-256 with step 2.
 
 ## Real Colab: CPU, then GPU
 
 Perform each run in a fresh runtime. A local notebook execution or a container named after Colab does not complete this step.
 
-1. Upload `api/python/notebooks/colab_quickstart.ipynb` through Colab's notebook upload dialog. Use the notebook from the reviewed change; the GitHub copy can differ before the pull request is merged.
+1. Upload `api/python/notebooks/colab_quickstart.ipynb` through Colab's notebook upload dialog. Use the notebook from the same source revision as the wheel being checked.
 2. Select a CPU runtime for the first run. Upload the wheel through the Files panel to `/content/`, or set `WHEEL` in the first code cell to a direct HTTPS URL. The URL must contain the original wheel filename in its path; signed query strings are allowed. Set `SOURCE_COMMIT` to the full SHA recorded by the build.
 3. Run all cells without installing/replacing NumPy or torch manually. The notebook installs only `retractordb` with `--no-deps`. Save the first cell's before/after versions, separate download/install/import times and `_core` path. Compare the reported wheel SHA-256 with the prepared artifact.
 4. Require both NumPy assertions and the training cell to complete. A real Colab runtime with torch must train; an unexpected ML skip is not CPU/GPU acceptance. The notebook's optional no-torch path is covered separately by the container.
@@ -75,26 +75,4 @@ The model receives copied CPU windows from `StreamDataset`, with `num_workers=0`
 
 Windows/s = processed windows / training-loop seconds. Mean step time = that elapsed time / batch count. Both include loading, transfers and optimization; engine advancement and CPU-reference training are reported separately. The first epoch includes warm-up. Record all epochs; do not report the fastest alone as the result. This small model is a demonstration, not a general engine benchmark. CUDA and CPU loss comparison uses the same initialization, data order and SGD parameters, with `rtol=0.05, atol=0.002`. An assertion failure remains a failed run.
 
-Approximately 20 seconds is a roadmap reference, not a closure threshold. Record conditions: upload versus URL, download time, cold/warm runtime, Python version, CPU/GPU type and whether package caches were already populated. Compare times only under comparable conditions; container installation does not measure Colab.
-
-## Result to record in #448
-
-Keep container and Colab results separate. Attach the build log and local result artifacts, then fill this template with observed values. Posting the comment, commit, push and opening a pull request require separate human authorization.
-
-| Field | Container with torch | Container without torch | Colab CPU | Colab GPU |
-|---|---|---|---|---|
-| Status (not run / passed / failed) | not run | not run | not run | not run |
-| Date and runtime version | | | | |
-| Wheel filename / source commit / SHA-256 | | | | |
-| Python / NumPy / torch / CUDA | | | | |
-| Wheel source (file or URL; omit signed URL secrets) | | | | |
-| Download / install / import seconds | | | | |
-| NumPy/torch before = after | | | | |
-| NumPy assertions | | | | |
-| Training device / precision / GradScaler | | skipped | | |
-| Epoch windows/s and mean step ms | | skipped | | |
-| CPU-reference loss agreement (GPU only) | n/a | n/a | n/a | |
-| Restart required / performed (human observation) | n/a | n/a | | |
-| Report and executed notebook location | | | | |
-
-Do not close #448 until the required container and real Colab results are recorded, and the reviewed change reaches `dev/445-jupyter-epic` through a pull request. The protocol itself and a green local build-module smoke do not meet those criteria.
+Record conditions: upload versus URL, download time, cold/warm runtime, Python version, CPU/GPU type and whether package caches were already populated. Compare times only under comparable conditions; container installation does not measure Colab.
