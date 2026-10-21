@@ -2,25 +2,55 @@
 
 The embedded library executes RQL inside Python without a daemon. Its [API contract](../appendices/python-jupyter-api.md) covers logical time, not real-time execution. Use the separate [monitoring client](../appendices/stream-monitoring-api.md) for service streams.
 
-## Installing a wheel
+## Installing from PyPI
 
-Use an explicitly supplied `.whl` file or its direct HTTPS URL. PyPI publication is a separate task; this guide assumes neither availability through `pip install retractordb` nor a macOS wheel. Linux x86_64 includes WSL2. The filename must match architecture and Python ABI: `cp312-abi3` supports CPython 3.12 and later, while cp310/cp311 target their respective versions. The build also provides for aarch64; availability and execution of each artifact require evidence on that architecture.
+The [`retractordb` package is published on PyPI](https://pypi.org/project/retractordb/). Release [v0.1.12](https://github.com/michalwidera/retractordb/releases/tag/v0.1.12) provides prebuilt Python wheels on both PyPI and GitHub Releases. `pip install retractordb` installs the package with the embedded `retractordb._core` library; no local engine compilation or running service is required. The [project website](https://retractordb.com/) introduces RetractorDB, while the [system installer](https://retractordb.com/install/) installs the separate CLI programs and service.
 
-Keep the complete filename, SHA-256 and source SHA supplied with the wheel. Verify the checksum before installation. Run these commands in your project directory; `RDB_WHEEL` names the downloaded file:
+The following example pins version `0.1.12` and creates an environment in your project directory. `--only-binary=retractordb` requires a prebuilt wheel instead of attempting to build the engine from source:
 
 ```bash
 python3.12 -m venv .venv-rdb
-.venv-rdb/bin/python -m pip install 'numpy>=1.23' ipykernel
-RDB_WHEEL="/path/to/retractordb-0.1.11-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
-sha256sum "$RDB_WHEEL"
+.venv-rdb/bin/python -m pip install --upgrade pip
+.venv-rdb/bin/python -m pip install --only-binary=retractordb 'retractordb==0.1.12' jupyterlab ipykernel
+.venv-rdb/bin/python -c 'import retractordb._core; print(retractordb._core.__file__)'
+.venv-rdb/bin/python -m pip check
+```
+
+`pip` selects a wheel matching your interpreter and platform and installs NumPy (`numpy>=1.23`). PyTorch is optional and is not installed by default. Importing `_core` establishes extension availability, rather than just the pure monitoring client.
+
+Release `0.1.12` publishes six wheels:
+
+| Platform | Minimum glibc | CPython variants |
+| --- | --- | --- |
+| Linux x86_64, including WSL2 | 2.27 | 3.10 (`cp310-cp310`), 3.11 (`cp311-cp311`), 3.12+ (`cp312-abi3`) |
+| Linux aarch64 / ARM64 | 2.26 | 3.10 (`cp310-cp310`), 3.11 (`cp311-cp311`), 3.12+ (`cp312-abi3`) |
+
+The `abi3` wheels target CPython 3.12 and later with the standard GIL. For CPython 3.10 or 3.11, replace `python3.12` with the appropriate interpreter; the local profiles below still require 3.12. This release has no macOS, native Windows or musllinux wheels. Prepare a [local build](python-build.md) on macOS, or use Linux under WSL2 on Windows. ARM64 wheel availability does not establish execution on a particular device.
+
+Install PyTorch for your CPU/CUDA environment yourself. It is unnecessary for plan execution, NumPy or DLPack. Run the [complete API example](../appendices/python-jupyter-api.md#complete-example) in this interpreter or its kernel.
+
+## Installing a wheel from GitHub Releases
+
+Alternatively, download a `.whl` file from [release v0.1.12](https://github.com/michalwidera/retractordb/releases/tag/v0.1.12) or the PyPI files section. Keep the complete filename, SHA-256 and source revision information from the build process. This release's wheels on GitHub and PyPI have identical filenames and SHA-256 checksums.
+
+This Linux x86_64 and CPython 3.12+ example downloads a specific wheel and verifies its published checksum. Run it in your project directory; if you do not have an environment yet, create one with the commands below:
+
+```bash
+python3.12 -m venv .venv-rdb
+.venv-rdb/bin/python -m pip install 'numpy>=1.23' jupyterlab ipykernel
+RDB_WHEEL="retractordb-0.1.12-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
+curl -fLO "https://github.com/michalwidera/retractordb/releases/download/v0.1.12/$RDB_WHEEL"
+printf '%s  %s\n' \
+  '511ca1401d9d0e268dd99f8ecfadbeb1e6f8c96ffce141c1a69891e87cffd287' "$RDB_WHEEL" \
+  | sha256sum --check
 .venv-rdb/bin/python -m pip install --no-deps "$RDB_WHEEL"
 .venv-rdb/bin/python -c 'import retractordb._core; print(retractordb._core.__file__)'
 .venv-rdb/bin/python -m pip check
 ```
 
-Alternatively, set `RDB_WHEEL` to the supplied direct HTTPS URL. Its path must preserve the original filename; signed query parameters are allowed. `--no-deps` requires NumPy to be prepared in advance and does not install or replace PyTorch. Omit signed URL secrets from reports. Importing `_core` establishes extension availability, rather than just the pure client.
+Use the corresponding checksum from GitHub Releases or PyPI for any other `.whl` file. `--no-deps` requires NumPy to be prepared in advance and does not install or replace PyTorch. You can also install directly from an HTTPS URL containing the original wheel filename, but verify the checksum separately after downloading.
 
-Install PyTorch for your CPU/CUDA environment yourself. It is unnecessary for plan execution, NumPy or DLPack. Run the [complete API example](../appendices/python-jupyter-api.md#complete-example) in this interpreter or its kernel.
+Running `pip install ./api/python` in the code repository installs only the monitoring client and can replace a package containing `_core`. Use a separate environment for that installation.
 
 ## Jupyter kernel
 
@@ -28,13 +58,22 @@ The kernel and extension must use compatible Python versions. You can explicitly
 
 ```bash
 .venv-rdb/bin/python -m ipykernel install --user --name retractordb-wheel --display-name 'RetractorDB wheel'
+.venv-rdb/bin/jupyter lab
 ```
 
-Select "RetractorDB wheel" in Jupyter. This registration intentionally changes user configuration; the local profile script below keeps its kernel inside the venv rather than registering it globally. The code repository's notebooks are `api/python/notebooks/j0_storage.ipynb`, `j1_engine.ipynb`, and `colab_quickstart.ipynb`.
+Select "RetractorDB wheel" in Jupyter. This registration intentionally changes user configuration; the local profile script below keeps its kernel inside the venv rather than registering it globally. The code repository's notebooks are [`j0_storage.ipynb`](https://github.com/michalwidera/retractordb/blob/v0.1.12/api/python/notebooks/j0_storage.ipynb), [`j1_engine.ipynb`](https://github.com/michalwidera/retractordb/blob/v0.1.12/api/python/notebooks/j1_engine.ipynb), and [`colab_quickstart.ipynb`](https://github.com/michalwidera/retractordb/blob/v0.1.12/api/python/notebooks/colab_quickstart.ipynb).
 
 ## Google Colab
 
-In a fresh runtime, upload `colab_quickstart.ipynb`, upload the wheel through the Files panel into `/content/`, and set the first cell's `WHEEL` to its path or direct URL. Set `SOURCE_COMMIT` to the complete SHA from the build log. The notebook installs only the wheel with `--no-deps`, compares NumPy/torch versions before and after, measures download, installation and import separately, and saves `rdb-acceptance.json`.
+For a basic package installation in a fresh runtime, run this cell:
+
+```python
+%pip install --only-binary=retractordb retractordb==0.1.12
+import retractordb._core
+print(retractordb._core.__file__)
+```
+
+Open the full [`colab_quickstart.ipynb` in Colab](https://colab.research.google.com/github/michalwidera/retractordb/blob/v0.1.12/api/python/notebooks/colab_quickstart.ipynb). Its installation cell still requires a `.whl` file or direct URL, rather than a PyPI package name. Download a compatible wheel from release `v0.1.12`, upload it through the Files panel into `/content/`, and set `WHEEL` in the first code cell to its path; alternatively, use the wheel's GitHub Releases URL. Set `SOURCE_COMMIT` to the complete SHA from the build log. The notebook installs only the wheel with `--no-deps`, compares NumPy/torch versions before and after, measures download, installation and import separately, and saves `rdb-acceptance.json`.
 
 NumPy assertions verify the signal before and after training. Without torch, ML cells explicitly skip training; with torch they use CUDA when available or CPU. T4 uses fp16 with GradScaler; native bf16 is selected when the runtime reports support. Do not assume arbitrary GPUs have been accepted. Observe versions and restart requirements in each runtime; a local container does not establish Colab behavior. The [acceptance protocol](../appendices/notebook-acceptance.md) separates both kinds of evidence.
 
@@ -52,7 +91,7 @@ scripts/jupyter-env.sh user
 .venv-jupyter-user-cpu/bin/rdb-jupyter api/python/notebooks
 
 scripts/jupyter-env.sh user --wheel \
-  build/wheelhouse/retractordb-0.1.11-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl \
+  build/wheelhouse/retractordb-0.1.12-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl \
   --venv .venv-jupyter-wheel
 .venv-jupyter-wheel/bin/rdb-jupyter api/python/notebooks
 ```
