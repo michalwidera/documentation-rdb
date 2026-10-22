@@ -132,7 +132,9 @@ Examples:
 
 An index outside the range of a result store, including an empty store, is rejected before reading: `read` and `rread` print `record out of range - read command`, leaving the payload and its previous state unchanged. `list` and `rlist` print `record out of range - list command` and move on to the next index. If the range check allows the request but the read itself reports a missing record or an error, the payload state changes to `error`; `list` and `rlist` then print `fetch error`. For declared sources, `read` and `rread` skip the initial range check and use the source's read result. The state can be checked with `status`.
 
-A successful `write N` or `append` sets the payload state to `stored`. Attempting `append` on a declared `BINFILE`, `TEXTFILE`, or `DEVICE` source that supports only reading sets the state to `error`: the source data and record count remain unchanged, and `xtrdb` continues accepting commands. The payload state reported by `status` is separate from the process exit code; this refusal does not require an error exit. Other write failures, such as an I/O error, may terminate the process.
+A successful `write N` or `append` sets the payload state to `stored`. Attempting `append` on a declared `BINFILE`, `TEXTFILE`, or `DEVICE` source that supports only reading sets the state to `error`: the source data and record count remain unchanged, and `xtrdb` continues accepting commands. The payload state reported by `status` is separate from the process exit code; this refusal does not require an error exit.
+
+Write failures returned by the storage layer, including I/O errors, also set the state to `error`: `write` prints `write: ...`, and `append` prints `append: ...`; the terminal continues accepting commands. A batch script should check diagnostics and payload state because process exit code 0 does not confirm that every command succeeded.
 
 The write-state and read-only append-refusal contract is covered by the `it_xtrdb_write_status-run` integration test.
 

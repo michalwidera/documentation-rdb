@@ -24,11 +24,11 @@ The railroad diagram in Fig. 3 was generated from the `declare_statement` rule i
 
 The data format follows from the keyword, never from the name or extension of the path:
 
-| Keyword    | What it reads                                                                                   | File kind at the path              | After the end of data                                  |
-| ---------- | ----------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------ |
-| `BINFILE`  | raw binary records whose size follows from the fields                                           | regular file only                  | back to the beginning (loop), with `ONESHOT` end of source |
-| `TEXTFILE` | text: values separated by whitespace, the `NULL` token marks a missing value                    | regular file only                  | as `BINFILE`                                           |
-| `DEVICE`   | raw binary records from a live source; it interprets neither text nor the `NULL` token, a zero byte is zero | character device or FIFO           | no writer: `NULL` records until data comes back; with `ONESHOT` end of source |
+| Keyword                  | What it reads                                                                      | File kind at the path              | After the end of data                                  |
+| ------------------------ | ---------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------ |
+| `BINFILE`                | raw binary records whose size follows from the fields                              | regular file only                  | back to the beginning (loop), with `ONESHOT` end of source |
+| `TEXTFILE`               | text: values separated by whitespace, the `NULL` token marks a missing value       | regular file only                  | as `BINFILE`                                           |
+| `DEVICE`                 | raw binary records from a live source; it interprets neither text nor the `NULL` token, a zero byte is zero | character device or FIFO           | no writer: `NULL` records until data comes back; with `ONESHOT` end of source |
 
 ```rql
 DECLARE MLII INTEGER, V1 INTEGER STREAM ecg, 1/360 BINFILE 'rec205'
