@@ -77,11 +77,11 @@ xretractor diagnostics.rql --name diagnostics --noanykey &
 xqry --bus
 ```
 
-Each receives its own lock and IPC objects. The shared bus nevertheless rejects a plan that collides with a live instance by stream name, written storage file, or `:ROTATION` counter file. The check happens before artifacts are removed. Omitting `--name` preserves the historical unnamed instance.
+Each receives its own lock and IPC objects. The shared bus nevertheless rejects a plan that collides with a live instance by stream name, written storage file, or `:ROTATION` counter file. The check happens before artifacts are removed. Omitting `--name` preserves the historical unnamed instance. After the service-mode exclusivity check, an instance with the same name as a live bus entry, including a second unnamed one, is refused with exit code `ENOLCK` (`37` on Linux) even when its lock file was deleted from the temporary directory.
 
 Service mode provides a separate guarantee: exactly one service instance may run in each `RDB_NAMESPACE`; in the default namespace it is named `service`. See [Multiple Instances and the Bus](../../data-processing-system-architecture/multiple-instances-and-bus.md).
 
-The instance lock file must be a regular file with a single name, owned by the account that starts the instance. A symbolic link (dangling ones included), a second hard link, a directory or a FIFO at that path, as well as a file owned by another account - also for an instance started as root - stop startup without changing the contents of the target file. The `stderr` message, shown in Release builds as well, names the path and the cause, and exit code `5` (`EIO`) distinguishes this refusal from an identity that is already taken (`37`, `ENOLCK`, message `is already running`). A leftover of another account after a crash is neither taken over by the instance nor removed by `--cleanup`; an operator with rights to the lock directory removes it by hand. Reading presence and IPC identity locks of other accounts remains allowed.
+The instance lock file must be a regular file with a single name, owned by the account that starts the instance. A symbolic link (dangling ones included), a second hard link, a directory or a FIFO at that path, as well as a file owned by another account - also for an instance started as root - stop startup without changing the contents of the target file. The `stderr` message, shown in Release builds as well, names the path and the cause, and exit code `5` (`EIO`) distinguishes this refusal from an identity that is already taken (`ENOLCK`, `37` on Linux, message `is already running`). A leftover of another account after a crash is neither taken over by the instance nor removed by `--cleanup`; an operator with rights to the lock directory removes it by hand. Reading presence and IPC identity locks of other accounts remains allowed.
 
 ### Cleaning up leftovers
 
@@ -94,8 +94,8 @@ The command does not start a plan. It attempts to acquire locks on recognized re
 | Scope | Action |
 | --- | --- |
 | Instance lock files | Scans `paths.lock_dir` selected by configuration, defaulting to the process's temporary directory. |
-| IPC identities | Scans the shared `/tmp`; removes an abandoned lock and its command queue, response segment, and map mutex. |
-| Bus | Removes unused segments of the current `xrdbbus_v7` layout protected by presence locks. |
+| IPC identities | Scans the shared `/tmp`; removes an abandoned lock and its command queue, response segment, and map mutex. Objects of an instance with a live slot on the bus of the current namespace are kept. |
+| Bus | Removes segments of the current `xrdbbus_v7` layout that nobody holds through a presence lock and in which no slot belongs to a live instance. |
 
 The scope is not restricted to an instance selected with `--name` or a single `RDB_NAMESPACE`. Filesystem permissions still control access to resources. The command does not enumerate or remove client response queues; it also leaves v5 and older segments untouched because they do not participate in the presence-lock protocol.
 

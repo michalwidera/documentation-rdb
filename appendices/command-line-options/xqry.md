@@ -121,6 +121,10 @@ Command responses are matched to the client's specific request. The `ipc.client_
 
 Waiting for command-queue space uses nonblocking send attempts and the shared deadline measured by a monotonic clock. A temporarily full queue can therefore accept the command if space becomes available before the deadline; it is not refused immediately. `ut_ipcClient` guards both outcomes.
 
+Response matching includes the client's PID, process start stamp, and request number. The client sends its stamp in `db.start`; the server reads it itself only for older clients that do not supply a nonzero value. Restricting visibility of the client's process entry, for example with `hidepid`, therefore does not change the response owner for a new client. Concurrent requests from several threads in one process retain their own responses: receiving one does not free a response for another request that is still pending. Coverage is provided by `ut_ipcResponses` and `ut_ipcServer`.
+
+A custom IPC client must not send INFO-format directives such as a `#include` line. The server rejects a message containing a line that starts with `#` after optional whitespace before the parser can read the referenced file; it neither executes the command nor sends a response. A `#` inside a value, such as the interleave operator in an ad hoc query, remains allowed.
+
 ## Plan variables: `--vars`
 
 `xqry --server measurements --vars` (short `-v`) lists `VAR` variables in declaration order:

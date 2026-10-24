@@ -14,6 +14,10 @@ The ad hoc channel accepts **exactly one `SELECT`, `DECLARE`, or `RULE` statemen
 
 A syntax error or invalid value is returned to the client with its reason, and the server continues to accept commands. The parser rejects, among other cases, out-of-range numeric literals, a zero denominator, a zero interval (in `DECLARE` and with `&`, `%`, or `-`), and an empty `FILE` name. If attachment fails after import, the server restores the previous plan and releases newly claimed stream names and storage files on the bus. The same command can be retried after the cause is fixed.
 
+Import rollback covers both a failure returned as a status and an exception during import, compilation, or registration of new streams. In the latter case, `xqry -a` prints the reason from the server response, for example `command processor failure: ...`, and exits with a nonzero code. Existing streams remain available, and the rejected names disappear from the plan and bus. `adhoc_register_rollback`, including its `-throw` variant, checks both paths and retrying the same command.
+
+If the bus mutex becomes unusable during import rollback, the plan is restored but the new claims cannot be released. They remain claimed until the instance ends; an ERROR log lists the stream names and storage paths with the cause. A refused import does not guarantee restoration of the bus registry in this case.
+
 Before attaching new streams, the server checks the `STORAGE` directory, retained descriptors, source existence, kinds and read permissions, and whether output files and applicable `.shadow` files can be opened. A new `SELECT` descriptor must match the plan's schema and must not introduce an unplanned `REF`; its `TYPE` must be supported. The check includes descriptors without `ROTATION` and for `MEMORY`, because import does not delete them. Only new streams are checked. The open check creates no new files; for a missing file, it checks the parent directory. A refusal returns the reason to the client, such as `cannot open output file`, without changing the plan. If the directory becomes unavailable after this check, a later failure to open a POSIX or POSIXSHD accessor, or a DEFAULT/DIRECT segment, is also returned as a refusal: the server rolls back the import and new claims on the bus, stays running, and allows the command to be retried. This handling of late open failures does not cover the `STORAGE GENERIC` profile.
 
 A generated substrate name colliding with a different program causes a compilation refusal (`Fail local chain compiler:Substrate name '...' denotes two different programs`) without terminating the server. This also applies to ordinary names with underscores, such as `A_B + C` and `A + B_C`. A corrected command can be submitted after refusal; coverage: `it_plan_error_e4-run` and `it_storage_refusal-adhoc`.
@@ -24,7 +28,7 @@ A new source can be declared without stopping a running engine:
 $ xqry -a "DECLARE a BYTE STREAM C, 1 TEXTFILE 'data3.txt'"
 ```
 
-Exit code `0` with no message means that the declaration was accepted. The declaration receives its logical-index base in its first due slot. If a query attached later needs a window or a time shift, emission waits until the source has accumulated the complete required history. `HOLD` is not required; it remains an optional directive that delays the physical read. Repeating `DECLARE` for an existing name is rejected rather than treated as a configuration update.
+Exit code `0` with no message means that the declaration was accepted. A declaration attached after the zero step receives its logical-index base in its first due slot. If a query attached later needs a window or a time shift, emission waits until the source has accumulated the complete required history. `HOLD` is not required; it remains an optional directive that delays the physical read. Repeating `DECLARE` for an existing name is rejected rather than treated as a configuration update.
 
 With multiple live instances, `DECLARE` alone cannot identify an owner because it has no `FROM` clause. The target must then be selected explicitly:
 
@@ -64,7 +68,9 @@ The right-hand side must have the variable's type. A refusal preserves active va
 
 ### Where an ad hoc stream begins
 
-A plan built from the start of system operation numbers records from the logical origin computed by the compiler. A query attached ad hoc has no such history - its first record is **the first slot in which the runtime saw it**, not slot zero of the plan. The import is atomic: the compiled tree and its stream instances are published under a common lock, and the execution loop rebuilds the timeline without rewinding, even when the new query introduces a new rate to the system. The same lock protects the zero step from collecting declaration names through publishing the first records, so an ad hoc import waits until that step finishes.
+A plan built from the start of system operation numbers records from the logical origin computed by the compiler. A query attached after the zero step has no such history - its base corresponds to **the first due slot in which the runtime processed it**, rather than slot zero of the plan. Import is atomic: the compiled tree and its stream instances are published under a common lock, and the execution loop rebuilds the timeline without rewinding, even when the new query introduces a new rate.
+
+The model can accept commands before the zero step, for example with the `--xqrywait` (`-x`) gate. A file source attached in that window belongs to the epoch's initial plan: the zero step assigns its compiler-computed base and prepares its first record, just as for sources from the plan file. `DEVICE` sources have no zero-step read; their first record is read in a due slot. During the zero step itself, the common lock blocks import until initialization finishes. `it_hash_string-adhoc-zero-step` checks attaching a source before that step.
 
 > **_NOTE:_** This behavior is covered by the `issue227_join_alignment` test (the `adhoc-origin` case).
 
