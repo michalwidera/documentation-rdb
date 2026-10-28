@@ -146,13 +146,19 @@ Before calling `processRows()`, the executor takes a snapshot of due `DEVICE` so
 The function performs **three passes** over the plan, considering only positions marked in the mask (Fig. 45):
 
 ```mermaid
-%%{init: {"markdownAutoWrap": false}}%%
-flowchart TB
-    S([processRows - dueMask]) --> P1
-    P1["Pass 1 - due declarations<br/>Bootstrap sources in the empty state<br/>DEVICE: publish the current slot's record"] --> P2
-
-    subgraph P2["Pass 2 - due non-declarations in topological order"]
+%% pdf-width: 100%
+%% pdf-height: 85%
+%%{init: {"htmlLabels": false, "flowchart": {"wrappingWidth": 260, "nodeSpacing": 20, "rankSpacing": 20, "padding": 10}}}%%
+flowchart LR
+    subgraph P1["Pass 1"]
         direction TB
+        S([processRows - dueMask]) --> D
+        D["Due declarations<br/>Bootstrap sources in the empty state<br/>DEVICE: publish the current slot's record"]
+    end
+
+    subgraph P2["Pass 2"]
+        direction TB
+        N["Due non-declarations<br/>Topological order"] --> X0
         X0{"Have origin and tail elapsed?<br/>Are inputs available for the first ad hoc record?"} -->|yes| X1
         X0 -->|no| X5([skip query])
         X1["constructInputPayload()<br/>builds input data from FROM"] --> XW
@@ -162,8 +168,11 @@ flowchart TB
         X4["constructRulesAndUpdate()<br/>evaluates RULE clauses"]
     end
 
-    P2 --> P3
-    P3["Pass 3 - due file declarations in the armed state<br/>flux, revRead(0), fire()<br/>Read the record for the next due slot<br/>DEVICE is skipped"] --> E([end])
+    subgraph P3["Pass 3"]
+        direction TB
+        F["Due file declarations in the armed state<br/>flux, revRead(0), fire()<br/>Read the record for the next due slot<br/>DEVICE is skipped"] --> E([end])
+    end
+    P1 --> P2 --> P3
 ```
 
 _Fig. 45. The processRows algorithm - three processing passes_

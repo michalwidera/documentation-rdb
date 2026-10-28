@@ -37,7 +37,8 @@ Artifacts and substrates written to disk can be associated with up to five files
 | Index shadow file      | `.meta.shadow`         | Null-pattern overrides accompanying `.shadow`              |
 
 ```mermaid
-%% pdf-width: 70%
+%% pdf-width: 50%
+%% pdf-height: 70%
 graph TD
   D[".desc: descriptor (record schema)"]
   B["Binary data file (N×R-byte records)"]
