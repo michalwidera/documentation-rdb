@@ -225,7 +225,7 @@ Before changing the active model, the server parses and compiles the set, checks
 
 The file check is preliminary: a path may change between the `OK` response to `--reset` and the actual storage open. A late open failure during the plan swap is not currently returned to the client as a refusal and may stop the server; `OK` does not guarantee that this later operation will succeed.
 
-When the target is a service instance, accepted contents are also written to its startup file so they survive a process restart.
+If the target is a service instance, the server also attempts to write the accepted text to its startup file. A failed write is logged and does not stop the new plan, but a restart may restore the previous contents. The `OK` response does not guarantee plan durability; see the [service and plan replacement contract](xretractor.md#service-and-plan-replacement).
 
 ### The `DO SYSTEM` rule does not pass through this channel
 
