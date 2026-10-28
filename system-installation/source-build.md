@@ -34,13 +34,15 @@ The `release-dirty` mode is for diagnosing local changes and does not produce a 
 
 ## Engine error-handling check
 
-The default `RDB_NOEXCEPT_CHECK=ON` adds the `rdb_noexcept_check`, `retractorcore_noexcept_check` and `rdbembed_noexcept_check` libraries to a full build. They compile the same core sources again with `-fno-exceptions`, excluding designated units that handle ANTLR, Boost.Stacktrace and configuration. Using `throw`, `try` or `catch` in the checked part of the core then fails compilation. The check objects are not linked into shipped programs.
+The default `RDB_NOEXCEPT_CHECK=ON` adds the `rdb_noexcept_check`, `retractorcore_noexcept_check` and `rdbembed_noexcept_check` targets to a full build. They check the same core sources again with `-fno-exceptions` and `-fsyntax-only`, excluding designated units that handle ANTLR, Boost.Stacktrace and configuration. Using `throw`, `try` or `catch` in the checked part of the core then fails compilation. The check covers the compiler's syntactic and semantic analysis without generating machine code.
+
+The `cmake/syntaxOnly.sh` script adds `-fsyntax-only` to the compiler command while preserving the configured ccache launcher. Only after success does it create the empty output file specified by `-o`, so Ninja can recognize a completed check. The targets remain `OBJECT` libraries in CMake, but their empty files are not linked into shipped programs; Release IPO is disabled for these targets.
 
 Shipped programs and the Python module compile uniformly with exception support. External libraries still use exceptions; mixing units with and without `-fno-exceptions` in one program caused incompatible Boost and spdlog inline functions and skipped destructors when an exception crossed the core. `RDB_NOEXCEPT_CHECK` therefore replaces the original `RDB_NO_EXCEPTIONS` from port #511.
 
 C++ core operations report recoverable errors through `rdb::Result<T> = std::expected<T, Error>`, carrying the category, message and `errno`. Callers check the result, and object construction can require a `create` or `make` factory. `RDB_NOEXCEPT_CHECK=OFF` disables only the additional compilation check; it does not restore the former exception-based C++ API. It does not control kernel survival: `rdb::fatal()` terminates the host regardless of this flag. See the [Python API error boundary](../appendices/python-jupyter-api.md#errors).
 
-A full build runs the check automatically. Building only a selected target, such as `_core`, does not run the independent check libraries; they can be built explicitly following the [Python procedure](python-build.md#module-from-a-build-tree). The `exception_mode_guard` test checks actual shipped-target flags and check completeness using `compile_commands.json`. It does not prove that the check build ran.
+A full build runs the check automatically. Building only a selected target, such as `_core`, does not run the independent check targets; they can be built explicitly following the [Python procedure](python-build.md#module-from-a-build-tree). The `exception_mode_guard` test checks actual shipped-target flags and check completeness using `compile_commands.json`. It does not prove that the check build ran.
 
 ## Apple development environment
 
