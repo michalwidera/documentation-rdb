@@ -32,6 +32,7 @@
   * [LET Command](query-language-construction/let-command.md)
   * [VAR Command and DO SET Action](query-language-construction/var-command.md)
   * [Configuration Directives](query-language-construction/configuration-directives.md)
+  * [Syntax and Compilation Errors](query-language-construction/syntax-and-compilation-errors.md)
 * [System Architecture](data-processing-system-architecture/README.md)
   * [General Perspective](data-processing-system-architecture/architecture-overview.md)
   * [Multiple Instances and the Bus](data-processing-system-architecture/multiple-instances-and-bus.md)

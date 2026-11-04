@@ -28,7 +28,7 @@ This is, in broad outline, the generic reason that gave rise to the need to crea
 
 - **2019 - the RetractorDB repository**
 
-  First commit of the repository (December 2019): the start of implementing a data-management system for signal processing.
+  First commit of the repository (December 2019): implementation of the data-management system for signal processing begins on GitHub.
 
 - **Today - telemetry, monitoring, IoT**
 

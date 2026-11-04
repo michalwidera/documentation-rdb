@@ -20,6 +20,249 @@ After the directory merge, all integration tests use the `it_` prefix; the forme
 
 Valgrind descriptions refer to the standard Linux run. The Apple development port runs tests without that wrapper and requires a separate sanitizer build; a `-vg` name does not establish memory checking. See [Apple development environment](../system-installation/source-build.md#apple-development-environment) for the test scope and explicit `test-api` step. Unit tests in `test_busFallback.cpp` also check that a stopped live owner retains its lock and that the lock is recovered after its owner dies.
 
+## Requirements in Code and Test Traceability
+
+Requirements are recorded next to classes, structures, and functions in `///` comment blocks, for example in the [compiler class contract](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/compiler.hpp#L43). Each item has a stable, versioned identifier, such as `compiler.compiler.2~1`. Here, `compiler.compiler.2` identifies the requirement and `~1` its version. A change in meaning increments the version; an editorial correction does not. Existing identifiers are not renumbered when items are added or removed.
+
+A test declares the relationship through a `covers:` comment containing complete, versioned identifiers. A unit test places it at the start of the GTest case body, for example:
+
+```cpp
+// covers: compiler.compiler.2~1
+```
+
+In integration tests, `# covers: ...` appears immediately above `add_test` in `CMakeLists.txt` or in the script executed by that CTest entry. A script marker declares that script's coverage; it does not automatically assign the same requirements to every test in the directory. For example, [it_window_aggregate](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/window_aggregate/CMakeLists.txt#L12) names three requirements: `datamodel.data-model.7~1`, `streaminstance.stream-instance.4~1`, and `streaminstance.stream-instance.6~1`. [it_let_typed-value](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/let_typed/run.sh#L2) declares its identifiers in the executed `run.sh`.
+
+The relationship is many-to-many: one requirement may be checked by several unit and integration tests, and one scenario may cover several classes and requirements. For example, separate cases check `compiler.compiler.2~1` for unknown functions, invalid arity, and a reducer used as a field. A requirement identifier is not a CTest name: `ut_compiler` runs many `xparser.*` and `xcompiler.*` cases, whereas `it_window_aggregate` is a separate execution scenario.
+
+[scripts/req-trace.py](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/scripts/req-trace.py) reads declarations in `src/` and `api/` and markers in tests. It checks identifier syntax and uniqueness, requirement existence, matching versions in `covers:`, and the presence of declared coverage. A requirement may include an explicit `Nietestowalne:` (untestable) or `Kontrola strukturalna:` (structural check) justification exempting it from `covers:`. A `Zakres testow:` (test scope) description is not such an exemption. From the code repository root, run:
+
+```bash
+python3 scripts/req-trace.py
+python3 scripts/req-trace.py --report
+```
+
+The second command prints a requirement-to-test matrix with declaration locations and the named tests. The check is also registered as `st_req_trace`; `st_req_trace_selftest` checks the error-detection mechanism itself. Changing a requirement version exposes stale references, prompting reassessment of tests against the new wording. A valid matrix establishes declaration consistency, not test execution or assertion completeness. Running the test is what checks observable behavior.
+
+### Test Map for the RQL Error Catalogue
+
+The following map expands references from [Syntax and Compilation Errors](../query-language-construction/syntax-and-compilation-errors.md). CTest names, GTest cases, assertions, and markers were inspected at revision `dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb`. Source links are pinned to that revision. This describes existing tests; it is not a report of a new test run.
+
+The requirements column copies only explicit `covers:` declarations from the case or the indicated script/registration. "No covers" means that this test has no formal link, although its assertions check the described behavior. It does not mean there is no test or no coverage of the requirement elsewhere. At runtime, parameterized GTest cases also have a suite prefix and parameter identifier.
+
+<a id="rql-tests-syntax"></a>
+
+#### Syntax, Comments, and Error Positions
+
+| Unit case within ut_compiler | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [xparser.check_multiline_backslash](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L185) | Statement continuation on the next line. | No `covers:` in this test. |
+| [xparser.syntax_error_reports_the_line_of_the_file](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L2684) | File line numbers, including continued statements. | No `covers:` in this test. |
+| [xparser.trailing_hash_comment_is_rejected](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L2647) | Rejection of a trailing comment written with #. | No `covers:` in this test. |
+| [xparser.comparison_chain_in_rule_condition_is_a_syntax_error](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L2494) | Rejection of comparison chains and a valid range using AND. | No `covers:` in this test. |
+| [xparser.not_negates_the_whole_comparison](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L2521) | NOT scope in WHEN and rejection of NOT in a SELECT expression. | No `covers:` in this test. |
+| [xparser.parse_failure_does_not_poison_the_next_parse](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L1906) | Successful parsing after a rejected query. | No `covers:` in this test. |
+
+| CTest entry and integration scenario source | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [it_adhoc_parse_error-run](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/adhoc_parse_error/CMakeLists.txt); [adhoc.sh](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/adhoc_parse_error/adhoc.sh) | Rejection codes and reasons in -c; the server survives invalid ad-hoc input and handles a later valid query. | No `covers:` in this test. |
+
+<a id="rql-tests-numbers"></a>
+
+#### Numbers, Intervals, and Limits
+
+| Unit case within ut_compiler | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [xparser_out_of_range.literal_is_a_plan_error](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L340) | Parameterized cases of out-of-range literals. | No `covers:` in this test. |
+| [xparser_dimension_limit.value_above_the_limit_is_a_plan_error](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L440) | Parameterized cases exceeding parser limits. | No `covers:` in this test. |
+| [xparser.invalid_values_are_refused_without_killing_the_process](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L1928) | Zero intervals, denominators, dimensions, and empty directive values. | No `covers:` in this test. |
+| [xcompiler.derived_field_length_is_limited](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L3015) | Field length limit after string concatenation. | No `covers:` in this test. |
+| [xcompiler.agse_logical_origin_beyond_int_is_a_plan_error](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L3053) | Compound-window logical origin outside the int range. | [compiler.compiler.7~1](#req-compiler-compiler-7-v1) |
+| [xcompiler.stream_history_in_memory_is_limited_by_the_config_budget](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L3076) | History memory budget and its configuration. | [compiler.compiler.8~1](#req-compiler-compiler-8-v1) |
+
+| CTest entry and integration scenario source | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [it_adhoc_parse_error-run](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/adhoc_parse_error/CMakeLists.txt); [adhoc.sh](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/adhoc_parse_error/adhoc.sh) | Rejection codes and reasons in -c; the server survives invalid ad-hoc input and handles a later valid query. | No `covers:` in this test. |
+
+<a id="rql-tests-references"></a>
+
+#### References, Indices, Interleaving, and Cycles
+
+| Unit case within ut_compiler | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [xcompiler.missing_from_source_and_non_positive_agse_step_are_refused_after_generator_expansion](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L5271) | Missing producers and nonpositive AGSE steps after expansion. | [compiler.compiler.3~1](#req-compiler-compiler-3-v1) |
+| [xcompiler.rejects_stream_index_beyond_from_slots](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L3214) | Index beyond the flat input record. | No `covers:` in this test. |
+| [xcompiler.bare_array_name_is_not_a_field_reference](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L3904) | An entire array name does not identify a single element. | No `covers:` in this test. |
+| [xcompiler.interleave_constituent_reference_is_a_compilation_error](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L1223) | Rejection of a named constituent reference through #. | No `covers:` in this test. |
+| [xcompiler.self_reference_over_bare_stream_is_rejected](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L1044) | Direct use of the result itself in FROM. | No `covers:` in this test. |
+| [xcompiler.still_reports_true_circular_dependency](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L1026) | Diagnostic for a genuine dependency cycle. | [compiler.compiler.1~1](#req-compiler-compiler-1-v1) |
+
+| CTest entry and integration scenario source | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [it_field_ref_outside_from-shape](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/field_ref_outside_from/CMakeLists.txt); [it_field_ref_outside_from-value](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/field_ref_outside_from/CMakeLists.txt); [shape.sh](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/field_ref_outside_from/shape.sh) | Foreign-source rejection in -c, with a separate correct-variant value check in value.sh. | No `covers:` in this test. |
+| [it_issue95_loopInCompile-compile](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/issue95_loopInCompile/CMakeLists.txt); [check_loop.sh](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/issue95_loopInCompile/check_loop.sh) | Nonzero status, Circular dependency, and bounded rejection time. | No `covers:` in this test. |
+
+<a id="rql-tests-functions"></a>
+
+#### Functions and Operand Types
+
+| Unit case within ut_compiler | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [xparser.unknown_function_is_rejected_at_compile_time](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L2111) | Unknown function names. | [compiler.compiler.2~1](#req-compiler-compiler-2-v1) |
+| [xparser.declared_width_is_rejected_for_functions_without_width](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L2136) | A width supplied to a function other than to_string. | [compiler.compiler.2~1](#req-compiler-compiler-2-v1) |
+| [xcompiler.rejects_a_stream_reducer_used_as_a_field_reference](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L4391) | A reducer keyword used as a field. | [compiler.compiler.2~1](#req-compiler-compiler-2-v1) |
+| [xcompiler.bitwise_not_is_refused_outside_byte_and_uint](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L2578) | Unsupported operand types for ~ in SELECT and RULE. | No `covers:` in this test. |
+| [xcompiler.rejects_irrational_functions_over_a_rational_value](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L4549) | Rejection of irrational-range functions over RATIONAL. | No `covers:` in this test. |
+
+| CTest entry and integration scenario source | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [it_reducer_field_ref-shape](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/reducer_field_ref/CMakeLists.txt); [it_reducer_field_ref-value](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/reducer_field_ref/CMakeLists.txt); [shape.sh](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/reducer_field_ref/shape.sh) | Diagnostic for a reducer used as a field, and values after correct materialization in value.sh. | No `covers:` in this test. |
+| [it_unary_ops-value](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/unary_ops/CMakeLists.txt); [run.sh](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/unary_ops/run.sh) | Values, types, and DUMP for valid unary operators; this is not a rejection catalogue. | No `covers:` in this test. |
+
+<a id="rql-tests-windows"></a>
+
+#### History Windows
+
+| Unit case within ut_compiler | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [xcompiler.window_aggregate_rejects_plans_it_cannot_execute](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L4080) | Compound FROM, zero width, strings, and windows in WHEN. | No `covers:` in this test. |
+| [xcompiler.window_over_an_expression_rejects_what_it_cannot_execute](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L4023) | Nested windows, constant arguments, text, and mixed sources. | No `covers:` in this test. |
+| [xparser.var_refusals_name_the_variable_the_context_and_its_position](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L5669) | VAR prohibited in a window argument or width. | [rqlparser.parser-rql-string.14~1](#req-rqlparser-parser-rql-string-14-v1), [rqlparser.parser-rql-string.16~1](#req-rqlparser-parser-rql-string-16-v1) |
+
+| CTest entry and integration scenario source | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [it_window_aggregate](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/window_aggregate/CMakeLists.txt); [CMakeLists.txt](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/window_aggregate/CMakeLists.txt) | Valid window values and schemas against a pattern; the listed unit tests check rejections. | [datamodel.data-model.7~1](#req-datamodel-data-model-7-v1), [streaminstance.stream-instance.4~1](#req-streaminstance-stream-instance-4-v1), [streaminstance.stream-instance.6~1](#req-streaminstance-stream-instance-6-v1) |
+
+<a id="rql-tests-constants"></a>
+
+#### LET Constants and Type Annotations
+
+| Unit case within ut_compiler | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [xparser.let_refusals_name_the_constant_and_its_position](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L5400) | Unknown constants, declaration order, and context restrictions. | [rqlparser.parser-rql-string.11~1](#req-rqlparser-parser-rql-string-11-v1) |
+| [xparser.let_refusals_in_rational_and_scalar_contexts](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L5499) | Invalid constant use in an interval or expression. | [rqlparser.parser-rql-string.12~1](#req-rqlparser-parser-rql-string-12-v1), [rqlparser.parser-rql-string.13~1](#req-rqlparser-parser-rql-string-13-v1) |
+| [xparser.let_type_annotation_in_expressions_set_and_structural_contexts](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L6081) | Explicit constant types in expressions, SET, and structural contexts. | [rqlparser.parser-rql-string.21~1](#req-rqlparser-parser-rql-string-21-v1), [rqlparser.parser-rql-string.22~1](#req-rqlparser-parser-rql-string-22-v1), [rqlparser.parser-rql-string.19~1](#req-rqlparser-parser-rql-string-19-v1) |
+
+| CTest entry and integration scenario source | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [it_let_constants-run](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/let_constants/CMakeLists.txt); [CMakeLists.txt](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/let_constants/CMakeLists.txt) | Byte equivalence of literal-based and LET-based plans and their results. | [rqlparser.parser-rql-string.10~1](#req-rqlparser-parser-rql-string-10-v1), [rqlparser.parser-rql-string.12~1](#req-rqlparser-parser-rql-string-12-v1), [rqlparser.parser-rql-string.13~1](#req-rqlparser-parser-rql-string-13-v1), [plansource.parse-plan-text.5~1](#req-plansource-parse-plan-text-5-v1) |
+| [it_let_typed-value](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/let_typed/CMakeLists.txt); [run.sh](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/let_typed/run.sh) | Values and types of annotated constants against an independent oracle. | [rqlparser.parser-rql-string.20~1](#req-rqlparser-parser-rql-string-20-v1), [rqlparser.parser-rql-string.21~1](#req-rqlparser-parser-rql-string-21-v1) |
+
+<a id="rql-tests-variables"></a>
+
+#### VAR Variables and DO SET Assignments
+
+| Unit case within ut_compiler | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [xparser.var_refusals_name_the_variable_the_context_and_its_position](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L5669) | Shared LET/VAR names, values, and prohibited contexts. | [rqlparser.parser-rql-string.14~1](#req-rqlparser-parser-rql-string-14-v1), [rqlparser.parser-rql-string.16~1](#req-rqlparser-parser-rql-string-16-v1) |
+| [xparser.set_refusals_name_the_target_the_rule_and_the_position](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L5860) | Invalid targets, types, foreign fields, windows, and SET on a family. | [rqlparser.parser-rql-string.17~1](#req-rqlparser-parser-rql-string-17-v1), [compiler.compiler.15~1](#req-compiler-compiler-15-v1) |
+| [xparser.var_type_annotation_converts_the_declared_literal](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L5908) | Literal conversion to an explicit VAR or LET type. | [rqlparser.parser-rql-string.18~1](#req-rqlparser-parser-rql-string-18-v1), [rqlparser.parser-rql-string.20~1](#req-rqlparser-parser-rql-string-20-v1), [rqlparser.parser-rql-string.21~1](#req-rqlparser-parser-rql-string-21-v1) |
+| [xparser.set_single_literal_converts_to_the_variable_type](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L5999) | Single-literal SET conversion and the suggested variable type. | [rqlparser.parser-rql-string.19~1](#req-rqlparser-parser-rql-string-19-v1), [compiler.compiler.16~1](#req-compiler-compiler-16-v1) |
+
+| CTest entry and integration scenario source | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [it_var_read-run](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/var_read/CMakeLists.txt); [CMakeLists.txt](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/var_read/CMakeLists.txt) | VAR reads without SET against an equivalent LET plan. | [rqlparser.parser-rql-string.15~1](#req-rqlparser-parser-rql-string-15-v1), [datamodel.data-model.16~1](#req-datamodel-data-model-16-v1), [streaminstance.stream-instance.10~1](#req-streaminstance-stream-instance-10-v1) |
+| [it_var_set-value](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/var_set/CMakeLists.txt); [run.sh](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/var_set/run.sh) | Next-slot updates, conflicts, NULL, and values against an independent oracle. | [rqlparser.parser-rql-string.17~1](#req-rqlparser-parser-rql-string-17-v1), [streaminstance.stream-instance.11~1](#req-streaminstance-stream-instance-11-v1), [datamodel.data-model.17~1](#req-datamodel-data-model-17-v1) |
+| [it_var_typed-value](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/var_typed/CMakeLists.txt); [run.sh](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/var_typed/run.sh) | Typed VAR and SET, values, and repeatability across two runs. | [rqlparser.parser-rql-string.18~1](#req-rqlparser-parser-rql-string-18-v1), [rqlparser.parser-rql-string.19~1](#req-rqlparser-parser-rql-string-19-v1) |
+| [it_var_adhoc-run](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/var_adhoc/CMakeLists.txt); [run.sh](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/var_adhoc/run.sh) | Ad-hoc variable access, SET attachment, refusals, and plan replacement. | [rqlparser.plan-variable-names.1~1](#req-rqlparser-plan-variable-names-1-v1), [rqlparser.plan-variable-names.2~1](#req-rqlparser-plan-variable-names-2-v1), [datamodel.data-model.16~1](#req-datamodel-data-model-16-v1) |
+
+<a id="rql-tests-generators"></a>
+
+#### Stream Families
+
+| Unit case within ut_compiler | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [xcompiler.rejects_generator_without_ordinal](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L2836) | Missing $ in a family template. | [compiler.compiler.3~1](#req-compiler-compiler-3-v1) |
+| [xcompiler.rejects_zero_sized_generator](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L2847) | Zero family size. | [compiler.compiler.3~1](#req-compiler-compiler-3-v1) |
+| [xcompiler.rejects_reference_beyond_family_range](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L3362) | Instance index outside the family range. | No `covers:` in this test. |
+| [xcompiler.rejects_file_directive_on_generator](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L3373) | A shared FILE filename for an entire family. | No `covers:` in this test. |
+| [xcompiler.generator_plan_is_identical_to_hand_written_plan](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L2752) | Equivalence of generated and manually expanded plans. | [compiler.compiler.4~1](#req-compiler-compiler-4-v1) |
+
+| CTest entry and integration scenario source | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [it_stream_generator-run](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/stream_generator/CMakeLists.txt); [verify.sh](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/stream_generator/verify.sh) | Family results against manual expansion and artifact cleanup. | No `covers:` in this test. |
+| [it_generator_expanded_source-run](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/generator_expanded_source/CMakeLists.txt); [CMakeLists.txt](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/generator_expanded_source/CMakeLists.txt) | Generator indices over a source widened by an earlier expansion. | No `covers:` in this test. |
+
+<a id="rql-tests-rules"></a>
+
+#### RULE Targets, DUMP Ranges, and Dump Names
+
+| Unit case within ut_compiler | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [xparser.rule_on_missing_stream_is_refused_not_ignored](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L195) | Rule on a nonexistent stream. | No `covers:` in this test. |
+| [xparser.rule_on_declaration_is_refused_without_killing_the_process](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L211) | Rule on a DECLARE source. | No `covers:` in this test. |
+| [xparser.duplicate_rule_name_on_one_stream_is_refused](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L223) | Duplicate rule name on the same stream. | No `covers:` in this test. |
+| [xparser.dump_rules_sharing_a_dump_file_are_refused](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L241) | Collisions between DUMP filename stems. | No `covers:` in this test. |
+| [xparser.empty_dump_range_is_refused_by_the_parser](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L283) | Empty DUMP range. | No `covers:` in this test. |
+| [xcompiler.rule_condition_reaching_another_stream_is_refused](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L468) | Rule condition reading another stream record. | [compiler.compiler.6~1](#req-compiler-compiler-6-v1) |
+
+| CTest entry and integration scenario source | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [it_adhoc_rule-run](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/adhoc_rule/CMakeLists.txt); [CMakeLists.txt](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/adhoc_rule/CMakeLists.txt) | Live DUMP attachment and rejection of DO SYSTEM or unavailable history. | [executorsm.executorsm.13~1](#req-executorsm-executorsm-13-v1) |
+
+<a id="rql-tests-storage"></a>
+
+#### Sources, Directives, and Retention
+
+| Unit case within ut_compiler | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [xparser.device_refuses_the_options_of_recorded_files](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L5026) | HOLD and DISPOSABLE on DEVICE and empty source paths. | No `covers:` in this test. |
+| [xparser.device_timeout_refusals](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L5087) | Invalid TIMEOUT values and source kinds. | No `covers:` in this test. |
+| [xparser.storage_profiles_are_only_writable_profiles](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L5154) | Source kinds rejected as output or SUBSTRAT profiles. | No `covers:` in this test. |
+| [xparser.rejects_misplaced_duplicate_or_conflicting_persistence](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L4961) | DEFAULT VOLATILE placement and persistence conflicts. | No `covers:` in this test. |
+| [xparser.retention_without_segments_on_disk_storage_is_a_plan_error](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L4734) | Single-argument retention on disk storage. | No `covers:` in this test. |
+| [xparser.retention_segments_on_memory_storage_are_a_plan_error](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L4765) | Disk segments on in-memory storage. | No `covers:` in this test. |
+| [xcompiler.default_retention_too_small_for_the_plan_is_a_compilation_error](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp#L4927) | Default retention too short for the required history. | [compiler.compiler.8~1](#req-compiler-compiler-8-v1) |
+
+| CTest entry and integration scenario source | What it checks | Identifiers from covers |
+| --- | --- | --- |
+| [it_source_kinds-run](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/source_kinds/CMakeLists.txt); [run.sh](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/source_kinds/run.sh) | Explicit source kinds, incompatible file-kind rejection, and descriptor compatibility. | No `covers:` in this test. |
+| [it_device_timeout-run](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/device_timeout/CMakeLists.txt); [CMakeLists.txt](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/device_timeout/CMakeLists.txt) | DEVICE reads, TIMEOUT, configuration precedence, and termination after EOF. | [datamodel.data-model.4~1](#req-datamodel-data-model-4-v1), [executorsm.executorsm.3~1](#req-executorsm-executorsm-3-v1), [executorsm.executorsm.7~1](#req-executorsm-executorsm-7-v1), [executorsm.executorsm.8~1](#req-executorsm-executorsm-8-v1) |
+| [it_unbounded_storage](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/unbounded_storage/CMakeLists.txt); [run.sh](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/IntegrationTest/unbounded_storage/run.sh) | Unbounded-growth reporting, persistence, and in-memory storage. | No `covers:` in this test. |
+
+### Requirement Names and Identifiers Used in the Map
+
+The names below are short navigation labels. The binding wording is in the linked class or function contract item.
+
+| Identifier and declaration in code | Requirement name |
+| --- | --- |
+| <a id="req-compiler-compiler-15-v1"></a>[compiler.compiler.15~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/compiler.hpp#L62) | SET right-hand-side validation and no SET on a family |
+| <a id="req-compiler-compiler-16-v1"></a>[compiler.compiler.16~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/compiler.hpp#L65) | Suggested VAR type when rejecting SET |
+| <a id="req-compiler-compiler-1-v1"></a>[compiler.compiler.1~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/compiler.hpp#L44) | Plan-rejection status and a distinct internal error |
+| <a id="req-compiler-compiler-2-v1"></a>[compiler.compiler.2~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/compiler.hpp#L45) | Function, arity, and reducer-as-field validation |
+| <a id="req-compiler-compiler-3-v1"></a>[compiler.compiler.3~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/compiler.hpp#L46) | Reject invalid generators, missing FROM sources, and nonpositive AGSE steps |
+| <a id="req-compiler-compiler-4-v1"></a>[compiler.compiler.4~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/compiler.hpp#L48) | Family expansion and the stream-count limit |
+| <a id="req-compiler-compiler-6-v1"></a>[compiler.compiler.6~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/compiler.hpp#L50) | Schema, reference, window, and type resolution |
+| <a id="req-compiler-compiler-7-v1"></a>[compiler.compiler.7~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/compiler.hpp#L51) | Logical origin and tail for every node |
+| <a id="req-compiler-compiler-8-v1"></a>[compiler.compiler.8~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/compiler.hpp#L52) | History capacity, memory budget, and default retention |
+| <a id="req-datamodel-data-model-16-v1"></a>[datamodel.data-model.16~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/dataModel.hpp#L35) | VAR state supplied to expressions and rules |
+| <a id="req-datamodel-data-model-17-v1"></a>[datamodel.data-model.17~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/dataModel.hpp#L36) | SET committed at the end of a successful slot |
+| <a id="req-datamodel-data-model-4-v1"></a>[datamodel.data-model.4~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/dataModel.hpp#L19) | Source and computation phase order within a slot |
+| <a id="req-datamodel-data-model-7-v1"></a>[datamodel.data-model.7~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/dataModel.hpp#L24) | Input record, windows, output, storage, and rules |
+| <a id="req-executorsm-executorsm-13-v1"></a>[executorsm.executorsm.13~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/executorsm.hpp#L56) | Transactional ad-hoc import and DO SYSTEM rejection |
+| <a id="req-executorsm-executorsm-3-v1"></a>[executorsm.executorsm.3~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/executorsm.hpp#L32) | Epoch construction and the file-source zero step |
+| <a id="req-executorsm-executorsm-7-v1"></a>[executorsm.executorsm.7~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/executorsm.hpp#L44) | Termination after source exhaustion |
+| <a id="req-executorsm-executorsm-8-v1"></a>[executorsm.executorsm.8~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/executorsm.hpp#L47) | DEVICE phase with the effective deadline |
+| <a id="req-plansource-parse-plan-text-5-v1"></a>[plansource.parse-plan-text.5~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/planSource.hpp#L36) | LET table shared by statements within one plan |
+| <a id="req-rqlparser-parser-rql-string-10-v1"></a>[rqlparser.parser-rql-string.10~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L66) | LET declaration and constant substitution |
+| <a id="req-rqlparser-parser-rql-string-11-v1"></a>[rqlparser.parser-rql-string.11~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L67) | LET rejections with a name and position |
+| <a id="req-rqlparser-parser-rql-string-12-v1"></a>[rqlparser.parser-rql-string.12~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L68) | LET constants in intervals and TIMEOUT |
+| <a id="req-rqlparser-parser-rql-string-13-v1"></a>[rqlparser.parser-rql-string.13~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L69) | LET constants in scalar expressions |
+| <a id="req-rqlparser-parser-rql-string-14-v1"></a>[rqlparser.parser-rql-string.14~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L70) | VAR declaration and the shared LET/VAR namespace |
+| <a id="req-rqlparser-parser-rql-string-15-v1"></a>[rqlparser.parser-rql-string.15~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L71) | VAR reads as PUSH_VAR tokens |
+| <a id="req-rqlparser-parser-rql-string-16-v1"></a>[rqlparser.parser-rql-string.16~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L72) | No VAR in plan structure or window arguments |
+| <a id="req-rqlparser-parser-rql-string-17-v1"></a>[rqlparser.parser-rql-string.17~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L73) | DO SET target, program, and text order |
+| <a id="req-rqlparser-parser-rql-string-18-v1"></a>[rqlparser.parser-rql-string.18~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L74) | Explicit VAR declaration type and literal conversion |
+| <a id="req-rqlparser-parser-rql-string-19-v1"></a>[rqlparser.parser-rql-string.19~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L75) | Single-literal or LET conversion in SET |
+| <a id="req-rqlparser-parser-rql-string-20-v1"></a>[rqlparser.parser-rql-string.20~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L76) | Explicit LET declaration type and literal conversion |
+| <a id="req-rqlparser-parser-rql-string-21-v1"></a>[rqlparser.parser-rql-string.21~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L77) | Reading an explicitly typed LET constant |
+| <a id="req-rqlparser-parser-rql-string-22-v1"></a>[rqlparser.parser-rql-string.22~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L78) | LET annotation compatible with the structural context |
+| <a id="req-rqlparser-plan-variable-names-1-v1"></a>[rqlparser.plan-variable-names.1~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L98) | VAR names and indices available to ad-hoc parsing |
+| <a id="req-rqlparser-plan-variable-names-2-v1"></a>[rqlparser.plan-variable-names.2~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.hpp#L99) | LET constants excluded from the variable table |
+| <a id="req-streaminstance-stream-instance-10-v1"></a>[streaminstance.stream-instance.10~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/streamInstance.hpp#L40) | Supplying VAR values to fields and conditions |
+| <a id="req-streaminstance-stream-instance-11-v1"></a>[streaminstance.stream-instance.11~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/streamInstance.hpp#L37) | SET buffering and rule-order conflict resolution |
+| <a id="req-streaminstance-stream-instance-4-v1"></a>[streaminstance.stream-instance.4~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/streamInstance.hpp#L26) | History-window reduction and NULL handling |
+| <a id="req-streaminstance-stream-instance-6-v1"></a>[streaminstance.stream-instance.6~1](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/streamInstance.hpp#L33) | Field, condition, and window-value evaluation |
+
 ## Execution and service scenarios
 
 | Test name | Description |
