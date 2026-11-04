@@ -10,6 +10,10 @@ The monitoring system was built and deployed at a client, in one of Warsaw's hos
 
 This is, in broad outline, the generic reason that gave rise to the need to create a data-management system for signal processing. Over time, further application areas were added, arising from the expanding development areas related to telemetry, monitoring, and the growth of IoT systems.
 
+The implementation was developed before the project was published on GitHub. The preserved history of `db-project` comprises 257 commits from 8 August 2012 to 21 July 2016. The [oldest commit](https://github.com/michalwidera/retractordb/commit/df2c085069adc2c44034703e9dd8fddb60e07f39) already contains the query compiler, executor, console, and regression tests. The project appeared on GitHub on 5 December 2019, when the implementation developed earlier was made available.
+
+On 4 November 2026, the full history from the `db-project` archive was incorporated into the `master` branch through [PR #598](https://github.com/michalwidera/retractordb/pull/598). The original identifiers and dates of all 257 commits were preserved. The merge extended the repository history without changing the contents of its current files.
+
 ## In brief
 
 <div class="timeline">
@@ -26,9 +30,13 @@ This is, in broad outline, the generic reason that gave rise to the need to crea
 
   The monitoring system runs at the client, but without the query language and data-management mechanisms described in the publications - the deadline forced a hand-built solution.
 
-- **2019 - the RetractorDB repository**
+- **2012-2016 - implementation work**
 
-  First commit of the repository (December 2019): implementation of the data-management system for signal processing begins on GitHub.
+  The `db-project` archive contains 257 commits. The oldest, dated 8 August 2012, already includes the compiler, executor, console, and regression tests. This history was merged into the `master` branch on 4 November 2026 as a maintenance operation, preserving the original commit identifiers and dates. The current project files remained unchanged.
+
+- **2019 - publication on GitHub**
+
+  On 5 December 2019, the project appears on GitHub. An existing implementation of the data-management system for signal processing is made available in the repository.
 
 - **Today - telemetry, monitoring, IoT**
 
