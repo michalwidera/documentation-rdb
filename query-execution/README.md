@@ -13,3 +13,5 @@ Consider three streams with intervals of 1/3 s, 1/2 s and 2/3 s. A regular grid 
 The deadline generator retains intervals 1/3 and 1/2, because every deadline of the 2/3 stream is already a deadline of the 1/3 stream. After slot zero, successive instants are 1/3, 1/2, 2/3, 1, 4/3, 3/2, 5/3 and 2 seconds. At each instant the engine checks which of all the streams are due; coincident deadlines are handled in one slot. See [Query Tree Traversal Algorithm](query-tree-traversal-algorithm.md) for details.
 
 Analyzing the discussion below may make clearer the comments, mentioned earlier in the chapter, generated for the swirly program showing the generated marble diagrams.
+
+See [Runtime errors](runtime-errors.md) for diagnostic causes, system responses, and recommended operator actions. The chapter covers data sources, computation, storage, rules, the bus and IPC, and client tools.

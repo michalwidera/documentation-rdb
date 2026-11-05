@@ -169,7 +169,9 @@ This command only reads; `xqry` has no direct variable assignment. Updates are r
 | `-n` / `--null` | In raw format, suppresses printing records in which all values are `NULL`; these records still consume the `--elimitqry` budget. |
 | `-c` / `--needctrlc` | Requires Ctrl+C instead of stopping on any keypress. |
 
-Each subscription creates its own response queue. When the server stops or replaces its plan, it attempts to send an end marker, then removes the queue name even if sending fails. A full queue may reject the marker; an abandoned queue lock after a client's death also does not stop cleanup. Receiving the marker ends reception; a missing marker, including after a sudden failure, is detected by the `timing.query_no_data_timeout_ms` timeout. `ut_ipcServer` guards the final send and cleanup.
+Each subscription receives its own response queue, either newly created or drained from the server pool. When the server stops or replaces its plan, it attempts to send an end marker, then removes the queue name even if sending fails. A full queue may reject the marker; an abandoned queue lock after a client's death also does not stop cleanup. Receiving the marker ends reception; a missing marker, including after a sudden failure, is detected by the `timing.query_no_data_timeout_ms` timeout. `ut_ipcServer` guards the final send and cleanup.
+
+See [Runtime errors](../../query-execution/runtime-errors.md) for queue overflow and abandonment, memory limits, rename failures, system responses, and corrective actions.
 
 ### Subscribing at a plan epoch boundary
 

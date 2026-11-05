@@ -68,6 +68,7 @@
     * [Moving Average Example](query-execution/agse-sliding-window/moving-average-example.md)
     * [Window Types](query-execution/agse-sliding-window/window-types.md)
   * [Stream Playback](query-execution/stream-playback.md)
+  * [Runtime errors](query-execution/runtime-errors.md)
 * [Usage Examples](usage-examples/README.md)
   * [Signal Filter Implementation](usage-examples/signal-filter-implementation.md)
   * [ECG Visualization and Arrhythmia Detection - MIT-BIH Database](usage-examples/ecg-visualization-mit-bih.md)
