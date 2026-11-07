@@ -10,7 +10,7 @@ The `-c` (`--onlycompile`) flag stops `xretractor` after compilation and prints 
 xretractor -c query.rql
 ```
 
-An exit code of `0` means success. Code `1` means a compilation error. Error messages go to stderr:
+An exit code of `0` means success. A parser or compiler refusal of an invalid plan returns `EPROTO`, which is `71` on Linux. Other failures, such as a missing `.rql` file or an internal error, can use different codes; scripts should check every nonzero result. Error messages go to stderr:
 
 ```bash
 xretractor -c query.rql 2>errors.txt
@@ -104,11 +104,11 @@ A stream refers, directly or indirectly, to itself. Generate the graph via `-d` 
 
 ### Unknown stream
 
-A reference to a stream that hasn't been declared yet. `.rql` files are processed sequentially - a `SELECT` cannot refer to a stream defined further down in the file. Move the `DECLARE` or `SELECT` earlier.
+The diagnostic `Stream 'dst' reads from 'absent', which is not defined in the plan` means that no producer with that name exists anywhere in the plan. Check the spelling and add the missing declaration or query. A `SELECT` may refer to a producer defined further down in the file as long as the dependencies are acyclic; moving an existing definition alone fixes neither a missing producer nor a cycle. Separate ordering rules apply to `LET`/`VAR`, whose declarations precede their uses, and to `RULE`, whose target must already exist when parsed. See [Syntax and Compilation Errors](../query-language-construction/syntax-and-compilation-errors.md#stream-names-fields-and-dependencies) for the diagnostics.
 
-### Schema cardinality mismatch with `_`
+### Different input widths with `[_]`
 
-Both streams in the expression `core0[_] * core1[_]` must have schemas of the same cardinality. Check how many fields each argument has in the plan's DECLARE blocks. See [Underscore Symbol Processing](underscore-symbol-processing.md).
+The expression `core0[_] * core1[_]` expands to the minimum flat width contributed by its two arguments to the `FROM` clause; equal widths are not required. Inputs with two positions and one position produce one output field. A numeric array occupies as many positions as it has elements, while `STRING[N]` occupies one; each source's contribution is determined in the actual `FROM` tree after accounting for windows and reducers. Check the schema and `FROM` clause if fewer results appear than expected. A name outside `FROM`, or a contribution that is not a contiguous block of fields, is refused rather than assigned a default width. See [Underscore Symbol Processing](underscore-symbol-processing.md).
 
 ### Data file unavailable
 
