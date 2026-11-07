@@ -26,7 +26,7 @@ The parameters of this sequence have a clear geometric interpretation:
 * α′ denotes the offset,
 * −α′/α denotes the y-intercept (the point where it crosses the y-axis).
 
-The [Beatty](../references.md#1) theorem guarantees a partition of the set for irrational numbers. The [Fraenkel](../references.md#2) theorem is a generalization that - crucially for us - also allows rational numbers, provided five postulates are satisfied (quoted in the [introductory chapter](README.md)). An accessible proof of Fraenkel's theorem can be found in K. O'Bryant's paper _"Fraenkel's partition and Brown's decomposition"_ [\[23\]](../references.md#23).
+The [Beatty](../references.md#1) theorem guarantees a partition of the set for irrational numbers. The [Fraenkel](../references.md#2) theorem is a generalization that - crucially for us - also allows rational numbers, provided five postulates are satisfied (quoted in the [introductory chapter](./)). An accessible proof of Fraenkel's theorem can be found in K. O'Bryant's paper _"Fraenkel's partition and Brown's decomposition"_ [\[23\]](../references.md#23).
 
 The remainder of this page boils down to a single idea: showing that the stream operators are, in essence, machines generating Beatty sequences that partition (cover) the set of natural numbers.
 
@@ -70,7 +70,7 @@ These two cases disjointly cover the entire domain of interest to us - which wil
 
 ## Operators in formal notation
 
-The operators introduced in the query language have their formal counterparts. The table below ties the formal notation (used in the proofs) to the symbols found in the [query language](../query-language-construction/README.md):
+The operators introduced in the query language have their formal counterparts. The table below ties the formal notation (used in the proofs) to the symbols found in the [query language](../query-language-construction/):
 
 | Operation | Formal symbol | Symbol in the query language |
 | --- | --- | --- |
