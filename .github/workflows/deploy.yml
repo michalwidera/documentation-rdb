@@ -71,6 +71,11 @@ jobs:
           \floatplacement{figure}{H}
           \setkeys{Gin}{keepaspectratio}
           \usepackage{amssymb}
+          \usepackage{newunicodechar}
+          \newunicodechar{ℕ}{\ensuremath{\mathbb{N}}}
+          \newunicodechar{∖}{\ensuremath{\setminus}}
+          \newunicodechar{∎}{\ensuremath{\blacksquare}}
+          \newunicodechar{⚠}{{\fontspec{DejaVu Sans}\symbol{"26A0}}}
           \usepackage{tcolorbox}
           \usepackage{eso-pic}
           \let\origmaketitle\maketitle
@@ -181,23 +186,24 @@ jobs:
           CODELUAEOF
 
           cat > /tmp/table_breaks.lua << 'TABLELUAEOF'
-          local function break_long_code(el)
-            if not el.text:match('[._/:]') then return nil end
+          local function break_identifier(text, make_inline, separators)
+            if not text:match(separators) and not text:match('[a-z%d][A-Z]') and #text < 24 then return nil end
 
             local result = pandoc.List()
             local start = 1
-            for i = 1, #el.text do
-              local char = el.text:sub(i, i)
-              local next_char = el.text:sub(i + 1, i + 1)
-              if (char == '.' or char == '_' or char == '/' or char == ':')
-                  and next_char ~= ':' then
-                result:insert(pandoc.Code(el.text:sub(start, i), el.attr))
+            for i = 1, #text - 1 do
+              local char = text:sub(i, i)
+              local next_char = text:sub(i + 1, i + 1)
+              local camel_case = char:match('[a-z%d]') and next_char:match('[A-Z]')
+              local long_part = i - start + 1 >= 16 and char:match('%w') and next_char:match('%w')
+              if (char:match(separators) and next_char ~= ':') or camel_case or long_part then
+                result:insert(make_inline(text:sub(start, i)))
                 result:insert(pandoc.RawInline('latex', '\\allowbreak{}'))
                 start = i + 1
               end
             end
-            if start <= #el.text then
-              result:insert(pandoc.Code(el.text:sub(start), el.attr))
+            if start <= #text then
+              result:insert(make_inline(text:sub(start)))
             end
             return result
           end
@@ -217,6 +223,11 @@ jobs:
               widths = {0.30, 0.27, 0.43}
             elseif #element.colspecs == 3 and first_heading == "State" then
               widths = {0.25, 0.37, 0.38}
+            elseif #element.colspecs == 3 and first_heading == "Key" then
+              widths = {0.26, 0.18, 0.56}
+            elseif #element.colspecs == 3 and (first_heading == "Unit case within ut_compiler"
+                or first_heading == "CTest entry and integration scenario source") then
+              widths = {0.43, 0.34, 0.23}
             elseif #element.colspecs == 2 and first_heading == "Option"
                 and pandoc.utils.stringify(element):find("xqrywait", 1, true) then
               widths = {0.25, 0.75}
@@ -246,7 +257,33 @@ jobs:
 
           function Code(element)
             if not FORMAT:match('latex') then return nil end
-            return break_long_code(element)
+            if element.text:match('^%x+$') and #element.text >= 32 then
+              local parts = pandoc.List()
+              for i = 1, #element.text, 8 do
+                if i > 1 then parts:insert(pandoc.RawInline('latex', '\\allowbreak{}')) end
+                parts:insert(pandoc.Code(element.text:sub(i, i + 7), element.attr))
+              end
+              return parts
+            end
+            return break_identifier(element.text, function(text) return pandoc.Code(text, element.attr) end, '[._/:]')
+          end
+
+          function Link(element)
+            if not FORMAT:match('latex') then return nil end
+            if #element.content ~= 1 or element.content[1].t ~= 'Str' then return nil end
+            local label = element.content[1].text
+            if not label:match('^[%w_./:~%-]+$') then return nil end
+            local parts = break_identifier(label, pandoc.Str, '[._/:~%-]')
+            if parts then
+              element.content = parts
+              return element
+            end
+          end
+
+          function Header(element)
+            if FORMAT:match('latex') and element.level >= 4 then
+              return {pandoc.RawBlock('latex', '\\Needspace{8\\baselineskip}'), element}
+            end
           end
 
           function Table(element)
@@ -421,6 +458,7 @@ jobs:
                       return m.group(0)
                   return f'![{alt}]({(d / src).resolve()})'
               text = re.sub(r'!\[([^\]]*)\]\(([^)\s]+)\)', fix_img, text)
+              text = re.sub(r'<a id="([^"]+)"></a>', r'[]{#\1}', text)
               text = demote_headings(text, level)
               parts.append(text)
           combined = '\n\n'.join(parts)

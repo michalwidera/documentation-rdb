@@ -38,6 +38,7 @@ The order of passes and checks is defined by the `compiler::compile()` function:
 - `checkFunctionCalls` - scalar-function names and arity
 - `checkStreamReducerFieldRefs` - stream reducer outside the `FROM` clause
 - `expandStreamGenerators` - expansion of `name[N]` stream families
+- `checkStreamReferences` - producer existence in `FROM` and a positive AGSE step
 - `snapshotNamedSourceRefs` - snapshot of user-written references
 - `extractIntermediateStreams` - two-argument `FROM` expressions, substrates
 - `validateSubstratNameUniqueness` - initial name check before sorting

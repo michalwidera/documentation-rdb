@@ -10,7 +10,7 @@ In this chapter I want to explain how I solved the syntactic problems I encounte
 
 ### The `.rql` file
 
-Compiler input - text in the RQL language containing `DECLARE`, `SELECT`, and `RULE` statements as well as configuration directives (e.g. `:STORAGE`). The ANTLR4 parser reads the file statement by statement.
+Compiler input - text in the RQL language containing `DECLARE`, `SELECT`, `LET`, `VAR`, and `RULE` statements as well as configuration directives (e.g. `:STORAGE`). The ANTLR4 parser reads the file statement by statement.
 
 The order of `DECLARE` and `SELECT` in the file does not matter: a query may refer to a stream defined further down, because dependencies between streams are resolved only by the compiler. `RULE` is the exception - the parser attaches a rule to a stream that has already been read, so a rule must come after the definition of its stream; otherwise the parser reports `Rule '…' refers to stream '…', but no such stream is defined`. A reference to a stream that does not exist anywhere in the file produces a controlled refusal, for example `Check result:Stream 'dst' reads from 'absent', which is not defined in the plan`. `xretractor -c` then exits with code 71 on Linux.
 
@@ -18,9 +18,9 @@ The order of `DECLARE` and `SELECT` in the file does not matter: a query may ref
 
 The parser builds the internal representation `qTree` - a `std::vector<query>` - by appending one element for every `DECLARE` and `SELECT` statement and configuration directive, in file order and without sorting. A `SELECT` element carries the field schema with its stack programs and the `FROM` program that names the source streams. At this point the time interval (delta) is known only for `DECLARE` declarations; for `SELECT` queries the compiler determines it. A `STREAM name[N]` generator template is still a single element, and a `RULE` does not create an element of its own - it goes onto the rule list of its stream.
 
-The order of the vector changes during compilation: interval resolution sorts it by delta, and the topological order (producer before consumer) is restored only by the last stage.
+The order of the vector changes during compilation: `expandSchemaWildcards` sorts it topologically before expanding schemas, and interval resolution sorts it by delta. The final sort restores topological order (producer before consumer).
 
-### The 23 compilation stages
+### Compilation stages
 
 `qTree` passes through an ordered chain of transformations: from breaking down FROM expressions into two-argument operations, through determining deltas, simplifying expressions, and locating fields, all the way to semantic verification, buffer-size computation, and the final topological sort. Each stage assumes the previous one succeeded.
 
@@ -39,15 +39,15 @@ The chapter is structured following the order of the compiler's stages - from a 
 
 - **[Compilation Passes](compilation-passes.md)**
 
-  Describes the entire chain of stages in the `compiler::compile()` function. Compilation is not a single step - it is an ordered sequence of twenty-three stages over the internal `qTree` representation, from expanding generators and reducing FROM expressions to two-argument form, through determining intervals, validating substrate names, simplifying expressions, and locating fields, all the way to semantic verification, buffer allocation, and the final topological sort. Each stage assumes the previous one succeeded, and an error at any stage stops compilation.
+  Describes the entire chain of stages in the `compiler::compile()` function. Compilation is not a single step - it is an ordered sequence of transformations over the internal `qTree` representation, from expanding generators and reducing FROM expressions to two-argument form, through determining intervals, validating substrate names, simplifying expressions, and locating fields, all the way to semantic verification, buffer-capacity computation, and the final topological sort. Each stage assumes the previous one succeeded, and an error at any stage stops compilation.
 
 - **[Dependency Tree Construction](dependency-tree-construction.md)**
 
-  Describes the DAG structure produced during compilation - the foundation on which every stage rests. The roots are ephemeris declarations (external sources); inside the graph lie intermediate substrates; and the leaves are artifacts. The `-d` flag generates output in DOT format, which `graphviz` turns into a visual dependency graph. The order of `DECLARE` and `SELECT` in the `.rql` file does not matter - the compiler builds the dependency graph; only a `RULE` must come after the definition of the stream it refers to.
+  Describes the DAG structure produced during compilation - the foundation on which every stage rests. The roots are ephemeris declarations (external sources); inside the graph lie intermediate substrates; and the leaves are artifacts. The `-d` flag generates output in DOT format, which `graphviz` turns into a visual dependency graph. The order of `DECLARE` and `SELECT` in the `.rql` file does not matter - the compiler builds the dependency graph; `RULE` must follow the definition of its target stream, and `LET` and `VAR` declarations must precede uses of their names.
 
 - **[Substrates](substrates.md)**
 
-  Explains the `extractIntermediateStreams` stage - the first step after generator expansion. When a FROM expression contains more than two arguments (e.g. `(core0#core1)+core2`, `core0+core1+core2`), the compiler breaks it down into two-argument operations and creates named substrates. A later stage, `deduplicateSubstrats`, detects when a substrate is structurally identical to a user query and replaces the references - avoiding duplicate computation.
+  Explains the `extractIntermediateStreams` stage, which follows generator expansion, stream-reference validation, and the snapshot of named references. When a FROM expression contains more than two arguments (e.g. `(core0#core1)+core2`, `core0+core1+core2`), the compiler breaks it down into two-argument operations and creates named substrates. A later stage, `deduplicateSubstrats`, detects when a substrate is structurally identical to a user query and replaces the references - avoiding duplicate computation.
 
 - **[Asterisk Expansion](asterisk-expansion.md)**
 
@@ -55,7 +55,7 @@ The chapter is structured following the order of the compiler's stages - from a 
 
 - **[Interval Resolution](interval-resolution.md)**
 
-  Describes the `resolveStreamIntervals` stage. The compiler determines the delta of every output stream from the stream-algebra equations: for the `+` operator the delta is the minimum of the inputs, for `#` it's the harmonic mean, for `@(step, window)` it's a derivative of the window size. The algorithm runs iteratively - each round resolves at least one stream, until all deltas are known.
+  Describes the `resolveStreamIntervals` stage. The compiler determines the delta of every output stream from the stream-algebra equations: for `+` it is the minimum input interval, for `#` it is `a*b/(a+b)` because the rates add up, and for `@(step, window)` it is the source interval multiplied by the step and divided by the number of flat elements in the input record. Window width determines the range of values, rather than the output interval. The algorithm runs iteratively - each round resolves at least one stream, until all deltas are known.
 
 - **[Loop Detection](loop-detection.md)**
 

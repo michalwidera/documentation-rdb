@@ -42,7 +42,7 @@ streamName(delta)
 | `streamName(delta)` | The stream's name and its interval as a fraction: `1/10` = 0.1 s = 10 Hz |
 | `:- PUSH_STREAM(x)` | Pushes stream `x` onto the stream stack; appears once per FROM argument |
 | `:- STREAM_ADD` | The stream-sum operator (`+` in FROM) |
-| `:- STREAM_HASH` | The stream-synchronization operator (`#` in FROM) |
+| `:- STREAM_HASH` | The stream-interleave operator (`#` in FROM) |
 | `:- STREAM_TIMEMOVE(n)` | Time shift (`>n` in FROM) |
 | `field: TYPE` | An output-schema field, after type promotion |
 | `PUSH_ID(s[n])` | Pushes the value of field `n` from stream `s` onto the stack - the effect of aliasing is visible here |
@@ -85,7 +85,7 @@ If an output stream's delta is unexpected:
 1. Check the source streams' deltas - visible in the DECLARE blocks at the end of the plan.
 2. Check the operator in the FROM clause - every operator has a different delta equation.
 
-Example: `core0(1/10) # core1(1/5)` gives a delta of `1/15` (the harmonic mean), not `1/10`. If you expected `1/10`, use `+` instead of `#`. Full equations - see [Interval Resolution](interval-resolution.md).
+Example: `core0(1/10) # core1(1/5)` gives a delta of `1/15`: input rates add up (`10 Hz + 5 Hz = 15 Hz`), so the interval is `a*b/(a+b)`. The sum `core0 + core1` gives a delta of `1/10` here, but it also combines both inputs' fields in one record; interleave `#` selects a record from one component. Choose the operator for the required schema and values as well. Full equations - see [Interval Resolution](interval-resolution.md).
 
 ## Common compilation errors
 

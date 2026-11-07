@@ -109,11 +109,12 @@ The `>1` shift makes positions 1..2 of the shifted stream carry elements 0..1 of
 Generating an image of the query plan that carries out serialization first and then deserialization, we'll see the following relationship (Fig. 54):
 
 ```mermaid
-%% pdf-width: 30%
+%% pdf-width: 24%
+%% pdf-height: 42%
 flowchart BT
-    A["A: BYTE a, BYTE b; delta=1"] --> S["str3: A@(1,1); delta=1/2"]
-    S --> T["str3>1: phase alignment"]
-    T --> R["str4: @(2,-2); delta=1"]
+    A["A: BYTE a, BYTE b;<br/>delta=1"] --> S["str3: A@(1,1);<br/>delta=1/2"]
+    S --> T["str3>1:<br/>phase alignment"]
+    T --> R["str4: @(2,-2);<br/>delta=1"]
 ```
 
 _Fig. 54. Serialization, phase alignment and deserialization_

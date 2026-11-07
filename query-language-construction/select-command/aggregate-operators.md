@@ -57,7 +57,7 @@ NULL values are skipped. If every slot in the record is NULL, the reduction resu
 
 Aggregates do not change the stream's rate - the output interval is the same as the source's:
 
-\\[\Delta_{result} = \Delta_{stream}\\]
+\\[\Delta_{\text{result}} = \Delta_{\text{stream}}\\]
 
 ### Result type
 

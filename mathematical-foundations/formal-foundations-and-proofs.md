@@ -312,8 +312,10 @@ W_{\varphi(A,B)}
 \operatorname{conv}(W_A,\Delta_a,\Delta_c),
 \operatorname{conv}(W_B,\Delta_b,\Delta_c)
 +H_{a,b}
-\right),
-\qquad
+\right)
+\\]
+
+\\[
 H_{a,b}=\left\lceil\frac{p+q-1}{p}\right\rceil
 \\]
 

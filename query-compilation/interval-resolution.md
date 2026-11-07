@@ -43,7 +43,7 @@ The output stream produces values as often as the faster of the input streams.
 
 Example: core0(Δ=1/10) + core1(Δ=1/5) → str1(Δ=1/10)
 
-### Stream synchronization (`#`, STREAM\_HASH)
+### Stream interleave (`#`, STREAM\_HASH)
 
 ```rql
 SELECT ... STREAM c FROM a # b
