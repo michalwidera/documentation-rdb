@@ -18,8 +18,6 @@ EOF
 xretractor "$rdb_demo_dir/plan.rql" --name installation-demo -u -k
 ```
 
-`-u` stops at EOF; `-k` skips the final keypress wait. Without `-u`, a source can wrap and the process needs stopping. The interval `1/2` means one sample every half second. Repeating the whole example creates a new directory with `mktemp`, keeping the results of previous runs separate.
-
 After `xretractor` exits, read the artifact in the same shell where you set `rdb_demo_dir`:
 
 ```bash
@@ -46,6 +44,8 @@ Expected output:
 { dst_0:140 }
 { dst_0:160 }
 ```
+
+`-u` stops at EOF; `-k` skips the final keypress wait. Without `-u`, a source can wrap and the process needs stopping. The interval `1/2` means one sample every half second. Repeating the whole example creates a new directory with `mktemp`, keeping the results of previous runs separate.
 
 `size` confirms the record count and record size; `list 8` shows the values in storage order. The compiler assigned the field name `dst_0` to the expression `a*2`. The file `results/dst` contains binary data; `results/dst.desc` describes its `INTEGER` field. Use `xtrdb` or [offline Storage](../appendices/python-jupyter-api.md) to interpret the data with its descriptor and metadata.
 
