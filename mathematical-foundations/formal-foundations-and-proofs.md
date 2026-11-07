@@ -1,10 +1,10 @@
 # Formal Foundations and Proofs
 
-In the chapter on the [algebra of regular time series](algebra-of-regular-time-series.md) I presented a set of operators together with the equations describing them. I deliberately omitted formal proofs there - I wanted to first show _what_ the system does before explaining _why_ it is allowed to do so. This page fills that gap. Here I gather the formal skeleton of the algebra: the connection between the stream operators and covering-system theory, along with proofs of the theorems underlying the correctness and optimization of query plans.
+The chapter on the [algebra of regular time series](algebra-of-regular-time-series.md) defines the operators and their equations. This page presents their justification: the connection to covering-system theory and proofs of properties used to interpret and optimize query plans. The final [section on the connection to the implementation](#connecting-proofs-to-the-implementation) explains which properties have been formalized in Lean and how tests compare the model with C++ functions.
 
 > **ℹ️ Info**
 >
-> The entire construction below stays within a single domain - the rational numbers. This is not a stylistic choice. It is the whole point. Beatty's theorem needs irrational numbers, which a computer does not have. Fraenkel's theorem lets us descend to rational numbers. The proofs on this page show that the interleaving and de-interleaving operations are a special case of Beatty sequences satisfying Fraenkel's postulates - and are therefore realizable using rational numbers alone.
+> The rational variant matters for the implementation. Beatty's theorem describes a partition for irrational parameters, while Fraenkel's generalization also admits rational parameters. The proofs below show that sample-position selection by interleaving and de-interleaving can be computed exactly in this domain, without floating-point approximations.
 
 
 ## Covering systems as the foundation
@@ -48,7 +48,7 @@ The second of these identities carries over directly to Beatty sequences themsel
 B_{\alpha}^{\prime}(n) = \left\lceil n\alpha \right\rceil = \left\lfloor n\alpha \right\rfloor + 1
 \\]
 
-In a true Beatty sequence α must be irrational, so nα is never an integer for any n > 0 - the premise of the second identity holds for every term, and the ceiling variant simply raises every term of the floor variant by exactly 1. For us, however, this is the case that does not exist inside a computer. In the rational domain, admitted only by Fraenkel's theorem, nα is sometimes an integer, and then ⌈nα⌉ = ⌊nα⌋, so the shift by 1 disappears. The constant offset between the ceiling and the floor variant therefore ceases to hold globally and has to be settled term by term - which is exactly what the case analysis in part three of the proof of Theorem 2 (de-interleaving satisfies Fraenkel's postulates) does, where gcd(a, b) decides which of the two cases applies.
+In the classical Beatty theorem, α is irrational, so nα is not an integer for any n > 0. The second identity therefore applies to every term: the ceiling variant raises each term of the floor variant by exactly 1. For rational α, nα can be an integer, in which case ⌈nα⌉ = ⌊nα⌋. The relationship must then be checked term by term. Part three of the proof of Theorem 2 (de-interleaving satisfies Fraenkel's postulates) performs this case analysis using gcd(a, b).
 
 \\[
 \left\lfloor x + C\right\rfloor = \left\lfloor x\right\rfloor + C
@@ -122,7 +122,7 @@ Symmetrically: the selection index for sequence A, i.e. ⌊nz⌋, increases by e
 
 ## Theorem 2: de-interleaving satisfies Fraenkel's postulates
 
-This is the central theorem of this page. It proves that the two sequences describing the de-interleaving operation are a special case of Beatty sequences satisfying the postulates of Fraenkel's theorem for rational numbers. Without this theorem, the whole system remains merely a promise.
+The theorem connects both sample-selection sequences in de-interleaving to Beatty sequences satisfying Fraenkel's postulates for rational parameters. It thereby establishes the exact inversion of interleaving.
 
 > **✅ Note**
 >
@@ -405,14 +405,36 @@ In the compiler, additional invariants preserve public stream field names, null 
 
 ## Why this matters
 
-The theorems presented are not formalism for its own sake. Each of them plays a concrete role in the working system:
+These properties establish the boundaries of correct stream transformations:
 
-* **Theorems 1 and 2** guarantee that the pairs of operations interleaving/de-interleaving and sum/difference are complementary - data is neither lost nor duplicated in an uncontrolled way. They are what allow us to treat these operations like multiplication/division and addition/subtraction on the set of regular time series.
-* **Theorem 2** in particular proves that the entire construction can be realized using rational numbers alone - and thus deterministically and exactly on a computer. This is the condition without which RetractorDB could not exist.
-* **The theorems on operator properties** (commutativity of summation, interleaving alignment, ordering disruption) provide rewrite rules for stream expressions. The query-plan optimizer uses them to transform plans into cheaper-to-execute forms without changing the result.
+* **Theorems 1 and 2** establish coverage of sample positions by interleaving and recovery of both components by de-interleaving, preserving the order within each component.
+* **The rational variant** allows exact index mappings. The implementation must also check the limits of its numeric representation.
+* **Operator properties** determine permitted rewrites and limits on interpretation. In particular, R1 preserves the value part of the observation but may reduce the startup tail, while interleaving does not preserve the general event order across its components.
 
-The branch of mathematics in which these equations are situated is the theory of covering systems [\[4\]](../references.md#4) within number theory. I presented the full formalism along with a complete set of proofs in the paper [A Deterministic Method for Processing Data Sequences](https://www.academia.edu/1840563/Deterministyczna_metoda_przetwarzania_ciagow_danych) [\[3\]](../references.md#3).
+The branch of mathematics in which these equations are situated is the theory of covering systems [\[4\]](../references.md#4) within number theory. The paper [A Deterministic Method for Processing Data Sequences](https://www.academia.edu/1840563/Deterministyczna_metoda_przetwarzania_ciagow_danych) [\[3\]](../references.md#3) presents the historical derivation of the method.
 
 > **ℹ️ Info**
 >
 > A numerical verification of the equations above - Python prototypes operating on rational numbers (the `Fraction` library) - can be found on the [Model Implementation](model-implementation.md) page and in the repository [github.com/michalwidera/equations](https://github.com/michalwidera/equations).
+
+## Connecting proofs to the implementation
+
+The mathematical proofs concern the operator model. Their Lean formalization and the engine tests provide further levels of verification with distinct scopes. The sources are in the code repository's [`math_proofs`](https://github.com/michalwidera/retractordb/tree/master/math_proofs) directory; the [Lean project guide](https://github.com/michalwidera/retractordb/blob/master/math_proofs/README.md) describes tool setup, proof checking, and Verso document generation.
+
+| Property | Formalization in `math_proofs/Profs/` |
+| --- | --- |
+| Sequential coverage by interleaving | [InterleaveCovering.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/InterleaveCovering.lean) |
+| Position partition and de-interleaving mappings | [BeattyPartition.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/BeattyPartition.lean), [Deinterleave.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/Deinterleave.lean) |
+| Exact invertibility | [ExactInvertibility.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/ExactInvertibility.lean) |
+| Event-order counterexample and sum commutativity | [EventOrder.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/EventOrder.lean), [SumCommutativity.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/SumCommutativity.lean) |
+| Matched shifts R1 and causal execution | [ShiftMatching.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/ShiftMatching.lean), [CausalShift.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/CausalShift.lean) |
+| Phase-requirement periodicity and exact interleave tail | [InterleaveTailExact.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/InterleaveTailExact.lean) |
+
+The connection to the C++ code has four steps:
+
+1. **Check the model in Lean.** The `Profs/` files contain definitions and proofs checked by the Lean kernel. The formalization of the positive-position partition uses Mathlib's generalized Rayleigh theorem. It does not formalize the full Fraenkel theorem. Once the environment is prepared, `lake build Profs`, run in `math_proofs`, checks the proof project.
+2. **Generate the oracle.** [`OracleMain.lean`](https://github.com/michalwidera/retractordb/blob/master/math_proofs/OracleMain.lean) computes tables from the model definitions. The `gen-oracle.sh` script writes them to `test/UnitTest/proofOracle.hpp`, together with SHA-256 hashes of proof sources and files specifying tool versions.
+3. **Compare with the implementation.** The `ut_proofOracle` test compares functions from `SOperations.hpp` with the generated tables and checks theorem consequences, for example `ProofOracle.deinterleave_inverts_interleave` and `ProofOracle.causal_shift_matching`. The C++ assertions check selected cases and parameter ranges; they do not constitute a universal proof that the entire implementation agrees with Lean.
+4. **Check that the connections are current.** The `proof_drift` test checks oracle-input hashes and [`test/proof_manifest.tsv`](https://github.com/michalwidera/retractordb/blob/master/test/proof_manifest.tsv). The manifest assigns theorems to tests or explicitly records missing coverage or a scope without an engine counterpart. Changes to proof sources or tool versions require regenerating the oracle; hash checks alone do not replace checking the proofs in Lean.
+
+The formalization covers indices, values, intervals, matched shifts, logical origins, and the phase formula for the exact interleave tail. The fallback tail estimate above `kHashPhaseScanLimit` remains outside its scope. Agreement of descriptors, `NULL` maps, gaps, materialization, and other C++ execution paths requires separate unit and integration checks. [Integration Tests](../appendices/integration-tests.md) explains their role and distinguishes a coverage description from an execution result.

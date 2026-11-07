@@ -1,6 +1,6 @@
 # Production Builds and Diagnostic Variants
 
-The `scripts/buildrdb.sh` script provides the production `release` build and diagnostic modes. The `release-ablation` and `probe` variants have separate CMake configurations, output directories, and Conan generators. Verification of the resulting binary confirms its switches. Tool preparation and installation are described in [System Installation](../system-installation/README.md).
+The `scripts/buildrdb.sh` script provides the production `release` build and diagnostic modes. The `release-ablation` and `probe` variants have separate CMake configurations, output directories, and Conan generators. Verification of the resulting binary confirms its switches. Tool preparation and installation are described in [System Installation](../system-installation/).
 
 > **⚠️ Warning**
 >

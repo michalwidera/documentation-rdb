@@ -12,11 +12,11 @@ The appendices contain documents not directly related to the system's constructi
 
   A versioned JSON Lines contract and optional Python and C++ libraries for observing streams from an explicitly named instance. This chapter describes type mappings, subscription lifecycle, timeouts, bounded buffers, error handling, and the separate targets used to build, install, and test the API.
 
-- **[System Origin](system-origin/README.md)**
+- **[System Origin](system-origin/)**
 
   A description of the historical circumstances that led to RetractorDB's creation. The starting point is the author's experience building a neonatal monitoring system in the early 2000s - running into the limitations of relational databases when recording high-granularity signals, attempts based on the stream-processing systems of the time, and the evolution toward a dedicated time-series processing engine. The chapter also explains where the name "Retractor" comes from - a reference to a group of surgical instruments that separate and join tissue structures, treated here as an analogy for operations on data streams.
 
-- **[RQL Syntax Highlighting](syntax-highlighting/README.md)**
+- **[RQL Syntax Highlighting](syntax-highlighting/)**
 
   RetractorDB query files (extension `.rql`) have dedicated syntax-highlighting definitions for three environments:
 
@@ -26,7 +26,7 @@ The appendices contain documents not directly related to the system's constructi
 
   Each environment recognizes RQL keywords (`SELECT`, `DECLARE`, `RULE`, `STREAM`, …), data types, comments, string literals, and numeric values.
 
-- **[Command-Line Options](command-line-options/README.md)**
+- **[Command-Line Options](command-line-options/)**
 
   Complete command-line flag documentation for all three of the system's tools:
 

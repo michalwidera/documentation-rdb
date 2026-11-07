@@ -1,11 +1,6 @@
 # Mathematical Foundations
 
-## Mathematical Foundations
-
-> **ℹ️ Info**
->
-> Do you know what the Fields Medal is? It is an award given exclusively to outstanding mathematicians under the age of 40. It is called the mathematical Nobel Prize. Interestingly, no mathematician will ever receive the actual Nobel Prize - as per the founder's wishes. John Charles Fields himself (1863-1932) was a Canadian mathematician. John Charles Fields had one doctoral student - Samuel Beatty (1881-1970).
-
+Interleaving and de-interleaving are based on partitioning sample positions into two disjoint, ordered sets. Beatty sequences and Fraenkel's theorem describe such a partition and allow exact index mappings to be derived. This page presents the underlying theorems; the following chapters define the operators and show how the system uses them.
 
 In 1926, Samuel Beatty published the following theorem [\[1\]](../references.md#1):
 
@@ -36,13 +31,11 @@ partition the set of positive integers.
 
 <figure><img src="../assets/zbiory_rozlaczne_beatya.png" alt=""><figcaption><p>Fig. 1. Graphical representation of the concept of disjoint sets</p></figcaption></figure>
 
-These two sequences partition the set of natural numbers. This means that given two irrational numbers satisfying the relation stated in the theorem, we can split the entire set of natural numbers into two disjoint sets (Fig. 1).
+Each positive integer therefore belongs to exactly one of these sequences (Fig. 1). The condition relating p and q ensures both disjointness and complete coverage of the set.
 
-The Beatty theorem is a fascinating observation in its own right - but in computer systems we run into a problem with irrational numbers. Real numbers - despite the fact that some programming languages use the words Real or Float for the real-number type - have little in common with actual real numbers. The fundamental problem is that we don't have them, and presumably never will.
+Computing these positions directly with floating-point approximations requires care: a small error near an integer can change the result of floor or ceiling and select a different sample. RetractorDB needs a variant in which intervals and index mappings can be computed exactly using rational numbers.
 
-And here our journey would have abruptly ended, were it not for another theorem. The situation changed dramatically thanks to a mathematician - Aviezri Siegmund Fraenkel (1926), who specializes in combinatorial aspects of game theory.
-
-In 1969 he presented the following theorem [\[2\]](../references.md#2). The starting point is a parameterized Beatty sequence:
+The generalization presented by Aviezri S. Fraenkel in 1969 [\[2\]](../references.md#2) provides that possibility. Its starting point is a parameterized Beatty sequence:
 
 \\[
 \mathcal{B}(\alpha ,\alpha ^{\prime }):=
@@ -108,8 +101,6 @@ k\alpha +\alpha ^{\prime }\not\in \mathbb{Z}
 \left\lceil q\alpha ^{\prime }\right\rceil +\left\lceil q\beta ^{\prime}\right\rceil =1
 \\]
 
-And that is exactly what we need! We don't have irrational numbers, but rational numbers understood as the ratio of two natural numbers are something a computer can handle just fine.
+Allowing rational parameters makes it possible to derive the operators used in RetractorDB without approximating sample positions. The implementation must also respect the limits of its numeric representation; a mathematical theorem does not remove the limits of machine types.
 
-In our case, I first built prototype equations in Python, and then started looking for mathematical foundations that looked similar and could serve as well-documented equations backed by formal proofs. Proofs, of course, carried out by more experienced mathematicians. Modest as my skills were, they were enough to identify these two publications as relevant to my ideas.
-
-This document does not include formal proofs. That is why I present here only the equations and theorems actually used in the system. For the formal proofs, I refer the reader to my scientific publications [\[3\]](../references.md#3).
+[Algebra of Regular Time Series](algebra-of-regular-time-series.md) defines the operators, and [Formal Foundations and Proofs](formal-foundations-and-proofs.md) proves their properties. Its [section on the connection to the implementation](formal-foundations-and-proofs.md#connecting-proofs-to-the-implementation) describes the Lean formalization and the checks comparing C++ functions with the model. The historical derivation of the method is presented in publication [\[3\]](../references.md#3).

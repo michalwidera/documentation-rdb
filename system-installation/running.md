@@ -4,7 +4,7 @@ Installed tools can run standalone or as a service. [Linux releases](linux-relea
 
 ## Standalone: a file until EOF
 
-Prepare separate input and output in a Linux shell:
+This example reads eight integers, multiplies each by two, and stores the `dst` stream. After [installing the tools](linux-releases.md), run the following commands in the same Linux shell:
 
 ```bash
 rdb_demo_dir=$(mktemp -d)
@@ -18,7 +18,40 @@ EOF
 xretractor "$rdb_demo_dir/plan.rql" --name installation-demo -u -k
 ```
 
-`-u` stops at EOF; `-k` skips the final keypress wait. Without `-u`, a source can wrap and the process needs stopping. The name identifies the instance on the bus; concurrent instances need distinct names and disjoint plan resources. Use `xqry --server installation-demo` while it is running; IPC cannot observe a completed run. Inspect resulting artifacts with `xtrdb` or offline Storage. The example directory remains for inspection.
+`-u` stops at EOF; `-k` skips the final keypress wait. Without `-u`, a source can wrap and the process needs stopping. The interval `1/2` means one sample every half second. Repeating the whole example creates a new directory with `mktemp`, keeping the results of previous runs separate.
+
+After `xretractor` exits, read the artifact in the same shell where you set `rdb_demo_dir`:
+
+```bash
+xtrdb --noprompt <<EOF
+storage $rdb_demo_dir/results
+open dst
+size
+list 8
+quit
+EOF
+```
+
+Expected output:
+
+```text
+8 Record(s)
+4 Byte(s) per record.
+{ dst_0:20 }
+{ dst_0:40 }
+{ dst_0:60 }
+{ dst_0:80 }
+{ dst_0:100 }
+{ dst_0:120 }
+{ dst_0:140 }
+{ dst_0:160 }
+```
+
+`size` confirms the record count and record size; `list 8` shows the values in storage order. The compiler assigned the field name `dst_0` to the expression `a*2`. The file `results/dst` contains binary data; `results/dst.desc` describes its `INTEGER` field. Use `xtrdb` or [offline Storage](../appendices/python-jupyter-api.md) to interpret the data with its descriptor and metadata.
+
+The name `installation-demo` identifies the instance on the bus; concurrent instances need distinct names and disjoint plan resources. In batch or interactive mode, `xtrdb` requires the instances detected by its [lock and bus checks](../appendices/command-line-options/xtrdb.md) to have stopped. If it refuses to start, wait for those instances to finish. Observe a running engine with `xqry --server installation-demo`; after the process exits, its files remain available, but its IPC stream does not.
+
+If the result differs from the output shown, keep the complete `xretractor` and `xtrdb` diagnostics and the example directory. Check [Runtime errors](../query-execution/runtime-errors.md); an `xtrdb` exit code of zero alone does not confirm that every command succeeded. The directory named by `rdb_demo_dir` remains available for further inspection.
 
 ## Running service
 

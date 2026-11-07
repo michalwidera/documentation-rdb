@@ -4,31 +4,30 @@ RetractorDB is an Edge Signal Processing Engine (ESPE) designed to continuously 
 
 The name combines two ideas. **Retractor** denotes a tool that extracts, separates, joins, and processes data contained in time series, while **DB** points to mechanisms familiar from databases: a declarative query language, schema descriptions, access methods, and persistent result storage. The origin of the name is explained in [Why Was This Name Chosen for the System?](appendices/system-origin/why-this-name.md).
 
-This documentation leads from the [mathematical foundations](mathematical-foundations/README.md) and the [construction of RQL](query-language-construction/README.md), through the [system architecture](data-processing-system-architecture/README.md), query compilation and execution, to application examples and reference appendices. First-time readers should follow the chapter order in the table of contents because later sections build on concepts introduced earlier. Readers looking for a specific solution can go directly to the relevant chapter, then use the examples and appendices as practical and reference material.
+## How to use this documentation
 
-## RetractorDB among neighboring fields
+For a first introduction, start with installation and the short example that takes you from an input file to reading the completed result. The mathematical foundations explain operator semantics and optimization rules; you can return to them after running your first plan.
 
-This chapter is a map, not a catalog. Instead of listing everything ever written about streams and signals, I show eight strands of research literature at whose intersection RetractorDB sits, and for each of them I answer three questions: what has this strand already solved, how does RetractorDB differ from it, and what does this strand **not** touch. Comparing them reveals the gap this project fills.
+| Goal | Suggested reading path |
+| --- | --- |
+| Run a first plan and read its result | [Installation](system-installation/) → [running example](system-installation/running.md#standalone-a-file-until-eof) → [usage examples](usage-examples/) |
+| Write queries and diagnose errors | [RQL construction](query-language-construction/) → [syntax and compilation errors](query-language-construction/syntax-and-compilation-errors.md) → [runtime errors](query-execution/runtime-errors.md) |
+| Understand the model and develop the implementation | [Mathematical foundations](mathematical-foundations/) → [proofs and their connection to the code](mathematical-foundations/formal-foundations-and-proofs.md#connecting-proofs-to-the-implementation) → [architecture](data-processing-system-architecture/) → [compilation](query-compilation/) and [execution](query-execution/) |
 
 <div class="no-print">
 
 > **📥 Download the documentation**
 >
-> This documentation is compiled entirely from Markdown files. Three targets are copied. The first is the HTML page you see now, the second is the PDF file, and the third is the EPUB document for the reader. Each time the content of the GitHub repository where the Markdown files are stored changes, a process is triggered to create these three targets.
+> The documentation is published as an HTML site and as PDF and EPUB files, built from the same Markdown sources. Download the files below for offline reading.
+>
 > * [retractordb.pdf](retractordb.pdf)
 > * [retractordb.epub](retractordb.epub)
 
 </div>
 
-> **✅ Note**
->
-> This system is an: Edge Signal Processing Engine. RetractorDB supports - rather than replaces - time-series databases (TSDB) and data stream management systems (DSMS): it works close to the signal source, pre-processes and filters high-frequency measurements using a declarative query language, keeps a partial, correctable record of past events and scheduled future ones in inspectable artifacts, and passes exact, deterministic results up the architecture - so that only reduced, already-processed streams reach the central architecture.
+## RetractorDB among neighboring fields
 
-
-> **ℹ️ Info**
->
-> Why did I place this chapter so early? Because an honest answer to the question "is this needed?" first requires showing what already exists. Most ideas in computer science have already been thought of once - reinventing the wheel wastes someone else's effort. This chapter is my attempt to prove that this particular wheel has not, in fact, been invented yet.
-
+The review below presents eight strands of literature related to RetractorDB's model and architecture. For each, it identifies existing solutions, similarities, and the limits of the comparison. Its purpose is to position the system among related work; the final methodological caveat explains the scope of the review and the limits of its conclusions.
 
 ## Eight neighboring fields
 
