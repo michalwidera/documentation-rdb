@@ -27,10 +27,10 @@ For the canonical `query.rql` from this chapter, the plan looks as follows:
 {{#include ../regen/out/debug.txt}}
 ```
 
-Every block has a fixed format:
+A computed stream's block has the following format; square brackets mark optional annotations and are not part of the output:
 
 ```rasm
-streamName(delta)
+streamName(delta) [tail=W] [origin=O]
         :- streamOperation(arg)
         outputFieldName: TYPE
                 instruction
@@ -40,6 +40,8 @@ streamName(delta)
 | Element | Meaning |
 |---------|-----------|
 | `streamName(delta)` | The stream's name and its interval as a fraction: `1/10` = 0.1 s = 10 Hz |
+| `tail=W` | Startup tail: the delay in record availability, measured in slots of this stream |
+| `origin=O` | Logical origin: the index of the first existing record; records at lower indices have no definition |
 | `:- PUSH_STREAM(x)` | Pushes stream `x` onto the stream stack; appears once per FROM argument |
 | `:- STREAM_ADD` | The stream-sum operator (`+` in FROM) |
 | `:- STREAM_HASH` | The stream-interleave operator (`#` in FROM) |
@@ -49,7 +51,9 @@ streamName(delta)
 | `PUSH_VAL(x)` | Pushes the constant `x` onto the stack |
 | `ADD`, `MULTIPLY`, ... | An arithmetic operation: pops two arguments off the stack, pushes the result |
 
-Ephemeris blocks (`DECLARE`) appear at the end of the plan - they contain the field list and the path to the data file.
+The `tail` and `origin` annotations are printed only for positive values; an absent annotation means zero. When both occur, `tail` precedes `origin`. See [Tails, Logical Origins and Operator Observability](../mathematical-foundations/operator-tails-and-observability.md) for details of both quantities.
+
+The plan is topologically ordered: every producer appears before the streams that consume it. Ephemeris blocks (`DECLARE`) contain the field list and the path to the data file.
 
 **Aliasing in the plan**: if two output fields point to the same `PUSH_ID`, they are aliases. In the example, `result_0` and `result_2` are both `PUSH_ID(merged[0])` - confirmation that `merged[0]` and `core0[0]` are the same position. See [Aliasing](aliasing.md).
 
@@ -82,7 +86,7 @@ The graph shows dependencies between streams as edges directed from sources to r
 
 If an output stream's delta is unexpected:
 
-1. Check the source streams' deltas - visible in the DECLARE blocks at the end of the plan.
+1. Check the source streams' deltas - visible in the DECLARE blocks before their consumers.
 2. Check the operator in the FROM clause - every operator has a different delta equation.
 
 Example: `core0(1/10) # core1(1/5)` gives a delta of `1/15`: input rates add up (`10 Hz + 5 Hz = 15 Hz`), so the interval is `a*b/(a+b)`. The sum `core0 + core1` gives a delta of `1/10` here, but it also combines both inputs' fields in one record; interleave `#` selects a record from one component. Choose the operator for the required schema and values as well. Full equations - see [Interval Resolution](interval-resolution.md).

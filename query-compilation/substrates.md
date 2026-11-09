@@ -92,20 +92,22 @@ SELECT shifted2[0] STREAM shifted2 FROM core0 > 2
 The compilation result keeps both streams, with no reduction at all:
 
 ```rasm
-shifted1(1/10)
-        :- PUSH_STREAM(core0)
-        :- STREAM_TIMEMOVE(2)
-        shifted1_0: BYTE
-                PUSH_ID(shifted1[0])
-shifted2(1/10)
-        :- PUSH_STREAM(core0)
-        :- STREAM_TIMEMOVE(2)
-        shifted2_0: BYTE
-                PUSH_ID(shifted2[0])
-core0(1/10)     sensor_a.txt
-        a: BYTE
-        b: INTEGER
+core0(1/10)	sensor_a.txt
+	a: BYTE
+	b: INTEGER
+shifted1(1/10)	origin=2
+	:- PUSH_STREAM(core0)
+	:- STREAM_TIMEMOVE(2)
+	shifted1_0: BYTE
+		PUSH_ID(shifted1[0])
+shifted2(1/10)	origin=2
+	:- PUSH_STREAM(core0)
+	:- STREAM_TIMEMOVE(2)
+	shifted2_0: BYTE
+		PUSH_ID(shifted2[0])
 ```
+
+Both shifted streams begin at logical index `2`, hence `origin=2`. Their tail is zero, so `tail` is omitted. The producer `core0` appears before its consumers.
 
 This semantic decision is deliberate: the user declared two separate output streams, and both are entitled to exist independently in the execution plan. The `deduplicateSubstrats()` pass removes neither of them. The compiler may, however, share their internal computation while retaining both public streams, as described in the next section.
 
