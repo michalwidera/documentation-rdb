@@ -275,14 +275,9 @@ Both streams carry ∆<sub>c</sub> = ∆<sub>a</sub>. They therefore coincide up
 
 The interleaving operation is not commutative in general: since 0 < z < 1, at n = 0 the equality branch of the interleaving definition always applies, so the stream φ(A, B) begins with element b₀, while the stream φ(B, A) begins with element a₀. Interleaving is, however, equivariant with respect to time shifts matched to the streams' rates - which is valuable for query-plan optimization.
 
-In the causal realization a stream has the form \\(\widehat{S}=((s_n,\Delta),W_S)\\), where \\(W_S\\) is its startup tail. We define conversion of a producer's tail into output slots as:
+In the causal realization a stream has the form \\(\widehat{S}=((s_n,\Delta),W_S)\\), where \\(W_S\\) is its startup tail.
 
-\\[
-\operatorname{conv}(w,\Delta_s,\Delta_o):=
-\left\lceil\frac{w\Delta_s}{\Delta_o}\right\rceil
-\\]
-
-The tail of an interleave with interval \\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\) follows directly from the operator definition, without going through a single phase term.
+The tail of an interleave with interval \\(\Delta_c=\Delta_a\Delta_b/(\Delta_a+\Delta_b)\\) follows from the operator definition.
 
 Record \\(i\\) of \\(\varphi(A,B)\\) carries the content of record \\(j(i)\\) of exactly one component - the one the interleave definition selects in slot \\(i\\). Write \\(\Delta_{s(i)}\\) and \\(W_{s(i)}\\) for the interval and tail of the selected component. Record \\(j(i)\\) is determined at time \\(\bigl(j(i)+1+W_{s(i)}\bigr)\Delta_{s(i)}\\), while consumer slot \\(i\\) ends at \\((i+1+W)\Delta_c\\). The causality condition for every \\(i\\) is:
 
@@ -302,24 +297,29 @@ W_{\varphi(A,B)}
 \right)
 \\]
 
-The formula is **exact**: it neither overshoots nor undershoots the event-model bound for any node. The period scan starts at zero - the logical origin shifts the consumer index and the component index by the same amount, so the window \\([0,\,p+q)\\) yields the same value as any shifted window.
+The formula is **exact**: it neither overshoots nor undershoots the event-model bound. Periodicity of the requirements means that the maximum over \\([0,\,p+q)\\) equals the maximum over every full period starting at any threshold, including the stream's logical origin.
 
-The earlier closed form
+For \\(L=p+q\\) and nonnegative tails \\(W_A,W_B\\), this maximum has a **closed form**:
 
 \\[
 W_{\varphi(A,B)}
 =\max\left(
-\operatorname{conv}(W_A,\Delta_a,\Delta_c),
-\operatorname{conv}(W_B,\Delta_b,\Delta_c)
-+H_{a,b}
+\left\lceil\frac{W_A L}{q}\right\rceil,\;
+\left\lceil\frac{(1+W_B)L+p-1}{p}\right\rceil-1
 \right)
 \\]
 
+To derive it, consider the positions of each component's records in the interleave:
+
 \\[
-H_{a,b}=\left\lceil\frac{p+q-1}{p}\right\rceil
+r_A(j)=\left\lceil\frac{(j+1)L}{q}\right\rceil-1,
+\qquad
+r_B(k)=\left\lfloor\frac{kL}{p}\right\rfloor
 \\]
 
-protected the worst read phase of the second argument, but did not check whether that phase actually falls on the record that waits longest - hence it overshot the tail by one slot for some nodes. It survives in the implementation as the fallback for \\(p+q\\) above the scan threshold (`kHashPhaseScanLimit` in `SOperations.hpp`): overshooting costs one slot of latency, whereas undershooting would mean emitting a record before its dependency is determined. Tail slots are not records.
+Substituting \\(r_A(j)\\) into the availability condition gives a difference of two ceilings. Its maximum is \\(\lceil W_A L/q\rceil\\), attained at \\(j=q-1\\), in the period's last slot. For B the requirement is \\(\lceil(k+1+W_B)L/p\rceil-1-\lfloor kL/p\rfloor\\). Since \\(\gcd(L,p)=1\\), the residue \\(kL\bmod p\\) visits every value from 0 to \\(p-1\\). The maximum occurs at residue \\(p-1\\) and gives the formula's second term. This also covers \\(p=1\\), whose only residue is 0.
+
+`exactInterleaveTail_closed` in `InterleaveTailExact.lean` formalizes equality with the phase maximum; `exactInterleaveTail_exact` states that the maximum is the smallest tail satisfying the availability condition from any threshold onward. `HashStartupLatency()` computes the closed form for every period without scanning it. For zero input tails, \\(W_{\varphi(A,B)}=\lceil(L-1)/p\rceil\\).
 
 The shift \\(\tau_m\\) does not change the emitted record sequence, but it does change the **index** at which that sequence appears: record \\(n\\) carries the content of record \\(n-m\\). Records with an index below \\(O_S+m\\) have no definition, hence
 
@@ -391,15 +391,15 @@ W_{\mathrm{LHS}}
 =W_{\mathrm{RHS}}.
 \\]
 
-Above the scan limit, the engine uses the \\(O(1)\\) fallback bound described earlier. For that bound, the same inequality follows from monotonicity of both \\(\operatorname{conv}\\) terms: a matched shift reduces each by at most \\(L\\), while the \\(H_{a,b}\\) term remains unchanged. Both sides use the same calculation variant because their intervals do not change. The fallback bound need not equal the exact phase maximum. ∎
+The closed form equals the phase maximum for every period, so this argument covers all interval ratios. ∎
 
 > **⚠️ Scope of the theorem**
 >
-> Equality of tails **does not hold**. Counterexample: \\(\Delta_a=1/10\\), \\(\Delta_b=1/5\\), \\(W_A=W_B=0\\), \\(H_{a,b}=2\\), \\(i=2\\), \\(k=1\\), \\(L=3\\). Then \\(W_{\mathrm{LHS}}=2\\) while \\(W_{\mathrm{RHS}}=\max(0,2-3)=0\\). The unfactored side reads its components **after** their own shift, so it waits longer for the same content; the factored side reads it directly from the interleave.
+> Equality of tails **does not hold**. Counterexample: \\(\Delta_a=1/10\\), \\(\Delta_b=1/5\\), \\(W_A=W_B=0\\), \\(W_{\varphi(A,B)}=2\\), \\(i=2\\), \\(k=1\\), \\(L=3\\). Then \\(W_{\mathrm{LHS}}=2\\) while \\(W_{\mathrm{RHS}}=\max(0,2-3)=0\\). The unfactored side reads its components **after** their own shift, so it waits longer for the same content; the factored side reads it directly from the interleave.
 >
 > Practical consequence: the rewrite rule \\(\varphi(\tau_i(A),\tau_k(B))\to\tau_{i+k}(\varphi(A,B))\\) is a **latency optimization**, not a neutral rewrite. It preserves the entire value part of the observation and never emits a record before its dependencies are determined, but the result is ready sooner.
 >
-> Previously both sides had the same tail solely because the realization of \\(\tau_m\\) overestimated its own tail by \\(\min(W_S,m)\\). The overestimate was removed by addressing the producer with a logical index instead of a relative offset. Regressions guarding this scope: `it_r1_identity_nulls`, `it_optimizer_ablation-factor-name-collision-semantic`.
+> Regressions guarding this scope: `it_r1_identity_nulls`, `it_optimizer_ablation-factor-name-collision-semantic`.
 
 In the compiler, additional invariants preserve public stream field names, null value maps, and the materialization policy.
 
@@ -428,13 +428,13 @@ The mathematical proofs concern the operator model. Their Lean formalization and
 | Exact invertibility | [ExactInvertibility.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/ExactInvertibility.lean) |
 | Event-order counterexample and sum commutativity | [EventOrder.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/EventOrder.lean), [SumCommutativity.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/SumCommutativity.lean) |
 | Matched shifts R1 and causal execution | [ShiftMatching.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/ShiftMatching.lean), [CausalShift.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/CausalShift.lean) |
-| Phase-requirement periodicity and exact interleave tail | [InterleaveTailExact.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/InterleaveTailExact.lean) |
+| Periodicity, minimality, and closed form of the interleave tail | [InterleaveTailExact.lean](https://github.com/michalwidera/retractordb/blob/master/math_proofs/Profs/InterleaveTailExact.lean) |
 
 The connection to the C++ code has four steps:
 
 1. **Check the model in Lean.** The `Profs/` files contain definitions and proofs checked by the Lean kernel. The formalization of the positive-position partition uses Mathlib's generalized Rayleigh theorem. It does not formalize the full Fraenkel theorem. Once the environment is prepared, `lake build Profs`, run in `math_proofs`, checks the proof project.
 2. **Generate the oracle.** [`OracleMain.lean`](https://github.com/michalwidera/retractordb/blob/master/math_proofs/OracleMain.lean) computes tables from the model definitions. The `gen-oracle.sh` script writes them to `test/UnitTest/proofOracle.hpp`, together with SHA-256 hashes of proof sources and files specifying tool versions.
-3. **Compare with the implementation.** The `ut_proofOracle` test compares functions from `SOperations.hpp` with the generated tables and checks theorem consequences, for example `ProofOracle.deinterleave_inverts_interleave` and `ProofOracle.causal_shift_matching`. The C++ assertions check selected cases and parameter ranges; they do not constitute a universal proof that the entire implementation agrees with Lean.
+3. **Compare with the implementation.** The `ut_proofOracle` test compares functions from `SOperations.hpp` with the generated tables and checks theorem consequences. For the interleave tail, `ProofOracle.exactInterleaveTail_table` compares the C++ result with the Lean table, while `ProofOracle.exactInterleaveTail_closed` checks the same table against the two closed-form terms for coprime parameters. The C++ assertions check selected cases and parameter ranges; they do not constitute a universal proof that the entire implementation agrees with Lean.
 4. **Check that the connections are current.** The `proof_drift` test checks oracle-input hashes and [`test/proof_manifest.tsv`](https://github.com/michalwidera/retractordb/blob/master/test/proof_manifest.tsv). The manifest assigns theorems to tests or explicitly records missing coverage or a scope without an engine counterpart. Changes to proof sources or tool versions require regenerating the oracle; hash checks alone do not replace checking the proofs in Lean.
 
-The formalization covers indices, values, intervals, matched shifts, logical origins, and the phase formula for the exact interleave tail. The fallback tail estimate above `kHashPhaseScanLimit` remains outside its scope. Agreement of descriptors, `NULL` maps, gaps, materialization, and other C++ execution paths requires separate unit and integration checks. [Integration Tests](../appendices/integration-tests.md) explains their role and distinguishes a coverage description from an execution result.
+The formalization covers indices, values, intervals, matched shifts, logical origins, and the minimality and closed form of the exact interleave tail. The model uses unbounded numbers; checks of the `int64` representation and plan refusal for a result outside `int` range belong to the C++ implementation. Agreement of descriptors, `NULL` maps, gaps, materialization, and other C++ execution paths requires separate unit and integration checks. [Integration Tests](../appendices/integration-tests.md) explains their role and distinguishes a coverage description from an execution result.

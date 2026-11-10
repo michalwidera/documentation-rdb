@@ -123,7 +123,7 @@ Extracts the argument program of each window aggregate - `MIN`, `MAX`, `AVG` or 
 
 #### inferFieldShapes
 
-The only stage that establishes the public shape of a `SELECT` field: its type, length, and cardinality. The shape follows from the whole field program - the pass replays the runtime arithmetic on a stack of types, including `BYTE` promotion, explicit conversions in the middle of an expression, the result of a record-history aggregate, and the width of `STRING`. The stage replaced the earlier local rules (`propagateCopiedFieldShapes`, `inferStringFieldTypes`), which settled the shape only in selected cases - see [Type Promotion](type-promotion.md).
+The only stage that establishes the public shape of a `SELECT` field: its type, length, and cardinality. The shape follows from the whole field program - the pass replays the runtime arithmetic on a stack of types, including `BYTE` promotion, explicit conversions in the middle of an expression, the result of a record-history aggregate, and the width of `STRING`. See [Type Promotion](type-promotion.md) for details.
 
 The pass runs to a fixed point because the tree is still sorted by interval and a consumer may precede its producer. It covers only nodes that copy their operand's schema; reducers and the `@` window keep the schema built by their operator, and `DECLARE` declarations are left untouched. The stage precedes expression simplification: after constant folding, a field's width would depend on an optimization switch.
 
@@ -161,9 +161,26 @@ For `@` and `>N` the form is closed; for `+`, `#`, `-`, `Theta` and `~Theta` the
 
 #### computeStartupLatency
 
-Computes `query::startupLatency`, the number of initial slots of the stream's own interval in which an existing result is not yet ready. Sources have tail 0; `>N` gives `max(0, W_src − N)`, because it reads a record older than the current one; interleave includes both input tails and its own look-ahead on the second argument; sum takes the maximum of both inputs' availability bounds. Difference and both de-interleaves use exact phase bounds - left de-interleave does not unconditionally add one slot. AGSE uses the bound from the newest field in its window, and reductions and record-history aggregates add no own tail. The plan listing shows `tail=` and the runtime emits no record during the tail. The number of silent slots is `origin + tail`.
+Computes `query::startupLatency`, the number of initial slots of the stream's own interval in which an existing result is not yet ready. Sources have tail 0; `>N` gives `max(0, W_src − N)`, because it reads a record older than the current one; interleave accounts for both input tails and the phase of the component actually selected; sum takes the maximum of both inputs' availability bounds. Difference and both de-interleaves use exact phase bounds - left de-interleave does not unconditionally add one slot. AGSE uses the bound from the newest field in its window, and reductions and record-history aggregates add no own tail. The plan listing shows `tail=` and the runtime emits no record during the tail. The number of silent slots is `origin + tail`.
 
 This pass runs after `computeLogicalOrigin` and before capacity computation: the tail depends on which slots are records, and retained history depends on the consumer's first emission time.
+
+For an interleave, the compiler reduces \\(\Delta_a/\Delta_b=p/q\\) to coprime positive \\(p,q\\). `HashStartupLatency()` (`SOperations.hpp`) computes the exact tail in closed form:
+
+\\[
+W_{\\#}
+=\max\left(
+\left\lceil\frac{W_A L}{q}\right\rceil,\;
+\left\lceil\frac{(1+W_B)L+p-1}{p}\right\rceil-1
+\right),
+\qquad L=p+q
+\\]
+
+This is the maximum availability requirement over one full phase period. The number of operations after obtaining \\(p/q\\) is independent of \\(L\\). [Formal foundations and proofs](../mathematical-foundations/formal-foundations-and-proofs.md) gives the derivation.
+
+Both terms and the result are computed in `int64`. For positive \\(p,q\\) and nonnegative \\(W_A,W_B\\) within `int` range, the numerators fit this type. If the result exceeds `std::numeric_limits<int>::max()`, `computeStartupLatency()` rejects the plan before storing `query::startupLatency`, identifying the stream, required slot count, and limit.
+
+The `ut_soperations` regressions compare the formula with an independent scan of the availability condition in `__int128`. They cover coprime \\(p,q\le30\\), three interval scales, and tails from 0 to 5, as well as large phase periods. `xSOperations.hash_startup_latency_handles_the_int_range_edge` checks argument range edges and a result outside `int` range. `ut_proofOracle` checks the connection to Lean tables, and `ut_h10aGate` guards the operator formula in compositions.
 
 #### computeRequiredCapacities
 
@@ -178,31 +195,6 @@ Verifies semantic correctness of the compiled plan: type and flat-width compatib
 #### applyCapacitiesToStreams
 
 Applies the computed capacities to the stream objects. A `MEMORY` store keeps the greater of `RETENTION n` and the plan's need; declared sources take their capacity from consumer needs.
-
-For an interleave, the compiler reduces \\(\Delta_a/\Delta_b=p/q\\) to coprime positive \\(p,q\\) and scans **one full phase period** \\(p+q\\). For each slot \\(i\\) of that period it determines which component the interleave selects and at which index \\(j(i)\\), then takes the maximum of the required latency:
-
-\\[
-W_{\\#}
-=\max_{0\le i<p+q}\left(
-\left\lceil\frac{\bigl(j(i)+1+W_{s(i)}\bigr)\Delta_{s(i)}}{\Delta_c}\right\rceil
--1-i
-\right)
-\\]
-
-The scan result is exact - it neither undershoots nor overshoots the causal bound. The arithmetic runs in 64 bits, because the product \\((j+1+W)\cdot\text{numerator}\cdot\text{denominator}\\) exceeds `int` range even for moderate intervals. Above `kHashPhaseScanLimit`, `HashStartupLatency()` (`SOperations.hpp`) uses a safe bound without a phase scan:
-
-\\[
-W_{\\#,\mathrm{fallback}}
-=\max\left(
-\left\lceil\frac{W_a\Delta_a}{\Delta_c}\right\rceil,
-\left\lceil\frac{W_b\Delta_b}{\Delta_c}\right\rceil
-+\left\lceil\frac{p+q-1}{p}\right\rceil
-\right)
-\\]
-
-The first two terms convert the input tails into output slots; a zero tail contributes zero. The term \\(\lceil(p+q-1)/p\rceil\\) describes only the phase and is insufficient on its own for nonzero input tails. The complete bound is conservative: it does not release a record before its dependencies are ready, but it does not promise an excess of exactly one slot. The regression `ut_soperations::xSOperations.hash_startup_latency_above_scan_limit_stays_safe` compares it with an independent scan, including nonzero input tails.
-
-Regressions cover ratios including \\(3/5\\), \\(3/2\\), \\(7/11\\), and \\(160/147\\), including periodic all-`NULL` records in the blocked, non-rewritten left-hand side of the R1 identity; the operator formula itself is guarded by `ut_h10aGate`.
 
 #### checkHistoryMemory
 

@@ -7,7 +7,7 @@ A causal realization extends a stream \\(S=(s_n,\Delta_S)\\) with **two** intege
 | logical origin \\(O_S\\) | *which record is missing?* | index of the first record that **exists at all**; records with a lower index have no definition, because they would reach before the start of the source stream |
 | startup tail \\(W_S\\) | *when is a record ready?* | record \\(n\\) is emitted at time \\((n+1+W_S)\Delta_S\\) |
 
-Neither is a prefix of zeros or of all-null records. The boundary principle holds unchanged: `NULL` is a data value, never a placeholder. The number of initial slots in which the stream stays silent is \\(O_S+W_S\\) - and only that sum was visible before the two quantities were separated.
+Neither is a prefix of zeros or of all-null records. The boundary principle states that `NULL` is a data value, never a placeholder. The number of initial slots in which the stream stays silent is \\(O_S+W_S\\).
 
 The logical index is the currency of every mapping between streams. A stream with a non-zero \\(O_S\\) has no earlier records, so its physical record 0 carries logical index \\(O_S\\); the conversion to a buffer offset is performed solely by `dataModel::fetchForward()`.
 
@@ -56,7 +56,20 @@ W_{\\#}
 \qquad \frac{\Delta_a}{\Delta_b}=\frac{p}{q},\quad \gcd(p,q)=1
 \\]
 
-The component selection and the phase repeat with period \\(p+q\\), so the maximum over one period is the maximum over all records; the logical origin shifts both indices equally and does not change the result. The formula is exact. For periods exceeding `kHashPhaseScanLimit`, a safe closed form protects the worst read phase. It may delay emission, but it cannot allow a record to be emitted before its dependencies are available.
+The availability requirement repeats with period \\(L=p+q\\), so the maximum over one period is the maximum over all records. Every full period starting at any logical origin contains the same phases and yields the same tail. For nonnegative input tails, the maximum has an exact closed form:
+
+\\[
+W_{\\#}
+=\max\left(
+\left\lceil\frac{W_A L}{q}\right\rceil,\;
+\left\lceil\frac{(1+W_B)L+p-1}{p}\right\rceil-1
+\right),
+\qquad L=p+q
+\\]
+
+The first term is the largest requirement in phases selecting A, the second in phases selecting B. Each accounts for both the component's tail and its phase. For \\(W_A=W_B=0\\), the result is \\(\lceil(L-1)/p\rceil\\).
+
+`HashStartupLatency()` in `SOperations.hpp` computes this form for every period. The Lean theorem `exactInterleaveTail_closed` states equality of the closed form and the maximum, while `exactInterleaveTail_exact` states minimality of that maximum. [Formal foundations and proofs](formal-foundations-and-proofs.md#connecting-proofs-to-the-implementation) presents the derivation and the limits of the connection to the implementation. An `int64` result exceeding `int` range causes plan compilation to fail, as described under [`computeStartupLatency`](../query-compilation/compilation-passes.md#computestartuplatency).
 
 ## The shift \\(\tau_N\\)
 
@@ -70,7 +83,7 @@ W_{\tau_N(S)}=\max\left(0,\;W_S-N\right)
 
 The tail **decreases**, it does not grow. Record \\(n-N\\) is older than the current one, so it is available all the more readily: the deficit of slot \\(n\\) is \\((n-N+1+W_S)-(n+1)=W_S-N\\) and is **constant**, independent of \\(n\\). The shift therefore moves silence from the tail into the logical origin, and additionally absorbs the producer tail whenever \\(N\ge W_S\\).
 
-The sum \\(O+W\\) is not invariant here: for \\(N<W_S\\) it equals \\(W_S\\), whereas the realization from before the separation gave \\(W_S+N\\). That earlier realization overestimated the tail by \\(\min(W_S,N)\\); the overestimate was removed by addressing the producer with a logical index instead of a relative offset.
+After the shift, the sum of the logical origin and tail is \\(O_S+N+\max(0,W_S-N)=O_S+\max(N,W_S)\\). For \\(N\le W_S\\), the number of initial silent slots stays the same; for \\(N>W_S\\), it grows to \\(O_S+N\\).
 
 ## The full AGSE window
 
@@ -90,9 +103,9 @@ W_{\operatorname{AGSE}}
 =\left\lceil\frac{(1+W_S)F}{k}\right\rceil-1
 \\]
 
-The phase term \\(P_{F,k,L}=\lfloor(\lvert L\rvert-1)/g\rfloor\,g\\), present in the form used before the re-stamping, **disappeared from the tail**: the window span is not waiting but undefinedness, and moved wholly into the logical origin. The sum \\(O+W\\) describes the same silence as before.
+The window span determines the logical origin: a window reaching before the source's start has no definition. The tail depends on the availability of the newest field.
 
-A positive width preserves the historical RetractorDB convention - the newest field comes first; a negative width mirrors it, giving arrival order.
+For a positive width, the newest field comes first; a negative width mirrors this order, giving arrival order.
 
 Source history capacity has no closed form here. The backward distance at the moment record \\(n\\) is emitted,
 
@@ -131,6 +144,6 @@ The split is not a formality. The \\(R_1\\) factoring (\\(\varphi(\tau_i(A),\tau
 
 Changing any component of the value part changes the observable artifact. In particular, enabling gap propagation for computed streams in the future requires a versioned semantic change.
 
-A read outside available history internally returns an all-null record as a failsafe. A correctly compiled plan never materializes it: `logicalOrigin` skips slots without a definition, `startupLatency` skips slots not yet determined, and the history capacity retains every required index. The `it_k19_boundaries` test distinguishes this case from a genuine `NULL` located inside a full window. Since 23 September 2026 the convention holds along the whole read path: `storage::read()` and `storage::revRead()` report a missing record through a separate status and also set an all-null pattern, so a reducer absorbs such a record instead of folding zeros out of it (→ [Files](../data-processing-system-architecture/data-storage-format/files.md#reading-a-record-that-does-not-exist)).
+A read outside available history internally returns an all-null record as a failsafe. A correctly compiled plan never materializes it: `logicalOrigin` skips slots without a definition, `startupLatency` skips slots not yet determined, and the history capacity retains every required index. The `it_k19_boundaries` test distinguishes this case from a genuine `NULL` located inside a full window. `storage::read()` and `storage::revRead()` report a missing record through a separate status and also set an all-null pattern, so a reducer absorbs such a record instead of folding zeros out of it (→ [Files](../data-processing-system-architecture/data-storage-format/files.md#reading-a-record-that-does-not-exist)).
 
 The operator formulas in this chapter are enforced on every commit: boundaries and observability by `it_k19_boundaries`, history depths by `it_k24_capacity`, and agreement of logical origin and tail for all canonical operator classes and their compositions by the `ut_h10aGate` unit test.
