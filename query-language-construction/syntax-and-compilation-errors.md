@@ -15,6 +15,7 @@ Go to the group that matches the diagnostic:
 - [Stream-Family Generators](#stream-family-generators)
 - [RULE Statements](#rule-statements)
 - [Sources, Storage, and Directives](#sources-storage-and-directives)
+- [Ad Hoc and Plan Reload Refusals](#ad-hoc-and-plan-reload-refusals)
 
 ## Reading a Diagnostic
 
@@ -30,12 +31,14 @@ Exit code `0` means compilation succeeded. Rejection of an invalid plan returns 
 
 | Diagnostic element | Meaning | What to check |
 | --- | --- | --- |
-| `Syntax error @Rql`, `line L:C`, `msg:...` | The lexer or parser did not recognize the syntax. | The indicated character, preceding word, comma, single quote, or parenthesis. |
+| `Syntax error @Rql`, `line:L:C at ...`, `msg:...` | The lexer or parser did not recognize the syntax. | The indicated character, preceding word, comma, single quote, or parenthesis. |
 | `Parse result:...` | Parsing or a semantic check performed by the parser failed. | In addition to syntax, check numeric ranges, `DECLARE` options, directives, `LET`/`VAR` declarations, and the `RULE` target. |
 | `Check result:...` | The parser accepted the syntax, but the compiler refused to construct the plan. | Field names and indices, dependencies, types, operator compatibility, and history resources. |
 | `FATAL: internal compiler error: ...` | An internal compiler invariant was violated. | Keep the plan, diagnostic, and program version for a bug report. This diagnostic does not identify an ordinary syntax correction. |
 
 Line number `L` starts at `1`, and position `C` within the line starts at `0`. For a statement continued with `\`, the line number identifies the start of the joined statement, and the position refers to the joined text. `Input file:` identifies the file being rejected. Correct the first error and compile again: later checks may reveal further problems only after the first one has been resolved.
+
+The parser prints details to stderr and then returns a shortened status, such as `Parse result:line 3:9 ...`. These are two representations of the same refusal. `at <EOF>` identifies the end of the submitted statement, while `at <unknown>` can occur on a lexer error before a token exists. The syntax-error status is a single line limited to 300 bytes; the full `msg:` text remains on the server's stderr. Not every semantic refusal includes a position: it may appear as `Error: ...` and `Parse result:...`.
 
 The tables below quote characteristic **diagnostic fragments**. The full message also includes stream names, values, and sometimes a position in the file. The list of tokens expected by the parser depends on where the error occurs.
 
@@ -132,6 +135,8 @@ For example, two `to_string` fields of width `40000` are individually valid, but
 | Diagnostic fragment | Incorrect | Correct |
 | --- | --- | --- |
 | `has length 80000; the limit is 65536` | `SELECT to_string(v:40000)+to_string(w:40000) STREAM result FROM src` | `SELECT to_string(v:16)+to_string(w:16) STREAM result FROM src` |
+
+`has a startup latency of ... slots; the limit is 2147483647` means that the plan's computed tail exceeds its representable range, including for interleave `#`. It is not a compilation timeout or a `DEVICE` read deadline. Reduce windows or shifts and check the source-interval relationships; individual operators fitting their limits is insufficient.
 
 The logical origin calculated for a compound plan must fit in `int`. Two consecutive AGSE windows `@(1,65536)` over a single-field source exceed the limit of `2147483647` slots. The diagnostic contains `has a logical origin of ... slots; the limit is ...`. The correction reduces both window widths:
 
@@ -236,6 +241,26 @@ SELECT * STREAM result FROM scalar#aux
 | `SUBTRACT interval constraint failed` | `SELECT * STREAM result FROM src-1/2` | `SELECT * STREAM result FROM src-2` |
 
 `src` has interval `1`, so the corrected target `2` is valid. Choose the value to match the rate required by the application.
+
+### Invalid De-interleave or Unrepresentable Computed Interval
+
+The `&` and `%` operators refuse an argument equal to the source interval: the result-interval formula would have a zero denominator. `You cannot make faster div from slower source` or `You cannot make faster mod from slower source` means that the computed result would be faster than the source. Check the complete de-interleave formula, as well as whether the argument is positive.
+
+| Diagnostic fragment | Incorrect | Correct |
+| --- | --- | --- |
+| `'&' argument equal to the source interval` | `SELECT * STREAM result FROM src&1` | `SELECT * STREAM result FROM src&2` |
+| `'%' argument equal to the source interval` | `SELECT * STREAM result FROM src%1` | `SELECT * STREAM result FROM src%2` |
+| `You cannot make faster div from slower source` | `SELECT * STREAM result FROM src&1/4` | `SELECT * STREAM result FROM src&2` |
+| `You cannot make faster mod from slower source` | `SELECT * STREAM result FROM src%1/4` | `SELECT * STREAM result FROM src%2` |
+
+`Stream interval out of representable range - simplify the plan or use coarser intervals` concerns an interval **computed by the compiler**. Each argument may be valid individually while the result does not fit the rational representation. Refused example (complete plan):
+
+```rql
+DECLARE x INTEGER STREAM sensor, 46341/46339 TEXTFILE 'x.txt'
+SELECT * STREAM result FROM sensor&46342/46339
+```
+
+Simplify the expression or choose different intervals consistent with the required cadence; rounding changes the computation. See [Interval Resolution](../query-compilation/interval-resolution.md) for the formulas.
 
 ### Unknown Function or Wrong Call Form
 
@@ -704,6 +729,29 @@ SELECT * STREAM result FROM wide>10 VOLATILE
 
 **Tests and requirements:** [Sources, Directives, and Retention](../appendices/integration-tests.md#rql-tests-storage).
 
+## Ad Hoc and Plan Reload Refusals
+
+The same parser and compiler checks apply to `xqry -a` and `xqry --reset` requests, but the response uses a different prefix. An ordinary refusal during validation leaves the running plan in place and does not terminate the server. Passing `xretractor -c` does not mean that the file's contents are allowed through every channel.
+
+| Response fragment | Meaning and correction |
+| --- | --- |
+| `Fail parse: ...` | A syntax error, a parser semantic check, or an ad hoc channel restriction. The remaining text identifies the cause. |
+| `Fail local chain compiler:...` | The compiler refused an ad hoc query or rule. Apply the catalogue's corrections for `Check result:`. |
+| `Fail compile:...` | The compiler refused a new plan during `--reset` validation. |
+| `Rejected: ...` | A source, storage, resource, or channel-policy check refused the request. This need not be a grammar error. |
+| `AdHoc accepts exactly one SELECT, DECLARE or RULE statement` | Send one statement; use `--reset` to submit a complete plan. |
+| `AdHoc accepts only SELECT, DECLARE or RULE; ... is not supported` | Standalone `LET`, `VAR`, and directives are not ad hoc commands. Put them in the plan file. |
+| `stream '...' already exists in this instance` | An ad hoc request tries to redeclare an existing stream using `DECLARE`. Change the name or reload the complete plan. |
+| `AdHoc RULE supports DO DUMP and DO SET only` | `DO SYSTEM` is not allowed in an ad hoc rule. |
+| `keeps only ... record(s) in memory, but a dump range ... needs ...` | The new rule needs more history than the running stream's ring holds. Shorten the range or reload the plan with sufficient capacity. |
+| `engine error: ...` | An engine invariant violation was reported through `error.response`; preserve the diagnostics for a defect report. |
+
+For a validation refusal, the reset client adds `xqry: plan reload refused at reset-commit: ...`. Refusals at `reset-begin` and `reset-chunk` concern starting or transferring the plan, before the parser receives the complete text. By default, a plan submitted through reset cannot contain `DO SYSTEM`; the diagnostic names the rule and the `service.unrestricted` setting. See [Runtime Errors](../query-execution/runtime-errors.md#command-reset-and-ad-hoc-import-refusals) for that option's rules and transfer diagnostics.
+
+An ad hoc request sees the running plan's declared `VAR` names, but not its `LET` constants, which disappear while parsing the file. An unknown `?N` diagnostic can therefore occur despite an earlier `LET N` in the startup file.
+
+**Coverage:** `it_adhoc_parse_error-run`, `it_adhoc_rule-run`, `it_storage_refusal`, and the reset tests under `test/IntegrationTest/`.
+
 ## What Is Not a Syntax Error
 
 Successful compilation does not confirm device availability, input file existence, compatibility of a retained descriptor, or permission to write to a directory. Diagnostics such as `source file does not exist`, `descriptor schema mismatch`, and `directory ... does not exist` concern sources or storage state, checked at startup and on other plan-loading paths. Resolve the cause by correcting paths, data, or permissions, or by reconciling storage with the plan. Do not blindly delete artifacts just because the parser accepted the query.
@@ -716,11 +764,12 @@ The catalogue is based on checks in the current implementation, rather than gram
 
 | Source | Diagnostic scope |
 | --- | --- |
-| [RQL.g4](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQL.g4) | Statement structure, clause order, and the distinction between scalar, logical, and stream expressions. |
-| [RQLParser.cpp](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/RQLParser.cpp) | Error positions, numbers and dimensions, source options, `LET`/`VAR`, rule attachment, directives, and retention forms. |
-| [compiler.cpp](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/compiler.cpp) | References, dependencies, operators, generators, windows, functions, assignments, and history resources. |
-| [expressionShape.cpp](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/lib/expressionShape.cpp) | Rejections of unsupported combinations of an operator or function with an argument type. |
-| [launcher.cpp](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/src/retractor/launcher.cpp) | The `Parse result:` and `Check result:` channels, the plan rejection code, and termination of `-c` mode. |
-| [test_compiler.cpp](https://github.com/michalwidera/retractordb/blob/dfcc42d2a5fee2efa0b531d682766e4b7b9b73bb/test/UnitTest/test_compiler.cpp) | Rejection cases and valid control variants for the parser and compiler. |
+| [RQL.g4](https://github.com/michalwidera/retractordb/blob/39b59c698992c35bbafb0c8525b7c8cedd181ac6/src/retractor/lib/RQL.g4) | Statement structure, clause order, and the distinction between scalar, logical, and stream expressions. |
+| [RQLParser.cpp](https://github.com/michalwidera/retractordb/blob/39b59c698992c35bbafb0c8525b7c8cedd181ac6/src/retractor/lib/RQLParser.cpp) | Error positions, numbers and dimensions, source options, `LET`/`VAR`, rule attachment, directives, and retention forms. |
+| [compiler.cpp](https://github.com/michalwidera/retractordb/blob/39b59c698992c35bbafb0c8525b7c8cedd181ac6/src/retractor/lib/compiler.cpp) | References, dependencies, operators, generators, windows, functions, assignments, and history resources. |
+| [expressionShape.cpp](https://github.com/michalwidera/retractordb/blob/39b59c698992c35bbafb0c8525b7c8cedd181ac6/src/retractor/lib/expressionShape.cpp) | Rejections of unsupported combinations of an operator or function with an argument type. |
+| [launcher.cpp](https://github.com/michalwidera/retractordb/blob/39b59c698992c35bbafb0c8525b7c8cedd181ac6/src/retractor/launcher.cpp) | The `Parse result:` and `Check result:` channels, the plan rejection code, and termination of `-c` mode. |
+| [executorsmAdHoc.cpp](https://github.com/michalwidera/retractordb/blob/39b59c698992c35bbafb0c8525b7c8cedd181ac6/src/retractor/lib/executorsmAdHoc.cpp), [executorsmPlanReload.cpp](https://github.com/michalwidera/retractordb/blob/39b59c698992c35bbafb0c8525b7c8cedd181ac6/src/retractor/lib/executorsmPlanReload.cpp) | Ad hoc and reset refusal prefixes and restrictions; validation before changing the running plan. |
+| [test_compiler.cpp](https://github.com/michalwidera/retractordb/blob/39b59c698992c35bbafb0c8525b7c8cedd181ac6/test/UnitTest/test_compiler.cpp) | Rejection cases and valid control variants for the parser and compiler. |
 
 The links pin the code revision used to prepare this chapter. Diagnostics about internally malformed tokens and violated invariants have no "incorrect/correct RQL" pair: they require a bug report. If the syntax is valid but the plan differs from expectations, use the [compilation debugging tools](../query-compilation/compilation-debugging.md); for the order of checks, see [Compilation Passes](../query-compilation/compilation-passes.md).

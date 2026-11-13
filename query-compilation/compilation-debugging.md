@@ -13,11 +13,28 @@ xretractor -c query.rql
 An exit code of `0` means success. A parser or compiler refusal of an invalid plan returns `EPROTO`, which is `71` on Linux. Other failures, such as a missing `.rql` file or an internal error, can use different codes; scripts should check every nonzero result. Error messages go to stderr:
 
 ```bash
-xretractor -c query.rql 2>errors.txt
-echo $?
+xretractor -c query.rql >plan.txt 2>errors.txt
+status=$?
+printf 'exit=%s\n' "$status"
+cat errors.txt
 ```
 
 Compilation can be invoked even while another `xretractor` process is already running - the `-c` flag does not attempt to acquire the execution lock.
+
+Save the exit code immediately: after `cat`, `$?` would describe reading the file rather than compilation. On refusal, `plan.txt` is not a completed plan. Early program diagnostics such as `fatal error: no input file` can go to stdout, so keep both files.
+
+## Identify the Refusal Stage
+
+| Diagnostic or situation | Stage and next step |
+| --- | --- |
+| `fatal error: no input file`, `file ... does not exist`, `Error: Unable to open file!` | The RQL file was not loaded. Check the program argument, working directory, and access to the plan file itself. |
+| `fatal error: no queries to process` | `-c` found no plan to compile, for example in a file containing only comments. A normal start without statements can remain idle. |
+| `Syntax error @Rql`, `Parse result:...` | Parser refusal. Check the first error, position, and named file. |
+| `Check result:...` | Compiler refusal, or a plan error detected during initialization on a normal start. Read the remaining text; the prefix alone does not identify the correction. |
+| `Fail parse:`, `Fail local chain compiler:`, `Fail compile:`, `Rejected:` | A response to an ad hoc or reset request. Check the cause and the channel's restrictions. |
+| `FATAL: internal compiler error: ...`, `engine error: ...` | Engine defect diagnostics. Save a minimal plan, the full message, and build information. |
+
+The [Syntax and Compilation Errors](../query-language-construction/syntax-and-compilation-errors.md) catalogue contains incorrect and corrected queries. Repeat the check after removing the first cause; compilation stops at its first refusal, so the next one may come from a different pass.
 
 ## How to read the compilation plan
 
@@ -80,6 +97,8 @@ Available flags that modify the DOT output:
 
 The graph shows dependencies between streams as edges directed from sources to results. Substrates have a different color than streams explicitly defined by the user. See [Dependency Tree Construction](dependency-tree-construction.md).
 
+DOT output is produced only after **successful compilation**. `-d` does not show a partial graph of a refused plan. Invoke `dot` through `&&`, as above, so a compilation refusal does not lead to processing an empty or incomplete file.
+
 > **_NOTE:_** The functionality described here is covered by the test: `issue31_doc`, described in the appendix [Integration Tests](../appendices/integration-tests.md).
 
 ## Verifying intervals
@@ -99,12 +118,9 @@ A number outside the target type's range stops parsing with `numeric literal ...
 
 ### A cycle in the dependency graph
 
-```
-[error] Circular dependency: stream interval resolution stalled with N
->> unresolved streams
-```
+The refusal status is `Check result:Circular dependency in stream definitions`. The log may also contain `Circular dependency: stream interval resolution stalled with N unresolved streams`.
 
-A stream refers, directly or indirectly, to itself. Generate the graph via `-d` - the cycle will be visible as a loop. See [Loop Detection](loop-detection.md).
+Trace the references in the RQL file's `FROM` clauses until you find a return to an earlier stream. Remove the cyclic dependency; changing line order does not remove it. A direct read of the stream's own output may be refused earlier with `a stream cannot be its own producer`. For a refused plan, `-d` also returns a refusal, so the graph can be generated only after correction. See [Loop Detection](loop-detection.md).
 
 ### Unknown stream
 
@@ -116,4 +132,37 @@ The expression `core0[_] * core1[_]` expands to the minimum flat width contribut
 
 ### Data file unavailable
 
-This error **does not appear with `-c`** - the flag verifies the query's correctness, it does not check whether the data files exist. The file-access error only appears when processing is started without `-c`.
+This error **does not appear with `-c`** - the flag verifies the query's correctness, it does not check whether the data files exist. A source-access error can occur during normal startup, reset validation, or ad hoc import. Do not confuse it with a missing `.rql` file, which also prevents compilation.
+
+## When Compilation Passes but Startup Fails
+
+Source and storage state checks run before processing starts, including validation of a new plan through reset and new streams through ad hoc import. `-c` skips these checks so a plan can be compiled on a machine without its data.
+
+| Diagnostic fragment | What to check |
+| --- | --- |
+| `source file does not exist`, `cannot inspect source`, `cannot read source` | The path and permissions of the account running the engine. Relative paths depend on the process working directory. |
+| `not a regular file`, `not a character device or FIFO` | Whether `BINFILE`/`TEXTFILE` or `DEVICE` matches the actual source kind. |
+| `directory ... from the STORAGE directive does not exist`, `is not a directory` | The `STORAGE` value or configured directory. The engine does not create this directory. |
+| `descriptor schema mismatch`, `was written for TYPE`, `was written for source` | Whether the retained `.desc` matches the current schema, source kind, and path. Establish whether the intent is to continue existing data or start a new stream. |
+| `rotation counter file ... is unreadable`, `cannot be read` | Counter contents and read access. A valid value is in `0..INT_MAX-1`; deleting the file restarts numbering at zero and can overwrite `.old<N>` archives. |
+| `dataModel: stream '...': ... open-files limit RLIMIT_NOFILE is ...` | The process open-files limit. The diagnostic gives the soft limit, hard limit, and stream count. Check `ulimit -n` or the service unit's limits. |
+
+Establish the effect on retained data before removing descriptors or the rotation counter. See [Runtime Errors](../query-execution/runtime-errors.md) for the complete catalogue of startup-refusal causes and effects.
+
+### History Memory and Shared Memory
+
+`Plan keeps ... bytes of stream history in memory; the budget [limits] history_memory_mib = ...` is a compiler refusal. Reduce record widths and history required by windows or shifts; check the largest stream contribution named in the diagnostic. This resource is separate from IPC queues.
+
+The `-c` mode also checks whether shared memory can hold the instance's fixed reservation. A valid plan can therefore end with `shared memory too small: fixed reservation needs ..., only ... free (see -c --shmbudget)` and `ENOBUFS` (`105` on Linux). Obtain the budget report separately:
+
+```bash
+xretractor -c --shmbudget query.rql >shm-budget.txt
+```
+
+`--shmbudget` requires successful compilation, prints a report instead of a plan, and does not refuse solely because space for the fixed reservation is insufficient. The report helps assess IPC cost; it does not confirm file availability or that every subscription can start.
+
+## Warnings and Defect Reports
+
+`warning: ... is declared but never used`, `TIMEOUT ... is longer than the interval`, the deprecated `FILE` notice, and `grows without bound on disk` are not compilation refusals. The exit code determines success. Unused names and excessive `TIMEOUT` values are reported even without `-v`; warnings about deprecated `FILE` sources and unbounded storage growth are printed to stderr with `--verbose`. Some log entries depend on the build configuration; a missing entry does not prove the absence of a problem.
+
+Include a minimal RQL file, the exact command, exit code, both output files, and the output of `xretractor --build-info` in a defect report. For a startup-only problem, also preserve the TOML used, working directory, relevant descriptors, and server log; remove confidential data from the copy. The `Log:` line in `xretractor --help` identifies the log location. For a service, also inspect its journal. For ad hoc failures, record the submitted statement, instance name, and client response, since the parser's detailed `msg:` goes to the server's stderr.
